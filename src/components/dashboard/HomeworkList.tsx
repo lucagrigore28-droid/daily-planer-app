@@ -67,11 +67,16 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
     const tasksForDisplayDate = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayDate).getTime());
     
     // Deduplicate tasks just in case, before rendering
-    const uniqueTasks = tasksForDisplayDate.filter((task, index, self) =>
-        index === self.findIndex((t) => (
-            t.subjectId === task.subjectId && !t.isManual
-        )) || task.isManual
-    );
+    const uniqueTasks = tasksForDisplayDate.reduce((acc, current) => {
+        if (!current.isManual) {
+            if (!acc.find(item => item.subjectId === current.subjectId && !item.isManual)) {
+                acc.push(current);
+            }
+        } else {
+            acc.push(current);
+        }
+        return acc;
+    }, [] as HomeworkTask[]);
 
     // Sort tasks: incomplete first, then completed
     return uniqueTasks.sort((a, b) => {
