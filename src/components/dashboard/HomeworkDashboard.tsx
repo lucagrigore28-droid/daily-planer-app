@@ -2,7 +2,7 @@
 
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { format } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -12,7 +12,8 @@ import AddTaskDialog from './AddTaskDialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HomeworkCalendarView from './HomeworkCalendarView';
-import { List, CalendarDays } from 'lucide-react';
+import { List, CalendarDays, CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
@@ -51,7 +52,7 @@ export default function HomeworkDashboard() {
   return (
     <main className="container mx-auto max-w-3xl py-8 px-4 fade-in-up">
       <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div>
+        <div className="rounded-lg bg-card/80 p-4 backdrop-blur-sm">
           <h1 className="text-4xl font-bold font-headline text-foreground">
             Salut, {userData.name}!
           </h1>
@@ -72,14 +73,20 @@ export default function HomeworkDashboard() {
             </TabsList>
         </div>
         <TabsContent value="list">
-          <div className="space-y-2">
+          <div className="space-y-2 rounded-lg bg-card/80 p-2 backdrop-blur-sm">
             <Accordion type="single" collapsible defaultValue={`${todayString}-item`} className="w-full">
                 {relevantDays.map(day => {
                     const formattedDate = format(day, "EEEE, d MMMM", { locale: ro });
                     const dayISO = day.toISOString().split('T')[0];
+                    const isCurrentDay = isToday(day);
+
                     return (
                         <AccordionItem value={`${dayISO}-item`} key={dayISO}>
-                            <AccordionTrigger className="text-xl font-headline font-semibold capitalize">
+                            <AccordionTrigger className={cn(
+                                "text-xl font-headline font-semibold capitalize no-underline hover:no-underline",
+                                isCurrentDay && "text-primary text-2xl"
+                                )}>
+                                <CalendarDays className="mr-3 h-5 w-5 text-accent"/>
                                 {formattedDate}
                             </AccordionTrigger>
                             <AccordionContent>
