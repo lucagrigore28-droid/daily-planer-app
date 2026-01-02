@@ -26,17 +26,20 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
       userData.schedule[subject.id]?.includes(nextDayIndex)
     );
     
+    // We will collect new tasks here and add them all at once.
     let generatedTasks: HomeworkTask[] = [];
 
     subjectsForNextDay.forEach(subject => {
+        // The check must be against the existing tasks in the state.
         const taskExists = tasks.some(task => 
             task.subjectId === subject.id && 
+            !task.isManual && // Make sure we are not clashing with a manually added task
             startOfDay(new Date(task.dueDate)).getTime() === nextSchoolDayDate.getTime()
         );
 
         if (!taskExists) {
             const newScheduledTask: HomeworkTask = {
-                id: `${subject.id}-${nextSchoolDayDate.toISOString()}-${Math.random().toString(36).substring(2, 9)}`,
+                id: `${subject.id}-${nextSchoolDayDate.toISOString()}`, // Use a predictable ID
                 subjectId: subject.id,
                 subjectName: subject.name,
                 description: '',
@@ -49,7 +52,12 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
     });
 
     if (generatedTasks.length > 0) {
-      setTasks(prevTasks => [...prevTasks, ...generatedTasks]);
+      setTasks(prevTasks => {
+        const newTasksToAdd = generatedTasks.filter(
+          genTask => !prevTasks.some(prevTask => prevTask.id === genTask.id)
+        );
+        return [...prevTasks, ...newTasksToAdd];
+      });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData.setupComplete, userData.subjects, userData.schedule, displayDate]);
@@ -60,7 +68,13 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
   }, [tasks, displayDate]);
 
   const incompleteTasks = useMemo(() => {
-    return tasksForDisplayDate.filter(task => !task.isCompleted);
+    // Deduplicate tasks just in case, before rendering
+    const uniqueTasks = tasksForDisplayDate.filter((task, index, self) =>
+        index === self.findIndex((t) => (
+            t.subjectId === task.subjectId && !t.isManual
+        )) || task.isManual
+    );
+    return uniqueTasks.filter(task => !task.isCompleted);
   }, [tasksForDisplayDate]);
   
   const allTasksCompleted = tasksForDisplayDate.length > 0 && incompleteTasks.length === 0;
