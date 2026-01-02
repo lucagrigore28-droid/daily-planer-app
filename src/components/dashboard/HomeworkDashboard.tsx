@@ -2,10 +2,10 @@
 
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { format, getDay } from 'date-fns';
+import { format, getDay, addDays, subDays, isSameDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import ManualTimeDialog from './ManualTimeDialog';
 import AddTaskDialog from './AddTaskDialog';
@@ -14,11 +14,13 @@ import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
+import { cn } from '@/lib/utils';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isManualTimeOpen, setManualTimeOpen] = useState(false);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
+  const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
   useEffect(() => {
     if (context?.isDataLoaded && context.hasGpsAccess === null) {
@@ -43,6 +45,24 @@ export default function HomeworkDashboard() {
   const nextDayWithTasks = React.useMemo(() => {
     return context?.getNextSchoolDayWithTasks();
   }, [context]);
+
+  useEffect(() => {
+    if (nextDayWithTasks) {
+      setDisplayedDay(nextDayWithTasks);
+    }
+  }, [nextDayWithTasks]);
+
+  const handlePrevDay = () => {
+    if (displayedDay) {
+      setDisplayedDay(subDays(displayedDay, 1));
+    }
+  };
+
+  const handleNextDay = () => {
+    if (displayedDay) {
+      setDisplayedDay(addDays(displayedDay, 1));
+    }
+  };
 
   if (!context) return null;
   const { userData, currentDate } = context;
@@ -74,22 +94,37 @@ export default function HomeworkDashboard() {
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-6">
+        <TabsList className="flex w-full max-w-lg mx-auto mb-6">
           {tabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+            <TabsTrigger key={tab.value} value={tab.value} className="flex-1">{tab.label}</TabsTrigger>
           ))}
         </TabsList>
         
         <TabsContent value="next-tasks">
             <div className="w-full max-w-3xl mx-auto">
-                {nextDayWithTasks ? (
+                {displayedDay ? (
                     <Card>
                         <CardContent className="p-4">
-                            <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline mb-4 text-primary">
-                                <CalendarIcon className="h-6 w-6"/>
-                                Teme pentru {format(nextDayWithTasks, "EEEE, d MMMM", { locale: ro })}
-                            </h2>
-                            <HomeworkList displayDate={nextDayWithTasks} />
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline text-primary">
+                                    <CalendarIcon className="h-6 w-6"/>
+                                    Teme pentru {format(displayedDay, "EEEE, d MMMM", { locale: ro })}
+                                </h2>
+                                <div className="flex items-center gap-2">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={handlePrevDay}
+                                      disabled={isSameDay(displayedDay, new Date())}
+                                    >
+                                        <ChevronLeft className="h-6 w-6" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={handleNextDay}>
+                                        <ChevronRight className="h-6 w-6" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <HomeworkList displayDate={displayedDay} />
                         </CardContent>
                     </Card>
                 ) : (
