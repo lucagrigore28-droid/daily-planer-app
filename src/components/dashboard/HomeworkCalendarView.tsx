@@ -11,10 +11,9 @@ import { ro } from 'date-fns/locale';
 import { ScrollArea } from '../ui/scroll-area';
 
 const formatWeekdayName = (day: Date) => {
-  const dayIndex = day.getDay();
   // Using single letters as requested
   const days = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-  return days[dayIndex];
+  return days[day.getDay()];
 };
 
 
@@ -77,17 +76,18 @@ export default function HomeworkCalendarView() {
                     formatters={{ formatWeekdayName }}
                     classNames={{
                         months: "h-full flex flex-col space-y-4",
-                        month: "h-full flex flex-col",
-                        caption: "flex items-center relative mb-4 h-10",
-                        caption_label: "text-2xl font-bold font-headline absolute left-1/2 -translate-x-1/2",
-                        nav: "flex items-center",
+                        month: "space-y-4 flex flex-col flex-1",
+                        caption: "flex justify-center items-center relative mb-4 h-10",
+                        caption_label: "text-2xl font-bold font-headline",
+                        nav: "space-x-1 flex items-center absolute",
                         nav_button: "h-8 w-8",
-                        table: "w-full h-full border-collapse",
-                        head_row: "flex justify-between",
-                        head_cell: "text-muted-foreground rounded-md w-full text-center font-normal text-base",
-                        row: "flex w-full mt-2 justify-between",
+                        table: "w-full border-collapse h-full flex flex-col",
+                        head_row: "flex justify-around",
+                        head_cell: "text-muted-foreground rounded-md w-16 text-center font-normal text-base",
+                        tbody: "flex flex-col flex-1",
+                        row: "flex w-full justify-around mt-2",
                         cell: "text-center text-sm p-0 relative focus-within:relative focus-within:z-20 flex justify-center items-center h-16 w-16",
-                        day: "h-12 w-12 text-lg p-0 font-normal aria-selected:opacity-100 rounded-full flex items-center justify-center",
+                        day: "h-14 w-14 text-lg p-0 font-normal aria-selected:opacity-100 rounded-full flex items-center justify-center",
                         day_selected:
                           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                         day_today: "bg-accent text-accent-foreground rounded-full",
