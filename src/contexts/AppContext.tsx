@@ -178,16 +178,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const nextWeekStart = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
     const nextWeekEnd = endOfWeek(nextWeekStart, { weekStartsOn: 1 });
 
-    // 1. Get all uncompleted tasks from the upcoming week
+    // 1. Get all tasks from the upcoming week
     const upcomingTasks = tasks.filter(task => {
         const taskDate = startOfDay(new Date(task.dueDate));
-        return !task.isCompleted && taskDate >= nextWeekStart && taskDate <= nextWeekEnd;
+        return taskDate >= nextWeekStart && taskDate <= nextWeekEnd;
     });
 
     // 2. Sort them by due date
     upcomingTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-    // 3. Group by subject and keep only the first occurrence
+    // 3. Group by subject and keep only the first occurrence (respecting completed status)
     const firstOccurrenceMap = new Map<string, HomeworkTask>();
     for (const task of upcomingTasks) {
         if (!firstOccurrenceMap.has(task.subjectId)) {
@@ -195,7 +195,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
     }
 
-    // 4. Return the unique list
+    // 4. Return the unique list. The sorting between completed/incompleted will be done in the component.
     return Array.from(firstOccurrenceMap.values());
   }, [tasks, currentDate]);
   
