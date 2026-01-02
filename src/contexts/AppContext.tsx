@@ -81,7 +81,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
-    const newTask = { ...task, id: new Date().toISOString() + Math.random() };
+    // For manual tasks, add a timestamp to ensure uniqueness
+    const uniqueId = task.isManual
+        ? `${task.subjectId}-${new Date().toISOString()}-${Math.random()}`
+        : `${task.subjectId}-${task.dueDate}`;
+    const newTask = { ...task, id: uniqueId };
     setTasks(prev => [...prev, newTask]);
   }, []);
   
