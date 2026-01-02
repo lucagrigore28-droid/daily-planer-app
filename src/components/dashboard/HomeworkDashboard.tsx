@@ -2,7 +2,7 @@
 
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { format, isSameDay, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -46,20 +46,20 @@ export default function HomeworkDashboard() {
   if (!context) return null;
   const { userData, currentDate } = context;
 
-  const todayString = startOfDay(currentDate).toISOString();
+  const todayString = currentDate.toISOString().split('T')[0];
 
   return (
-    <main className="container mx-auto max-w-3xl py-8 px-4">
+    <main className="container mx-auto max-w-3xl py-8 px-4 fade-in-up">
       <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline text-foreground">
+          <h1 className="text-4xl font-bold font-headline text-foreground">
             Salut, {userData.name}!
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-muted-foreground">
             Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
           </p>
         </div>
-        <Button size="sm" onClick={() => setAddTaskOpen(true)}>
+        <Button onClick={() => setAddTaskOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Adaugă temă
         </Button>
       </header>
@@ -73,11 +73,12 @@ export default function HomeworkDashboard() {
         </div>
         <TabsContent value="list">
           <div className="space-y-2">
-            <Accordion type="single" collapsible defaultValue={todayString} className="w-full">
+            <Accordion type="single" collapsible defaultValue={`${todayString}-item`} className="w-full">
                 {relevantDays.map(day => {
                     const formattedDate = format(day, "EEEE, d MMMM", { locale: ro });
+                    const dayISO = day.toISOString().split('T')[0];
                     return (
-                        <AccordionItem value={day.toISOString()} key={day.toISOString()}>
+                        <AccordionItem value={`${dayISO}-item`} key={dayISO}>
                             <AccordionTrigger className="text-xl font-headline font-semibold capitalize">
                                 {formattedDate}
                             </AccordionTrigger>

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import type { UserData, Subject, Schedule, HomeworkTask } from '@/lib/types';
-import { addDays, getDay, startOfDay, subDays, isSameDay } from 'date-fns';
+import type { HomeworkTask, UserData } from '@/lib/types';
+import { addDays, getDay, startOfDay, subDays } from 'date-fns';
 
 const initialUserData: UserData = {
   name: '',
@@ -26,7 +26,6 @@ type AppContextType = {
   setCurrentDate: (date: Date) => void;
   hasGpsAccess: boolean | null;
   setHasGpsAccess: (hasAccess: boolean) => void;
-  findNextSchoolDay: () => Date;
   getRelevantSchoolDays: () => Date[];
 };
 
@@ -86,7 +85,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const newTask = { ...task, id: uniqueId };
     setTasks(prev => {
         // Prevent adding duplicates
-        if (prev.some(t => t.id === newTask.id)) {
+        if (prev.some(t => t.id === newTask.id || (t.subjectId === newTask.subjectId && t.dueDate === newTask.dueDate && !t.isManual))) {
             return prev;
         }
         return [...prev, newTask];
@@ -99,22 +98,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const isSchoolDay = useCallback((date: Date) => {
     const dayIndex = getDay(date);
+    // School days are Monday (1) to Friday (5)
+    if (dayIndex < 1 || dayIndex > 5) return false;
     const hasSubjects = Object.values(userData.schedule).some(days => days.includes(dayIndex));
     return hasSubjects;
   }, [userData.schedule]);
   
-  const findNextSchoolDay = useCallback(() => {
-    let nextDay = addDays(startOfDay(currentDate), 1);
-    let i = 0;
-    while (i < 7) {
-        if (isSchoolDay(nextDay)) {
-            return nextDay;
-        }
-        nextDay = addDays(nextDay, 1);
-        i++;
-    }
-    return addDays(startOfDay(currentDate), 1);
-  }, [currentDate, isSchoolDay]);
 
   const getRelevantSchoolDays = useCallback(() => {
     const relevantDays: Date[] = [];
@@ -123,33 +112,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Look back 7 days
     for (let i = 7; i > 0; i--) {
       const pastDay = subDays(today, i);
-      if (isSchoolDay(pastDay)) {
+      const tasksForDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === pastDay.getTime());
+      if (tasksForDay.length > 0) {
         relevantDays.push(pastDay);
       }
     }
 
-    // Add today if it's a school day
-    if (isSchoolDay(today)) {
-      relevantDays.push(today);
-    }
+    // Add today
+    relevantDays.push(today);
 
-    // Look forward 14 days to find the next 5 school days
+    // Look forward 14 days to find the next 5-7 school days with tasks
     let futureDay = addDays(today, 1);
-    while (relevantDays.filter(d => d > today).length < 5 && relevantDays.length < 15) {
-        if (isSchoolDay(futureDay)) {
-            relevantDays.push(futureDay);
-        }
-        futureDay = addDays(futureDay, 1);
+    let daysAheadCount = 0;
+    while (daysAheadCount < 14) {
+      if (isSchoolDay(futureDay)) {
+          relevantDays.push(futureDay);
+      }
+       futureDay = addDays(futureDay, 1);
+       daysAheadCount++;
     }
     
-    // Ensure today is in the list if there are no other school days around
-    if (relevantDays.length === 0) {
-      return [today];
-    }
+    // Deduplicate and sort
+    const uniqueDays = Array.from(new Set(relevantDays.map(d => d.getTime()))).map(time => new Date(time));
+    uniqueDays.sort((a,b) => a.getTime() - b.getTime());
 
-    return relevantDays;
+    return uniqueDays;
 
-  }, [currentDate, isSchoolDay]);
+  }, [currentDate, isSchoolDay, tasks]);
   
   const value = {
     userData,
@@ -164,7 +153,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCurrentDate,
     hasGpsAccess,
     setHasGpsAccess,
-    findNextSchoolDay,
     getRelevantSchoolDays,
   };
 

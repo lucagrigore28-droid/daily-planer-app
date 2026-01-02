@@ -18,16 +18,23 @@ export default function SetupWizard() {
 
   const progressValue = (step / TOTAL_STEPS) * 100;
 
+  const renderStep = () => {
+    switch (step) {
+      case 1: return <StepWelcome onNext={nextStep} />;
+      case 2: return <StepName onNext={nextStep} />;
+      case 3: return <StepSubjects onNext={nextStep} onBack={prevStep} />;
+      case 4: return <StepSchedule onNext={nextStep} onBack={prevStep} />;
+      case 5: return <StepPermissions onBack={prevStep} />;
+      default: return <StepWelcome onNext={nextStep} />;
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-2xl">
         <Progress value={progressValue} className="mb-8 h-2" />
-        <div className="min-h-[500px]">
-          {step === 1 && <StepWelcome onNext={nextStep} />}
-          {step === 2 && <StepName onNext={nextStep} />}
-          {step === 3 && <StepSubjects onNext={nextStep} onBack={prevStep} />}
-          {step === 4 && <StepSchedule onNext={nextStep} onBack={prevStep} />}
-          {step === 5 && <StepPermissions onBack={prevStep} />}
+        <div className="min-h-[500px] fade-in-up">
+          {renderStep()}
         </div>
       </div>
     </div>

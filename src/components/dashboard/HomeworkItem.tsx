@@ -24,7 +24,6 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   
   const handleCompletionChange = (checked: boolean) => {
     setIsCompleted(checked);
-    // No fade out, just update the state
     context?.updateTask(task.id, { isCompleted: checked });
   };
   
@@ -45,11 +44,14 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   return (
     <div
       className={cn(
-        "transition-all duration-300",
-        isCompleted && "bg-green-500/10 rounded-lg"
-        )}
+        "transition-all duration-500",
+        isCompleted && "opacity-70"
+      )}
     >
-      <Card className={cn(isCompleted ? 'border-green-500/20' : '')}>
+      <Card className={cn(
+        "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+        isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-card'
+      )}>
         <CardContent className="p-3">
           <Accordion type="single" collapsible disabled={isCompleted}>
             <AccordionItem value="item-1" className="border-b-0">
@@ -63,15 +65,15 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                 <Label 
                     htmlFor={`task-${task.id}`} 
                     className={cn(
-                        "flex-1 text-lg font-medium cursor-pointer",
+                        "flex-1 text-lg font-medium cursor-pointer transition-colors",
                         isCompleted && "line-through text-muted-foreground"
                     )}
                 >
                   {task.subjectName}
                 </Label>
-                {!isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-accent" />}
+                {!isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-primary" />}
               </div>
-              <AccordionContent className="pl-12 pr-4 pt-2">
+              <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
                 <div className="space-y-2">
                    <Textarea
                     placeholder="Adaugă detalii despre temă..."

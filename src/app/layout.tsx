@@ -2,11 +2,26 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { AppProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
+import { Inter, Poppins } from 'next/font/google';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Daily Planner Pro',
   description: 'Un planificator inteligent pentru temele tale zilnice.',
 };
+
+const fontPoppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-poppins',
+});
+
+const fontInter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-inter',
+});
+
 
 export default function RootLayout({
   children,
@@ -15,12 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ro">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased">
+      <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <AppProvider>
           {children}
           <Toaster />
