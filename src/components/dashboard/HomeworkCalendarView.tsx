@@ -68,25 +68,31 @@ export default function HomeworkCalendarView() {
 
 
   return (
-    <Card className="flex flex-col h-[75vh] overflow-hidden">
-        <CardContent className="flex-grow p-0 sm:p-2 flex flex-col">
-            <Calendar
-            mode="single"
-            selected={selectedDay}
-            onSelect={setSelectedDay}
-            className="w-full"
-            modifiers={modifiers}
-            modifiersStyles={modifiersStyles}
-            locale={ro}
-            formatters={{ formatWeekdayName }}
-            classNames={{
-                head_cell: "w-full",
-                day: "w-full h-12",
-                cell: "w-full"
-            }}
-            />
-            <div className="flex-shrink border-t mt-auto">
-                <ScrollArea className="h-48 p-2 sm:p-4">
+    <Card className="h-[75vh] overflow-hidden">
+        <CardContent className="flex flex-row h-full p-0">
+            <div className="w-3/5 xl:w-2/3 border-r">
+                 <Calendar
+                    mode="single"
+                    selected={selectedDay}
+                    onSelect={setSelectedDay}
+                    className="h-full w-full flex-1 p-4"
+                    modifiers={modifiers}
+                    modifiersStyles={modifiersStyles}
+                    locale={ro}
+                    formatters={{ formatWeekdayName }}
+                    classNames={{
+                        months: "h-full flex-1",
+                        month: "h-full flex flex-col",
+                        table: "flex-1",
+                        head_cell: "w-full",
+                        row: "w-full",
+                        day: "w-full h-16 text-lg",
+                        cell: "w-full"
+                    }}
+                />
+            </div>
+            <div className="w-2/5 xl:w-1/3">
+                <ScrollArea className="h-full p-4">
                     {selectedDay && <HomeworkList displayDate={selectedDay} />}
                 </ScrollArea>
             </div>
