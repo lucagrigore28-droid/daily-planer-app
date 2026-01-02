@@ -21,7 +21,6 @@ type AppContextType = {
   updateUser: (data: Partial<UserData>) => void;
   addTask: (task: Omit<HomeworkTask, 'id'>) => void;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
-  getTasksForNextDay: () => HomeworkTask[];
   isDataLoaded: boolean;
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
@@ -106,51 +105,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Default to tomorrow if no school day found in the next week
     return addDays(startOfDay(currentDate), 1);
   }, [currentDate, userData.schedule]);
-
-  const getTasksForNextDay = useCallback(() => {
-    if (!userData.setupComplete) return [];
-    
-    const nextSchoolDayDate = findNextSchoolDay();
-    const nextDayIndex = getDay(nextSchoolDayDate);
-
-    const subjectsForNextDay = userData.subjects.filter(subject =>
-      userData.schedule[subject.id]?.includes(nextDayIndex)
-    );
-    
-    let generatedTasks: HomeworkTask[] = [];
-
-    subjectsForNextDay.forEach(subject => {
-        const taskExists = tasks.some(task => 
-            task.subjectId === subject.id && 
-            startOfDay(new Date(task.dueDate)).getTime() === nextSchoolDayDate.getTime()
-        );
-
-        if (!taskExists) {
-            const newScheduledTask: HomeworkTask = {
-                id: `${subject.id}-${nextSchoolDayDate.toISOString()}`,
-                subjectId: subject.id,
-                subjectName: subject.name,
-                description: '',
-                dueDate: nextSchoolDayDate.toISOString(),
-                isCompleted: false,
-                isManual: false,
-            };
-            generatedTasks.push(newScheduledTask);
-        }
-    });
-
-    if (generatedTasks.length > 0) {
-      setTasks(prevTasks => [...prevTasks, ...generatedTasks]);
-    }
-    
-    const allTasksForDay = tasks.filter(task => 
-      startOfDay(new Date(task.dueDate)).getTime() === nextSchoolDayDate.getTime()
-    );
-    
-    return allTasksForDay;
-  }, [userData, tasks, findNextSchoolDay]);
-
-
+  
   const value = {
     userData,
     tasks,
@@ -159,7 +114,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     updateUser,
     addTask,
     updateTask,
-    getTasksForNextDay,
     isDataLoaded,
     currentDate,
     setCurrentDate,

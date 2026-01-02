@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { startOfDay } from 'date-fns';
+import { getDay, startOfDay } from 'date-fns';
+import type { HomeworkTask } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
 import { CheckCircle2, ClipboardList } from 'lucide-react';
@@ -13,13 +14,45 @@ type HomeworkListProps = {
 
 export default function HomeworkList({ displayDate }: HomeworkListProps) {
   const context = useContext(AppContext);
-  const { tasks, userData, getTasksForNextDay } = context!;
-  const [currentDayTasks, setCurrentDayTasks] = useState(getTasksForNextDay);
+  const { tasks, userData, setTasks } = context!;
 
   useEffect(() => {
-    const nextDayTasks = getTasksForNextDay();
-    setCurrentDayTasks(nextDayTasks);
-  }, [tasks, userData, displayDate, getTasksForNextDay]);
+    if (!userData.setupComplete) return;
+
+    const nextSchoolDayDate = displayDate;
+    const nextDayIndex = getDay(nextSchoolDayDate);
+
+    const subjectsForNextDay = userData.subjects.filter(subject =>
+      userData.schedule[subject.id]?.includes(nextDayIndex)
+    );
+    
+    let generatedTasks: HomeworkTask[] = [];
+
+    subjectsForNextDay.forEach(subject => {
+        const taskExists = tasks.some(task => 
+            task.subjectId === subject.id && 
+            startOfDay(new Date(task.dueDate)).getTime() === nextSchoolDayDate.getTime()
+        );
+
+        if (!taskExists) {
+            const newScheduledTask: HomeworkTask = {
+                id: `${subject.id}-${nextSchoolDayDate.toISOString()}`,
+                subjectId: subject.id,
+                subjectName: subject.name,
+                description: '',
+                dueDate: nextSchoolDayDate.toISOString(),
+                isCompleted: false,
+                isManual: false,
+            };
+            generatedTasks.push(newScheduledTask);
+        }
+    });
+
+    if (generatedTasks.length > 0) {
+      setTasks(prevTasks => [...prevTasks, ...generatedTasks]);
+    }
+  }, [userData, tasks, displayDate, setTasks]);
+
 
   const tasksForDisplayDate = useMemo(() => {
     return tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayDate).getTime());
