@@ -7,6 +7,7 @@ import { Calendar } from '@/components/ui/calendar';
 import HomeworkList from './HomeworkList';
 import { startOfDay } from 'date-fns';
 import { Card, CardContent } from '../ui/card';
+import { ro } from 'date-fns/locale';
 
 export default function HomeworkCalendarView() {
   const context = useContext(AppContext);
@@ -60,17 +61,17 @@ export default function HomeworkCalendarView() {
 
   return (
     <Card>
-      <CardContent className="p-2 md:p-4">
+      <CardContent className="p-0 sm:p-2">
         <Calendar
           mode="single"
           selected={selectedDay}
           onSelect={setSelectedDay}
-          className="rounded-md"
+          className="w-full"
           modifiers={modifiers}
           modifiersStyles={modifiersStyles}
-          locale={context?.userData ? require('date-fns/locale/ro') : undefined}
+          locale={ro}
         />
-        <div className="mt-4 px-2 md:px-0">
+        <div className="mt-4 p-2 sm:p-4 border-t">
           {selectedDay && <HomeworkList displayDate={selectedDay} />}
         </div>
       </CardContent>
