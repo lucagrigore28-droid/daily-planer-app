@@ -36,7 +36,7 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
 
         if (!taskExists) {
             const newScheduledTask: HomeworkTask = {
-                id: `${subject.id}-${nextSchoolDayDate.toISOString()}-${Math.random()}`,
+                id: `${subject.id}-${nextSchoolDayDate.toISOString()}-${Math.random().toString(36).substring(2, 9)}`,
                 subjectId: subject.id,
                 subjectName: subject.name,
                 description: '',
@@ -51,7 +51,8 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
     if (generatedTasks.length > 0) {
       setTasks(prevTasks => [...prevTasks, ...generatedTasks]);
     }
-  }, [userData, tasks, displayDate, setTasks]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userData.setupComplete, userData.subjects, userData.schedule, displayDate]);
 
 
   const tasksForDisplayDate = useMemo(() => {
