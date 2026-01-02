@@ -8,6 +8,14 @@ import HomeworkList from './HomeworkList';
 import { startOfDay } from 'date-fns';
 import { Card, CardContent } from '../ui/card';
 import { ro } from 'date-fns/locale';
+import { ScrollArea } from '../ui/scroll-area';
+
+const formatWeekdayName = (day: Date) => {
+  const dayIndex = day.getDay();
+  const days = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+  return days[dayIndex];
+};
+
 
 export default function HomeworkCalendarView() {
   const context = useContext(AppContext);
@@ -60,21 +68,29 @@ export default function HomeworkCalendarView() {
 
 
   return (
-    <Card>
-      <CardContent className="p-0 sm:p-2">
-        <Calendar
-          mode="single"
-          selected={selectedDay}
-          onSelect={setSelectedDay}
-          className="w-full"
-          modifiers={modifiers}
-          modifiersStyles={modifiersStyles}
-          locale={ro}
-        />
-        <div className="mt-4 p-2 sm:p-4 border-t">
-          {selectedDay && <HomeworkList displayDate={selectedDay} />}
-        </div>
-      </CardContent>
+    <Card className="flex flex-col h-[75vh] overflow-hidden">
+        <CardContent className="flex-grow p-0 sm:p-2 flex flex-col">
+            <Calendar
+            mode="single"
+            selected={selectedDay}
+            onSelect={setSelectedDay}
+            className="w-full"
+            modifiers={modifiers}
+            modifiersStyles={modifiersStyles}
+            locale={ro}
+            formatters={{ formatWeekdayName }}
+            classNames={{
+                head_cell: "w-full",
+                day: "w-full h-12",
+                cell: "w-full"
+            }}
+            />
+            <div className="flex-shrink border-t mt-auto">
+                <ScrollArea className="h-48 p-2 sm:p-4">
+                    {selectedDay && <HomeworkList displayDate={selectedDay} />}
+                </ScrollArea>
+            </div>
+        </CardContent>
     </Card>
   );
 }
