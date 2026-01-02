@@ -78,7 +78,7 @@ export default function HomeworkCalendarView() {
                         month: "space-y-4 h-full flex flex-col",
                         caption: "flex items-center justify-center relative mb-4 h-10",
                         caption_label: "text-2xl font-bold font-headline absolute right-0",
-                        nav: "space-x-1 flex items-center",
+                        nav: "space-x-1 flex items-center absolute left-0",
                         nav_button: "h-8 w-8",
                         table: "w-full border-collapse flex-1",
                         head_row: "flex",
