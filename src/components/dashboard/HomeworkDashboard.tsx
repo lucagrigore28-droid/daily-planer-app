@@ -2,7 +2,7 @@
 
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { format } from 'date-fns';
+import { format, getDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -13,6 +13,7 @@ import { CalendarIcon } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
+import WeekendView from './WeekendView';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
@@ -46,6 +47,16 @@ export default function HomeworkDashboard() {
   if (!context) return null;
   const { userData, currentDate } = context;
 
+  const dayOfWeek = getDay(currentDate);
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+  const tabs = [{ value: "next-tasks", label: "Teme următoare" }];
+  if (isWeekend) {
+    tabs.push({ value: "weekend", label: "Weekend" });
+  }
+  tabs.push({ value: "calendar", label: "Calendar" });
+
+
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
       <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
@@ -63,10 +74,12 @@ export default function HomeworkDashboard() {
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-sm mx-auto mb-6">
-          <TabsTrigger value="next-tasks">Teme următoare</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+        <TabsList className={`grid w-full max-w-lg mx-auto mb-6 grid-cols-${tabs.length}`}>
+          {tabs.map(tab => (
+            <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+          ))}
         </TabsList>
+        
         <TabsContent value="next-tasks">
             <div className="w-full max-w-3xl mx-auto">
                 {nextDayWithTasks ? (
@@ -89,6 +102,13 @@ export default function HomeworkDashboard() {
                 )}
             </div>
         </TabsContent>
+
+        {isWeekend && (
+          <TabsContent value="weekend">
+            <WeekendView />
+          </TabsContent>
+        )}
+
         <TabsContent value="calendar">
             <ExpandableCalendarView />
         </TabsContent>

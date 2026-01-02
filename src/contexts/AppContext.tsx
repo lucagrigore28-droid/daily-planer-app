@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { HomeworkTask, UserData } from '@/lib/types';
-import { addDays, getDay, startOfDay, subDays } from 'date-fns';
+import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
 
 const initialUserData: UserData = {
   name: '',
@@ -28,6 +28,7 @@ type AppContextType = {
   setHasGpsAccess: (hasAccess: boolean) => void;
   getRelevantSchoolDays: () => Date[];
   getNextSchoolDayWithTasks: () => Date | null;
+  getWeekendTasks: () => HomeworkTask[];
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -171,6 +172,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Fallback to today if no future day is found
     return today;
   }, [currentDate, tasks, isSchoolDay]);
+
+  const getWeekendTasks = useCallback(() => {
+    const today = startOfDay(currentDate);
+    const nextWeekStart = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+    const nextWeekEnd = endOfWeek(nextWeekStart, { weekStartsOn: 1 });
+
+    // 1. Get all uncompleted tasks from the upcoming week
+    const upcomingTasks = tasks.filter(task => {
+        const taskDate = startOfDay(new Date(task.dueDate));
+        return !task.isCompleted && taskDate >= nextWeekStart && taskDate <= nextWeekEnd;
+    });
+
+    // 2. Sort them by due date
+    upcomingTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+    // 3. Group by subject and keep only the first occurrence
+    const firstOccurrenceMap = new Map<string, HomeworkTask>();
+    for (const task of upcomingTasks) {
+        if (!firstOccurrenceMap.has(task.subjectId)) {
+            firstOccurrenceMap.set(task.subjectId, task);
+        }
+    }
+
+    // 4. Return the unique list
+    return Array.from(firstOccurrenceMap.values());
+  }, [tasks, currentDate]);
   
   const value = {
     userData,
@@ -187,6 +214,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setHasGpsAccess,
     getRelevantSchoolDays,
     getNextSchoolDayWithTasks,
+    getWeekendTasks,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
