@@ -63,35 +63,26 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
   }, [userData.setupComplete, userData.subjects, userData.schedule, displayDate]);
 
 
-  const tasksForDisplayDate = useMemo(() => {
-    return tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayDate).getTime());
-  }, [tasks, displayDate]);
-
-  const incompleteTasks = useMemo(() => {
+  const sortedTasks = useMemo(() => {
+    const tasksForDisplayDate = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayDate).getTime());
+    
     // Deduplicate tasks just in case, before rendering
     const uniqueTasks = tasksForDisplayDate.filter((task, index, self) =>
         index === self.findIndex((t) => (
             t.subjectId === task.subjectId && !t.isManual
         )) || task.isManual
     );
-    return uniqueTasks.filter(task => !task.isCompleted);
-  }, [tasksForDisplayDate]);
-  
-  const allTasksCompleted = tasksForDisplayDate.length > 0 && incompleteTasks.length === 0;
 
-  if (allTasksCompleted) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-xl font-semibold">Gata pentru azi!</h3>
-            <p className="text-muted-foreground">Toate temele pentru această zi sunt finalizate. Bravo!</p>
-        </CardContent>
-      </Card>
-    );
-  }
+    // Sort tasks: incomplete first, then completed
+    return uniqueTasks.sort((a, b) => {
+        if (a.isCompleted === b.isCompleted) return 0;
+        return a.isCompleted ? 1 : -1;
+    });
+  }, [tasks, displayDate]);
 
-  if (incompleteTasks.length === 0) {
+  const allTasksCompleted = sortedTasks.length > 0 && sortedTasks.every(task => task.isCompleted);
+
+  if (sortedTasks.length === 0) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -103,9 +94,28 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
     );
   }
 
+  if (allTasksCompleted) {
+    return (
+      <>
+        <Card>
+            <CardContent className="p-6 text-center">
+                <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                <h3 className="text-xl font-semibold">Gata pentru azi!</h3>
+                <p className="text-muted-foreground">Toate temele pentru această zi sunt finalizate. Bravo!</p>
+            </CardContent>
+        </Card>
+        <div className="space-y-3 mt-4">
+            {sortedTasks.map(task => (
+              <HomeworkItem key={task.id} task={task} />
+            ))}
+        </div>
+      </>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      {incompleteTasks.map(task => (
+      {sortedTasks.map(task => (
         <HomeworkItem key={task.id} task={task} />
       ))}
     </div>

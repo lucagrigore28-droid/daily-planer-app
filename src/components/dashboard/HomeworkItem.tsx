@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
 import { CornerDownLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type HomeworkItemProps = {
   task: HomeworkTask;
@@ -20,15 +21,11 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   const [description, setDescription] = useState(task.description);
   const [isCompleted, setIsCompleted] = useState(task.isCompleted);
   const [isSaving, setIsSaving] = useState(false);
-  const [isFadingOut, setIsFadingOut] = useState(false);
-
+  
   const handleCompletionChange = (checked: boolean) => {
     setIsCompleted(checked);
-    setIsFadingOut(true);
-    // Delay update to allow for fade-out animation
-    setTimeout(() => {
-        context?.updateTask(task.id, { isCompleted: checked });
-    }, 300);
+    // No fade out, just update the state
+    context?.updateTask(task.id, { isCompleted: checked });
   };
   
   const handleSaveDescription = () => {
@@ -47,12 +44,14 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
 
   return (
     <div
-      className={`transition-opacity duration-300 ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}
-      style={{ transformOrigin: 'top' }}
+      className={cn(
+        "transition-all duration-300",
+        isCompleted && "bg-green-500/10 rounded-lg"
+        )}
     >
-      <Card>
+      <Card className={cn(isCompleted ? 'border-green-500/20' : '')}>
         <CardContent className="p-3">
-          <Accordion type="single" collapsible>
+          <Accordion type="single" collapsible disabled={isCompleted}>
             <AccordionItem value="item-1" className="border-b-0">
               <div className="flex items-center gap-4">
                 <Checkbox
@@ -61,10 +60,16 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                   onCheckedChange={handleCompletionChange}
                   className="h-6 w-6 rounded-full"
                 />
-                <Label htmlFor={`task-${task.id}`} className="flex-1 text-lg font-medium cursor-pointer">
+                <Label 
+                    htmlFor={`task-${task.id}`} 
+                    className={cn(
+                        "flex-1 text-lg font-medium cursor-pointer",
+                        isCompleted && "line-through text-muted-foreground"
+                    )}
+                >
                   {task.subjectName}
                 </Label>
-                <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-accent" />
+                {!isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-accent" />}
               </div>
               <AccordionContent className="pl-12 pr-4 pt-2">
                 <div className="space-y-2">
