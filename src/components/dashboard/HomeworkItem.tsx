@@ -50,7 +50,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     >
       <Card className={cn(
         "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
-        isCompleted ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-card'
+        isCompleted ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-800' : 'bg-card'
       )}>
         <CardContent className="p-3">
           <Accordion type="single" collapsible disabled={isCompleted}>
