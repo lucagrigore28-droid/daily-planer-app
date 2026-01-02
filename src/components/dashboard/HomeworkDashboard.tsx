@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { format, isSameDay, startOfDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
@@ -9,12 +9,10 @@ import { Plus } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import ManualTimeDialog from './ManualTimeDialog';
 import AddTaskDialog from './AddTaskDialog';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import HomeworkCalendarView from './HomeworkCalendarView';
+import { List, CalendarDays } from 'lucide-react';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
@@ -41,7 +39,7 @@ export default function HomeworkDashboard() {
     }
   }, [context]);
   
-  const relevantDays = useMemo(() => {
+  const relevantDays = React.useMemo(() => {
     return context?.getRelevantSchoolDays() || [];
   }, [context]);
 
@@ -52,7 +50,7 @@ export default function HomeworkDashboard() {
 
   return (
     <main className="container mx-auto max-w-3xl py-8 px-4">
-      <header className="mb-8 flex justify-between items-center">
+      <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold font-headline text-foreground">
             Salut, {userData.name}!
@@ -66,23 +64,36 @@ export default function HomeworkDashboard() {
         </Button>
       </header>
       
-      <div className="space-y-2">
-         <Accordion type="single" collapsible defaultValue={todayString} className="w-full">
-            {relevantDays.map(day => {
-                const formattedDate = format(day, "EEEE, d MMMM", { locale: ro });
-                return (
-                    <AccordionItem value={day.toISOString()} key={day.toISOString()}>
-                        <AccordionTrigger className="text-xl font-headline font-semibold capitalize">
-                            {formattedDate}
-                        </AccordionTrigger>
-                        <AccordionContent>
-                           <HomeworkList displayDate={day} />
-                        </AccordionContent>
-                    </AccordionItem>
-                )
-            })}
-        </Accordion>
-      </div>
+      <Tabs defaultValue="list" className="w-full">
+        <div className="flex justify-end mb-4">
+            <TabsList>
+                <TabsTrigger value="list"><List className="mr-2 h-4 w-4"/>Listă</TabsTrigger>
+                <TabsTrigger value="calendar"><CalendarDays className="mr-2 h-4 w-4"/>Calendar</TabsTrigger>
+            </TabsList>
+        </div>
+        <TabsContent value="list">
+          <div className="space-y-2">
+            <Accordion type="single" collapsible defaultValue={todayString} className="w-full">
+                {relevantDays.map(day => {
+                    const formattedDate = format(day, "EEEE, d MMMM", { locale: ro });
+                    return (
+                        <AccordionItem value={day.toISOString()} key={day.toISOString()}>
+                            <AccordionTrigger className="text-xl font-headline font-semibold capitalize">
+                                {formattedDate}
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <HomeworkList displayDate={day} />
+                            </AccordionContent>
+                        </AccordionItem>
+                    )
+                })}
+            </Accordion>
+          </div>
+        </TabsContent>
+        <TabsContent value="calendar">
+          <HomeworkCalendarView />
+        </TabsContent>
+      </Tabs>
       
       <ManualTimeDialog open={isManualTimeOpen} onOpenChange={setManualTimeOpen} />
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
