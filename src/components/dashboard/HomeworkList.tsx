@@ -19,7 +19,7 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
   useEffect(() => {
     if (!userData.setupComplete) return;
 
-    const nextSchoolDayDate = displayDate;
+    const nextSchoolDayDate = startOfDay(displayDate);
     const nextDayIndex = getDay(nextSchoolDayDate);
 
     const subjectsForNextDay = userData.subjects.filter(subject =>
@@ -36,7 +36,7 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
 
         if (!taskExists) {
             const newScheduledTask: HomeworkTask = {
-                id: `${subject.id}-${nextSchoolDayDate.toISOString()}`,
+                id: `${subject.id}-${nextSchoolDayDate.toISOString()}-${Math.random()}`,
                 subjectId: subject.id,
                 subjectName: subject.name,
                 description: '',
