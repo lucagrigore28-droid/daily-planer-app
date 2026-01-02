@@ -2,7 +2,7 @@
 
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { addDays, format } from 'date-fns';
+import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -36,10 +36,10 @@ export default function HomeworkDashboard() {
   }, [context?.isDataLoaded, context?.hasGpsAccess, context]);
 
   if (!context) return null;
-  const { userData, currentDate } = context;
+  const { userData, currentDate, findNextSchoolDay } = context;
 
-  const nextDay = addDays(currentDate, 1);
-  const formattedDate = format(nextDay, "EEEE, d MMMM", { locale: ro });
+  const nextSchoolDay = findNextSchoolDay();
+  const formattedDate = format(nextSchoolDay, "EEEE, d MMMM", { locale: ro });
 
   return (
     <main className="container mx-auto max-w-3xl py-8 px-4">
@@ -62,7 +62,7 @@ export default function HomeworkDashboard() {
               <Plus className="mr-2 h-4 w-4" /> Adaugă temă
             </Button>
           </div>
-          <HomeworkList displayDate={nextDay} />
+          <HomeworkList displayDate={nextSchoolDay} />
         </div>
       </div>
       

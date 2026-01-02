@@ -27,6 +27,7 @@ type AppContextType = {
   setCurrentDate: (date: Date) => void;
   hasGpsAccess: boolean | null;
   setHasGpsAccess: (hasAccess: boolean) => void;
+  findNextSchoolDay: () => Date;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -89,9 +90,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => prev.map(task => task.id === taskId ? { ...task, ...updates } : task));
   }, []);
 
+  const findNextSchoolDay = useCallback(() => {
+    let nextDay = addDays(startOfDay(currentDate), 1);
+    let i = 0;
+    // Limit search to 7 days to prevent infinite loops
+    while (i < 7) {
+        const dayIndex = getDay(nextDay);
+        const hasSubjects = Object.values(userData.schedule).some(days => days.includes(dayIndex));
+        if (hasSubjects) {
+            return nextDay;
+        }
+        nextDay = addDays(nextDay, 1);
+        i++;
+    }
+    // Default to tomorrow if no school day found in the next week
+    return addDays(startOfDay(currentDate), 1);
+  }, [currentDate, userData.schedule]);
+
   const getTasksForNextDay = useCallback(() => {
-    const nextDayDate = addDays(startOfDay(currentDate), 1);
-    const nextDayIndex = getDay(nextDayDate);
+    if (!userData.setupComplete) return [];
+    
+    const nextSchoolDayDate = findNextSchoolDay();
+    const nextDayIndex = getDay(nextSchoolDayDate);
 
     const subjectsForNextDay = userData.subjects.filter(subject =>
       userData.schedule[subject.id]?.includes(nextDayIndex)
@@ -102,16 +122,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     subjectsForNextDay.forEach(subject => {
         const taskExists = tasks.some(task => 
             task.subjectId === subject.id && 
-            startOfDay(new Date(task.dueDate)).getTime() === nextDayDate.getTime()
+            startOfDay(new Date(task.dueDate)).getTime() === nextSchoolDayDate.getTime()
         );
 
         if (!taskExists) {
             const newScheduledTask: HomeworkTask = {
-                id: `${subject.id}-${nextDayDate.toISOString()}`,
+                id: `${subject.id}-${nextSchoolDayDate.toISOString()}`,
                 subjectId: subject.id,
                 subjectName: subject.name,
                 description: '',
-                dueDate: nextDayDate.toISOString(),
+                dueDate: nextSchoolDayDate.toISOString(),
                 isCompleted: false,
                 isManual: false,
             };
@@ -120,16 +140,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (generatedTasks.length > 0) {
-      // Use a functional update to avoid race conditions
       setTasks(prevTasks => [...prevTasks, ...generatedTasks]);
     }
     
     const allTasksForDay = tasks.filter(task => 
-      startOfDay(new Date(task.dueDate)).getTime() === nextDayDate.getTime()
+      startOfDay(new Date(task.dueDate)).getTime() === nextSchoolDayDate.getTime()
     );
     
     return allTasksForDay;
-  }, [userData, tasks, currentDate]);
+  }, [userData, tasks, findNextSchoolDay]);
 
 
   const value = {
@@ -146,6 +165,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCurrentDate,
     hasGpsAccess,
     setHasGpsAccess,
+    findNextSchoolDay,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
