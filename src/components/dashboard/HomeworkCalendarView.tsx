@@ -78,7 +78,7 @@ export default function HomeworkCalendarView() {
                     classNames={{
                         months: "h-full flex flex-col space-y-4",
                         month: "h-full flex flex-col",
-                        caption: "flex items-center justify-center relative mb-4",
+                        caption: "flex items-center relative mb-4 h-10",
                         caption_label: "text-2xl font-bold font-headline absolute left-1/2 -translate-x-1/2",
                         nav: "flex items-center",
                         nav_button: "h-8 w-8",
