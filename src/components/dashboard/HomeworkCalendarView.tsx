@@ -12,6 +12,7 @@ import { ScrollArea } from '../ui/scroll-area';
 
 const formatWeekdayName = (day: Date) => {
   const dayIndex = day.getDay();
+  // Using single letters as requested
   const days = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
   return days[dayIndex];
 };
@@ -58,17 +59,13 @@ export default function HomeworkCalendarView() {
       border: '2px solid hsl(var(--primary))',
       backgroundColor: 'hsla(var(--primary) / 0.1)',
     },
-    selected: {
-        backgroundColor: 'hsl(var(--primary))',
-        color: 'hsl(var(--primary-foreground))',
-    }
   };
 
 
   return (
     <Card className="h-[75vh] overflow-hidden">
         <CardContent className="flex flex-row h-full p-0">
-            <div className="w-3/5 xl:w-2/3 border-r p-4">
+            <div className="w-3/5 xl:w-2/3 border-r-2 border-black p-4">
                  <Calendar
                     mode="single"
                     selected={selectedDay}
@@ -81,12 +78,16 @@ export default function HomeworkCalendarView() {
                     classNames={{
                         months: "h-full flex flex-col space-y-4",
                         month: "h-full flex flex-col",
-                        table: "w-full h-full border-collapse space-y-1",
+                        caption: "flex items-center justify-center relative mb-4",
+                        caption_label: "text-2xl font-bold font-headline absolute left-1/2 -translate-x-1/2",
+                        nav: "flex items-center",
+                        nav_button: "h-8 w-8",
+                        table: "w-full h-full border-collapse",
                         head_row: "flex justify-between",
-                        head_cell: "text-muted-foreground rounded-md w-full text-center font-normal text-[0.8rem]",
+                        head_cell: "text-muted-foreground rounded-md w-full text-center font-normal text-base",
                         row: "flex w-full mt-2 justify-between",
-                        cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                        day: "h-16 w-16 text-lg p-0 font-normal aria-selected:opacity-100 rounded-full",
+                        cell: "text-center text-sm p-0 relative focus-within:relative focus-within:z-20 flex justify-center items-center h-16 w-16",
+                        day: "h-12 w-12 text-lg p-0 font-normal aria-selected:opacity-100 rounded-full flex items-center justify-center",
                         day_selected:
                           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
                         day_today: "bg-accent text-accent-foreground rounded-full",
