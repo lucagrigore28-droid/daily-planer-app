@@ -74,7 +74,7 @@ export default function HomeworkDashboard() {
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className={`grid w-full max-w-lg mx-auto mb-6 grid-cols-${tabs.length}`}>
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-6">
           {tabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
           ))}
