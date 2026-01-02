@@ -7,13 +7,16 @@ import HomeworkItem from './HomeworkItem';
 import { CheckCircle2, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { Separator } from '../ui/separator';
 
 export default function WeekendView() {
   const context = useContext(AppContext);
   const weekendTasks = useMemo(() => {
     if (!context) return [];
-    return context.getWeekendTasks();
+    // Sort tasks: incomplete first, then completed
+    return context.getWeekendTasks().sort((a, b) => {
+        if (a.isCompleted === b.isCompleted) return 0;
+        return a.isCompleted ? 1 : -1;
+    });
   }, [context]);
 
   if (!context) return null;
@@ -43,29 +46,29 @@ export default function WeekendView() {
           </h2>
           <p className="text-muted-foreground mb-6">Finalizează prima temă de la fiecare materie pentru a fi cu un pas înainte.</p>
           
-          {allTasksCompleted ? (
-             <div className="p-6 text-center rounded-lg bg-green-50 dark:bg-green-900/20">
+          {allTasksCompleted && (
+             <div className="p-6 text-center rounded-lg bg-green-50 dark:bg-green-900/20 mb-6">
                 <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
                 <h3 className="text-xl font-semibold">Gata pentru săptămâna viitoare!</h3>
                 <p className="text-muted-foreground">Toate temele importante sunt finalizate. Weekend excelent!</p>
             </div>
-          ) : (
-             <div className="space-y-4">
-                {weekendTasks.map(task => (
-                    <div key={task.id}>
-                        <div className="flex items-center justify-between">
-                           <div className="flex-grow">
-                             <HomeworkItem task={task} />
-                           </div>
-                           <div className="ml-4 text-right text-sm text-muted-foreground">
-                             <p className="font-semibold">{format(new Date(task.dueDate), "EEEE", { locale: ro })}</p>
-                             <p>{format(new Date(task.dueDate), "d MMMM", { locale: ro })}</p>
-                           </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
           )}
+          
+           <div className="space-y-4">
+              {weekendTasks.map(task => (
+                  <div key={task.id}>
+                      <div className="flex items-center justify-between">
+                         <div className="flex-grow">
+                           <HomeworkItem task={task} />
+                         </div>
+                         <div className="ml-4 text-right text-sm text-muted-foreground">
+                           <p className="font-semibold">{format(new Date(task.dueDate), "EEEE", { locale: ro })}</p>
+                           <p>{format(new Date(task.dueDate), "d MMMM", { locale: ro })}</p>
+                         </div>
+                      </div>
+                  </div>
+              ))}
+          </div>
 
         </CardContent>
       </Card>
