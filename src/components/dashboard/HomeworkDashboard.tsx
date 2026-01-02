@@ -9,9 +9,7 @@ import { Plus } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import ManualTimeDialog from './ManualTimeDialog';
 import AddTaskDialog from './AddTaskDialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import HomeworkCalendarView from './HomeworkCalendarView';
-import { List, CalendarDays, CalendarIcon } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 
 export default function HomeworkDashboard() {
@@ -62,37 +60,26 @@ export default function HomeworkDashboard() {
         </Button>
       </header>
       
-      <Tabs defaultValue="list" className="w-full">
-        <div className="flex justify-end mb-4">
-            <TabsList>
-                <TabsTrigger value="list"><List className="mr-2 h-4 w-4"/>Listă</TabsTrigger>
-                <TabsTrigger value="calendar"><CalendarDays className="mr-2 h-4 w-4"/>Calendar</TabsTrigger>
-            </TabsList>
-        </div>
-        <TabsContent value="list">
-            {nextDayWithTasks ? (
-                <Card>
-                    <CardContent className="p-4">
-                        <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline mb-4 text-primary">
-                            <CalendarIcon className="h-6 w-6"/>
-                            Teme pentru {format(nextDayWithTasks, "EEEE, d MMMM", { locale: ro })}
-                        </h2>
-                        <HomeworkList displayDate={nextDayWithTasks} />
-                    </CardContent>
-                </Card>
-            ) : (
-                <Card>
-                    <CardContent className="p-6 text-center">
-                        <h3 className="text-xl font-semibold">Nicio temă viitoare</h3>
-                        <p className="text-muted-foreground">Nu ai nicio temă programată în curând. Bucură-te de timpul liber!</p>
-                    </CardContent>
-                </Card>
-            )}
-        </TabsContent>
-        <TabsContent value="calendar">
-          <HomeworkCalendarView />
-        </TabsContent>
-      </Tabs>
+      <div className="w-full">
+        {nextDayWithTasks ? (
+            <Card>
+                <CardContent className="p-4">
+                    <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline mb-4 text-primary">
+                        <CalendarIcon className="h-6 w-6"/>
+                        Teme pentru {format(nextDayWithTasks, "EEEE, d MMMM", { locale: ro })}
+                    </h2>
+                    <HomeworkList displayDate={nextDayWithTasks} />
+                </CardContent>
+            </Card>
+        ) : (
+            <Card>
+                <CardContent className="p-6 text-center">
+                    <h3 className="text-xl font-semibold">Nicio temă viitoare</h3>
+                    <p className="text-muted-foreground">Nu ai nicio temă programată în curând. Bucură-te de timpul liber!</p>
+                </CardContent>
+            </Card>
+        )}
+      </div>
       
       <ManualTimeDialog open={isManualTimeOpen} onOpenChange={setManualTimeOpen} />
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
