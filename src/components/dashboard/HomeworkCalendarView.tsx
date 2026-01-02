@@ -57,12 +57,10 @@ export default function HomeworkCalendarView() {
     allTasksCompleted: {
       border: '2px solid hsl(var(--primary))',
       backgroundColor: 'hsla(var(--primary) / 0.1)',
-      borderRadius: '50%',
     },
     selected: {
         backgroundColor: 'hsl(var(--primary))',
         color: 'hsl(var(--primary-foreground))',
-        borderRadius: '50%',
     }
   };
 
@@ -70,24 +68,34 @@ export default function HomeworkCalendarView() {
   return (
     <Card className="h-[75vh] overflow-hidden">
         <CardContent className="flex flex-row h-full p-0">
-            <div className="w-3/5 xl:w-2/3 border-r">
+            <div className="w-3/5 xl:w-2/3 border-r p-4">
                  <Calendar
                     mode="single"
                     selected={selectedDay}
                     onSelect={setSelectedDay}
-                    className="h-full w-full flex-1 p-4"
+                    className="h-full w-full"
                     modifiers={modifiers}
                     modifiersStyles={modifiersStyles}
                     locale={ro}
                     formatters={{ formatWeekdayName }}
                     classNames={{
-                        months: "h-full flex-1",
+                        months: "h-full flex flex-col space-y-4",
                         month: "h-full flex flex-col",
-                        table: "flex-1",
-                        head_cell: "w-full",
-                        row: "w-full",
-                        day: "w-full h-16 text-lg",
-                        cell: "w-full"
+                        table: "w-full h-full border-collapse space-y-1",
+                        head_row: "flex justify-between",
+                        head_cell: "text-muted-foreground rounded-md w-full text-center font-normal text-[0.8rem]",
+                        row: "flex w-full mt-2 justify-between",
+                        cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                        day: "h-16 w-16 text-lg p-0 font-normal aria-selected:opacity-100 rounded-full",
+                        day_selected:
+                          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+                        day_today: "bg-accent text-accent-foreground rounded-full",
+                        day_outside:
+                          "day-outside text-muted-foreground opacity-50",
+                        day_disabled: "text-muted-foreground opacity-50",
+                        day_range_middle:
+                          "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                        day_hidden: "invisible",
                     }}
                 />
             </div>
