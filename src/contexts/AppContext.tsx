@@ -27,6 +27,7 @@ type AppContextType = {
   hasGpsAccess: boolean | null;
   setHasGpsAccess: (hasAccess: boolean) => void;
   getRelevantSchoolDays: () => Date[];
+  getNextSchoolDayWithTasks: () => Date | null;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -81,11 +82,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
-    const uniqueId = `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`;
+    // For manual tasks, we add a random string to ensure uniqueness even if others details are the same
+    const uniqueId = task.isManual
+        ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
+        : `${task.subjectId}-${task.dueDate}`;
+        
     const newTask = { ...task, id: uniqueId };
+
     setTasks(prev => {
-        // Prevent adding duplicates
-        if (prev.some(t => t.id === newTask.id || (t.subjectId === newTask.subjectId && t.dueDate === newTask.dueDate && !t.isManual))) {
+        // Prevent adding duplicates based on the generated ID.
+        if (prev.some(t => t.id === newTask.id)) {
             return prev;
         }
         return [...prev, newTask];
@@ -109,19 +115,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const relevantDays: Date[] = [];
     const today = startOfDay(currentDate);
 
-    // Look back 7 days
-    for (let i = 7; i > 0; i--) {
-      const pastDay = subDays(today, i);
-      const tasksForDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === pastDay.getTime());
-      if (tasksForDay.length > 0) {
-        relevantDays.push(pastDay);
-      }
-    }
-
     // Add today
     relevantDays.push(today);
 
-    // Look forward 14 days to find the next 5-7 school days with tasks
+    // Look forward 14 days to find the next school days
     let futureDay = addDays(today, 1);
     let daysAheadCount = 0;
     while (daysAheadCount < 14) {
@@ -132,13 +129,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
        daysAheadCount++;
     }
     
+    // Get past days that still have tasks, up to 7 days ago
+    for (let i = 1; i <= 7; i++) {
+        const pastDay = subDays(today, i);
+        const tasksForDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === pastDay.getTime());
+        if (tasksForDay.length > 0) {
+            relevantDays.push(pastDay);
+        }
+    }
+    
     // Deduplicate and sort
     const uniqueDays = Array.from(new Set(relevantDays.map(d => d.getTime()))).map(time => new Date(time));
     uniqueDays.sort((a,b) => a.getTime() - b.getTime());
 
-    return uniqueDays;
+    return uniqueDays.slice(0, 7);
 
   }, [currentDate, isSchoolDay, tasks]);
+
+  const getNextSchoolDayWithTasks = useCallback(() => {
+    const today = startOfDay(currentDate);
+    
+    // Check today first if it has any incomplete tasks
+    const tasksForToday = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === today.getTime());
+    if (tasksForToday.some(t => !t.isCompleted)) {
+      return today;
+    }
+  
+    // If today's tasks are all done, or there are no tasks, find the next day
+    let nextDay = addDays(today, 1);
+    for (let i = 0; i < 30; i++) { // Search up to 30 days in the future
+      if (isSchoolDay(nextDay)) {
+        return nextDay;
+      }
+      const tasksForNextDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === nextDay.getTime());
+      if (tasksForNextDay.length > 0) {
+        return nextDay;
+      }
+      nextDay = addDays(nextDay, 1);
+    }
+  
+    // Fallback to today if no future day is found
+    return today;
+  }, [currentDate, tasks, isSchoolDay]);
   
   const value = {
     userData,
@@ -154,6 +186,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     hasGpsAccess,
     setHasGpsAccess,
     getRelevantSchoolDays,
+    getNextSchoolDayWithTasks,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
