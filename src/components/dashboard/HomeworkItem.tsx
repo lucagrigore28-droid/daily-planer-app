@@ -73,7 +73,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
       >
         <Card className={cn(
           "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 relative",
-          isCompleted ? 'border-gradient bg-card' : 'bg-card'
+           isCompleted ? 'border-gradient bg-card' : 'bg-card'
         )}>
           <CardContent className="p-3">
             <Accordion type="single" collapsible disabled={isCompleted}>
@@ -92,13 +92,13 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                         htmlFor={`task-${task.id}`} 
                         className={cn(
                             "text-lg font-medium cursor-pointer transition-colors",
-                            isCompleted && "text-muted-foreground line-through"
+                            isCompleted && "text-muted-foreground"
                         )}
                     >
                       {task.subjectName}
                     </Label>
                     {task.estimatedTime && task.estimatedTime > 0 && (
-                        <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", isCompleted && "line-through")}>
+                        <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground")}>
                             <Clock className="h-3 w-3" />
                             <span>{task.estimatedTime} minute</span>
                         </div>
