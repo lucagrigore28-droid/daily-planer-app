@@ -67,7 +67,7 @@ const AppearanceSettings = () => {
                                 <button
                                     onClick={() => handleThemeChange(theme.name)}
                                     className={cn(
-                                        "flex items-center justify-center w-full h-16 rounded-lg border-2 transition-all",
+                                        "relative flex items-center justify-center w-full h-16 rounded-lg border-2 transition-all",
                                         context?.userData.theme === theme.name ? 'border-primary' : 'border-transparent'
                                     )}
                                 >
@@ -75,11 +75,6 @@ const AppearanceSettings = () => {
                                         <div className="h-8 w-8 rounded-full" style={{ backgroundColor: `hsl(${theme.primary})` }} />
                                         <div className="h-8 w-8 rounded-full" style={{ backgroundColor: `hsl(${theme.accent})` }} />
                                     </div>
-                                    {context?.userData.theme === theme.name && (
-                                        <div className="absolute top-1 right-1 p-0.5 bg-primary text-primary-foreground rounded-full">
-                                            <Check className="h-4 w-4" />
-                                        </div>
-                                    )}
                                 </button>
                                 <p className="text-center text-sm font-medium mt-2">{theme.label}</p>
                             </div>
