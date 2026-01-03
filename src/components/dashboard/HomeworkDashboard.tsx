@@ -52,10 +52,11 @@ export default function HomeworkDashboard() {
   const { userData, currentDate, tasks } = context;
 
   const dayOfWeek = getDay(currentDate);
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  // Show weekend tab on Friday (5), Saturday (6), and Sunday (0)
+  const showWeekendTab = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
 
   const tabs = [{ value: "next-tasks", label: "Teme următoare" }];
-  if (isWeekend) {
+  if (showWeekendTab) {
     tabs.push({ value: "weekend", label: "Weekend" });
   }
   tabs.push({ value: "calendar", label: "Calendar" });
@@ -146,7 +147,7 @@ export default function HomeworkDashboard() {
             </div>
         </TabsContent>
 
-        {isWeekend && (
+        {showWeekendTab && (
           <TabsContent value="weekend">
             <WeekendView />
           </TabsContent>
