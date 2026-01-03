@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useState, useEffect } from 'react';
@@ -68,12 +69,12 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
       <div
         className={cn(
           "transition-all duration-500",
-          isCompleted && "opacity-70"
+          isCompleted && "opacity-80"
         )}
       >
         <Card className={cn(
           "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
-          isCompleted ? 'bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-800' : 'bg-card'
+          isCompleted ? 'bg-gradient-primary-accent text-primary-foreground' : 'bg-card'
         )}>
           <CardContent className="p-3">
             <Accordion type="single" collapsible disabled={isCompleted}>
@@ -83,20 +84,23 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                     id={`task-${task.id}`}
                     checked={isCompleted}
                     onCheckedChange={handleCompletionChange}
-                    className="h-6 w-6 rounded-full"
+                    className={cn(
+                        "h-6 w-6 rounded-full",
+                        isCompleted && "border-primary-foreground text-primary-foreground data-[state=checked]:bg-transparent data-[state=checked]:text-primary-foreground"
+                    )}
                   />
                   <div className="flex-1">
                     <Label 
                         htmlFor={`task-${task.id}`} 
                         className={cn(
                             "text-lg font-medium cursor-pointer transition-colors",
-                            isCompleted && "text-muted-foreground"
+                            isCompleted && "text-primary-foreground"
                         )}
                     >
                       {task.subjectName}
                     </Label>
                     {task.estimatedTime && task.estimatedTime > 0 && (
-                        <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", isCompleted && "text-muted-foreground/70")}>
+                        <div className={cn("flex items-center gap-1.5 text-xs", isCompleted ? "text-primary-foreground/80" : "text-muted-foreground")}>
                             <Clock className="h-3 w-3" />
                             <span>{task.estimatedTime} minute</span>
                         </div>
@@ -172,3 +176,4 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     </>
   );
 }
+
