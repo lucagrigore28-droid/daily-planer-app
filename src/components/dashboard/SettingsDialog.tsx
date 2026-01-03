@@ -9,7 +9,7 @@ import StepName from '@/components/setup/StepName';
 import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
 import StepNotifications from '@/components/setup/StepNotifications';
-import { User, Book, Calendar, Bell, LogOut } from 'lucide-react';
+import { User, Book, Calendar, Bell, LogOut, Palette, Check } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +21,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '../ui/button';
+import { ThemeToggle } from '../ThemeToggle';
+import { themes } from '@/lib/themes';
+import { cn } from '@/lib/utils';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -32,6 +35,61 @@ const ProfileSettings = () => <StepName onNext={() => {}} />;
 const SubjectsSettings = () => <StepSubjects onNext={() => {}} onBack={() => {}} />;
 const ScheduleSettings = () => <StepSchedule onNext={() => {}} onBack={() => {}} />;
 const NotificationsSettings = () => <StepNotifications onNext={() => {}} onBack={() => {}} />;
+
+const AppearanceSettings = () => {
+    const context = useContext(AppContext);
+
+    const handleThemeChange = (themeName: string) => {
+        context?.updateUser({ theme: themeName });
+    }
+
+    return (
+        <div className="space-y-8">
+            <div>
+                <h3 className="text-lg font-semibold mb-4">Mod afișare</h3>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                        <h4 className="font-semibold">Temă vizuală</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Alege între tema luminoasă și cea întunecată.
+                        </p>
+                    </div>
+                    <ThemeToggle />
+                </div>
+            </div>
+            <div>
+                <h3 className="text-lg font-semibold mb-4">Culori</h3>
+                <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Alege o paletă de culori pentru aplicație.</p>
+                    <div className="grid grid-cols-3 gap-4 pt-2">
+                        {themes.map((theme) => (
+                            <div key={theme.name}>
+                                <button
+                                    onClick={() => handleThemeChange(theme.name)}
+                                    className={cn(
+                                        "flex items-center justify-center w-full h-16 rounded-lg border-2 transition-all",
+                                        context?.userData.theme === theme.name ? 'border-primary' : 'border-transparent'
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-8 w-8 rounded-full" style={{ backgroundColor: `hsl(${theme.primary})` }} />
+                                        <div className="h-8 w-8 rounded-full" style={{ backgroundColor: `hsl(${theme.accent})` }} />
+                                    </div>
+                                    {context?.userData.theme === theme.name && (
+                                        <div className="absolute top-1 right-1 p-0.5 bg-primary text-primary-foreground rounded-full">
+                                            <Check className="h-3 w-3" />
+                                        </div>
+                                    )}
+                                </button>
+                                <p className="text-center text-sm font-medium mt-2">{theme.label}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 const DangerZone = () => {
     const context = useContext(AppContext);
@@ -93,6 +151,9 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               <TabsTrigger value="profile" className="w-full justify-start gap-2">
                 <User className="h-4 w-4"/> Profil
               </TabsTrigger>
+               <TabsTrigger value="appearance" className="w-full justify-start gap-2">
+                <Palette className="h-4 w-4"/> Aspect
+              </TabsTrigger>
               <TabsTrigger value="subjects" className="w-full justify-start gap-2">
                 <Book className="h-4 w-4"/> Materii
               </TabsTrigger>
@@ -107,6 +168,9 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               <TabsContent value="profile">
                 <ProfileSettings />
                 <DangerZone />
+              </TabsContent>
+              <TabsContent value="appearance">
+                <AppearanceSettings />
               </TabsContent>
               <TabsContent value="subjects">
                 <SubjectsSettings />
@@ -124,3 +188,5 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     </Dialog>
   );
 }
+
+    

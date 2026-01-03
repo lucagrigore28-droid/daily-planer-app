@@ -1,3 +1,4 @@
+
 export type Subject = {
   id: string;
   name: string;
@@ -35,4 +36,7 @@ export type UserData = {
   schedule: Schedule;
   setupComplete: boolean;
   notifications: UserNotifications;
+  theme: string;
 };
+
+    

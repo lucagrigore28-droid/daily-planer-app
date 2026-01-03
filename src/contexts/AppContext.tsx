@@ -4,6 +4,7 @@
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { HomeworkTask, UserData, UserNotifications } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, format, isSaturday, isSunday } from 'date-fns';
+import { themes } from '@/lib/themes';
 
 const initialUserData: UserData = {
   name: '',
@@ -19,7 +20,8 @@ const initialUserData: UserData = {
     saturdayEveningTime: '20:00',
     sundayMorningTime: '11:00',
     sundayEveningTime: '20:00',
-  }
+  },
+  theme: 'orange',
 };
 
 const initialTasks: HomeworkTask[] = [];
@@ -84,7 +86,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const mergedData = { 
             ...initialUserData, 
             ...parsedData, 
-            notifications: mergedNotifications 
+            notifications: mergedNotifications,
+            theme: parsedData.theme || 'orange' // Ensure theme is loaded
         };
         setUserData(mergedData);
       }
@@ -102,6 +105,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (isDataLoaded) {
       try {
         localStorage.setItem('dailyPlannerPro_userData', JSON.stringify(userData));
+        
+        // Handle color theme
+        const themeName = userData.theme || 'orange';
+        const themeClass = themes.find(t => t.name === themeName)?.className || 'theme-orange';
+        const root = window.document.documentElement;
+        
+        // Remove old theme classes
+        themes.forEach(t => root.classList.remove(t.className));
+        
+        // Add new theme class
+        root.classList.add(themeClass);
+
       } catch (error) {
         console.error("Failed to save user data to localStorage", error);
       }
