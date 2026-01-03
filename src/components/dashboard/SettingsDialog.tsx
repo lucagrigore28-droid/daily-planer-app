@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StepName from '@/components/setup/StepName';
 import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
-import { User, Book, Calendar, ShieldAlert } from 'lucide-react';
+import { User, Book, Calendar, LogOut } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -97,8 +97,8 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               <TabsTrigger value="schedule" className="w-full justify-start gap-2">
                 <Calendar className="h-4 w-4"/> Orar
               </TabsTrigger>
-               <TabsTrigger value="danger" className="w-full justify-start gap-2 text-destructive data-[state=active]:border-destructive/50">
-                <ShieldAlert className="h-4 w-4"/> Pericol
+               <TabsTrigger value="logout" className="w-full justify-start gap-2 text-destructive data-[state=active]:border-destructive/50">
+                <LogOut className="h-4 w-4"/> Deconectare
               </TabsTrigger>
             </TabsList>
             <div className="flex-1 min-h-0 overflow-y-auto">
@@ -111,7 +111,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               <TabsContent value="schedule">
                 <ScheduleSettings />
               </TabsContent>
-              <TabsContent value="danger">
+              <TabsContent value="logout">
                 <DangerZone />
               </TabsContent>
             </div>
