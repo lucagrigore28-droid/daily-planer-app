@@ -91,8 +91,8 @@ export default {
         },
       },
       animation: {
-        'accordion-down': 'accordion-down 0.3s ease-out',
-        'accordion-up': 'accordion-up 0.3s ease-out',
+        'accordion-down': 'accordion-down 0.3s ease-in-out',
+        'accordion-up': 'accordion-up 0.3s ease-in-out',
       },
       backgroundColor: ({ theme }) => ({
         ...theme('colors'),
