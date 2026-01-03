@@ -82,7 +82,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                       htmlFor={`task-${task.id}`} 
                       className={cn(
                           "flex-1 text-lg font-medium cursor-pointer transition-colors",
-                          isCompleted && "text-muted-foreground line-through"
+                          isCompleted && "text-muted-foreground"
                       )}
                   >
                     {task.subjectName}
