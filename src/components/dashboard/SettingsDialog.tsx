@@ -31,7 +31,7 @@ type SettingsDialogProps = {
 };
 
 const TABS = [
-    { value: 'profile', label: 'Profil', icon: User, component: null },
+    { value: 'profile', label: 'Profil', icon: User, component: StepName },
     { value: 'subjects', label: 'Materii', icon: Book, component: StepSubjects },
     { value: 'schedule', label: 'Orar', icon: Calendar, component: StepSchedule },
     { value: 'notifications', label: 'Notificări', icon: Bell, component: StepNotifications },
@@ -154,26 +154,16 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                         </div>
                     </ScrollArea>
                 </TabsContent>
-                 <TabsContent value="subjects" className="h-full flex flex-col mt-0">
-                    <ScrollArea className="flex-grow pr-4">
-                        <StepSubjects />
-                    </ScrollArea>
-                </TabsContent>
-                 <TabsContent value="schedule" className="h-full flex flex-col mt-0">
-                    <ScrollArea className="flex-grow pr-4">
-                        <StepSchedule />
-                    </ScrollArea>
-                </TabsContent>
-                 <TabsContent value="notifications" className="h-full flex flex-col mt-0">
-                    <ScrollArea className="flex-grow pr-4">
-                        <StepNotifications />
-                    </ScrollArea>
-                </TabsContent>
-                 <TabsContent value="appearance" className="h-full flex flex-col mt-0">
-                    <ScrollArea className="flex-grow pr-4">
-                        <StepTheme />
-                    </ScrollArea>
-                </TabsContent>
+                {TABS.filter(t => t.component).map(tab => {
+                  const Component = tab.component!;
+                  return (
+                     <TabsContent key={tab.value} value={tab.value} className="h-full flex flex-col mt-0">
+                        <ScrollArea className="flex-grow pr-4">
+                            <Component />
+                        </ScrollArea>
+                    </TabsContent>
+                  )
+                })}
             </div>
           </Tabs>
         </div>
@@ -181,3 +171,4 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     </Dialog>
   );
 }
+
