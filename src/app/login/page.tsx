@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/firebase';
-import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,8 +34,9 @@ export default function LoginPage() {
     setIsClient(true);
   }, []);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
+    mode: 'onChange',
   });
 
   const handleAnonymousSignIn = () => {
@@ -50,6 +51,33 @@ export default function LoginPage() {
       });
     });
   };
+  
+  const handlePasswordReset = async () => {
+    const email = getValues("email");
+    if (!email) {
+      toast({
+        title: "Email necesar",
+        description: "Te rog introdu adresa de email în câmpul de mai sus înainte de a reseta parola.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Verifică-ți emailul",
+        description: `Am trimis un link de resetare a parolei la ${email}.`,
+      });
+    } catch (error: any) {
+        console.error("Password reset failed", error);
+        toast({
+            title: "Eroare la resetarea parolei",
+            description: "Nu am putut trimite emailul de resetare. Verifică adresa și încearcă din nou.",
+            variant: "destructive",
+        });
+    }
+  }
 
   const handleEmailPasswordSubmit = (mode: 'signIn' | 'signUp'): SubmitHandler<FormValues> => async (data) => {
     setIsSubmitting(true);
@@ -136,7 +164,12 @@ export default function LoginPage() {
                   {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password-login">Parolă</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password-login">Parolă</Label>
+                     <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handlePasswordReset}>
+                        Ai uitat parola?
+                     </Button>
+                  </div>
                   <Input id="password-login" type="password" {...register('password')} />
                   {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
                 </div>
