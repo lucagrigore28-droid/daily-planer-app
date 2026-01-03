@@ -3,13 +3,14 @@
 import React, { useState } from 'react';
 import StepWelcome from './StepWelcome';
 import StepName from './StepName';
+import StepTheme from './StepTheme';
 import StepSubjects from './StepSubjects';
 import StepSchedule from './StepSchedule';
 import StepNotifications from './StepNotifications';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 export default function SetupWizard() {
   const [step, setStep] = useState(1);
@@ -23,9 +24,10 @@ export default function SetupWizard() {
     switch (step) {
       case 1: return <StepWelcome onNext={nextStep} />;
       case 2: return <StepName onNext={nextStep} />;
-      case 3: return <StepSubjects onNext={nextStep} onBack={prevStep} />;
-      case 4: return <StepSchedule onNext={nextStep} onBack={prevStep} />;
-      case 5: return <StepNotifications onNext={nextStep} onBack={prevStep} />;
+      case 3: return <StepTheme onNext={nextStep} onBack={prevStep} />;
+      case 4: return <StepSubjects onNext={nextStep} onBack={prevStep} />;
+      case 5: return <StepSchedule onNext={nextStep} onBack={prevStep} />;
+      case 6: return <StepNotifications onNext={nextStep} onBack={prevStep} />;
       default: return <StepWelcome onNext={nextStep} />;
     }
   }

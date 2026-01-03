@@ -10,6 +10,7 @@ import { AppContext } from '@/contexts/AppContext';
 
 type StepProps = {
   onNext: () => void;
+  onBack?: () => void;
 };
 
 export default function StepName({ onNext }: StepProps) {
