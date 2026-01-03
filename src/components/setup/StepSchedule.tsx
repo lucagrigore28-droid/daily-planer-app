@@ -55,7 +55,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-72 pr-4">
+        <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-6">
             {subjects.map(subject => (
               <div key={subject.id}>
@@ -87,3 +87,4 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
+
