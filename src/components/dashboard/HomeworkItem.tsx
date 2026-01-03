@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
-import { CornerDownLeft, Trash2 } from 'lucide-react';
+import { Input } from '../ui/input';
+import { CornerDownLeft, Trash2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -29,6 +30,7 @@ type HomeworkItemProps = {
 export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
   const [description, setDescription] = useState(task.description);
+  const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime?.toString() || '');
   const [isCompleted, setIsCompleted] = useState(task.isCompleted);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -38,9 +40,12 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     context?.updateTask(task.id, { isCompleted: checked });
   };
   
-  const handleSaveDescription = () => {
+  const handleSaveDetails = () => {
     setIsSaving(true);
-    context?.updateTask(task.id, { description });
+    context?.updateTask(task.id, { 
+        description,
+        estimatedTime: estimatedTime ? parseInt(estimatedTime, 10) : undefined,
+    });
     setTimeout(() => setIsSaving(false), 1000);
   };
 
@@ -52,9 +57,10 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   useEffect(() => {
     setDescription(task.description);
     setIsCompleted(task.isCompleted);
+    setEstimatedTime(task.estimatedTime?.toString() || '');
   }, [task]);
 
-  const hasChanged = description !== task.description;
+  const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime?.toString() || '');
 
   return (
     <>
@@ -78,31 +84,57 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                     onCheckedChange={handleCompletionChange}
                     className="h-6 w-6 rounded-full"
                   />
-                  <Label 
-                      htmlFor={`task-${task.id}`} 
-                      className={cn(
-                          "flex-1 text-lg font-medium cursor-pointer transition-colors",
-                          isCompleted && "text-muted-foreground"
-                      )}
-                  >
-                    {task.subjectName}
-                  </Label>
+                  <div className="flex-1">
+                    <Label 
+                        htmlFor={`task-${task.id}`} 
+                        className={cn(
+                            "text-lg font-medium cursor-pointer transition-colors",
+                            isCompleted && "text-muted-foreground"
+                        )}
+                    >
+                      {task.subjectName}
+                    </Label>
+                    {task.estimatedTime && (
+                        <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", isCompleted && "text-muted-foreground/70")}>
+                            <Clock className="h-3 w-3" />
+                            <span>{task.estimatedTime} minute</span>
+                        </div>
+                    )}
+                  </div>
                   {!isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-primary" />}
                 </div>
                 <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
-                  <div className="space-y-3">
-                     <Textarea
-                      placeholder="Adaugă detalii despre temă..."
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="min-h-[80px]"
-                     />
+                  <div className="space-y-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor={`description-${task.id}`}>Descriere</Label>
+                         <Textarea
+                          id={`description-${task.id}`}
+                          placeholder="Adaugă detalii despre temă..."
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          className="min-h-[80px]"
+                         />
+                    </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor={`estimated-time-${task.id}`}>Timp estimat (minute)</Label>
+                        <div className="relative">
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                id={`estimated-time-${task.id}`}
+                                type="number"
+                                value={estimatedTime}
+                                onChange={(e) => setEstimatedTime(e.target.value)}
+                                placeholder="ex: 30"
+                                className="pl-9"
+                            />
+                        </div>
+                     </div>
                      <div className="flex justify-between items-center">
                         <div>
                             {hasChanged && (
-                              <Button size="sm" onClick={handleSaveDescription} disabled={isSaving}>
+                              <Button size="sm" onClick={handleSaveDetails} disabled={isSaving}>
                                   <CornerDownLeft className="mr-2 h-4 w-4"/>
-                                  {isSaving ? 'Se salvează...' : 'Salvează descrierea'}
+                                  {isSaving ? 'Se salvează...' : 'Salvează detaliile'}
                               </Button>
                             )}
                         </div>

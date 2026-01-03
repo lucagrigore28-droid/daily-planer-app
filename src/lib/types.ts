@@ -15,6 +15,7 @@ export type HomeworkTask = {
   isCompleted: boolean;
   isManual: boolean;
   plannedDate?: string; // ISO string for the day it's planned for weekend work
+  estimatedTime?: number; // in minutes
 };
 
 export type UserNotifications = {

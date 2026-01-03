@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
@@ -28,6 +28,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
+  const [estimatedTime, setEstimatedTime] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
       setSelectedSubject(null);
       setDescription('');
       setDueDate(new Date());
+      setEstimatedTime('');
     }
   }, [open]);
 
@@ -56,6 +58,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
       dueDate: dueDate.toISOString(),
       isCompleted: false,
       isManual: true,
+      estimatedTime: estimatedTime ? parseInt(estimatedTime, 10) : undefined,
     });
     
     toast({
@@ -153,6 +156,21 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                 />
               </PopoverContent>
             </Popover>
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="estimated-time" className="text-right">Timp estimat</Label>
+            <div className="relative col-span-3">
+              <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                id="estimated-time" 
+                type="number" 
+                value={estimatedTime}
+                onChange={(e) => setEstimatedTime(e.target.value)}
+                placeholder="ex: 30"
+                className="pl-9"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">minute</span>
+            </div>
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
             <Label htmlFor="description" className="text-right pt-2">Descriere</Label>
