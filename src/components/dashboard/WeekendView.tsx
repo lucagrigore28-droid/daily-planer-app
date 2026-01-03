@@ -175,7 +175,7 @@ export default function WeekendView() {
     <div className="w-full max-w-6xl mx-auto">
         <header className="flex justify-between items-center mb-6">
             <div>
-                <h2 className="text-2xl font-semibold font-headline text-primary">
+                <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                     Planificator Weekend
                 </h2>
                 <p className="text-muted-foreground">Organizează-ți temele pentru zilele următoare.</p>

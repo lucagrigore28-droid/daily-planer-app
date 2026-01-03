@@ -58,7 +58,7 @@ export default function ExpandableCalendarView() {
                 {/* Calendar Header */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-baseline gap-4">
-                        <span className="text-4xl font-extrabold text-primary uppercase">
+                        <span className="text-4xl font-extrabold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase">
                             {format(currentMonth, 'LLLL', { locale: ro })}
                         </span>
                         <span className="text-4xl font-extrabold text-foreground">
@@ -121,7 +121,7 @@ export default function ExpandableCalendarView() {
 
             {/* Right Side: Homework List */}
             <div className="flex flex-col">
-                <h2 className="text-2xl font-bold font-headline mb-4">
+                <h2 className="text-2xl font-bold font-headline mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                     Teme pentru <span className="text-primary">{format(selectedDate, 'd MMMM yyyy', { locale: ro })}</span>
                 </h2>
                 <ScrollArea className="flex-1 pr-3 -mr-3">
