@@ -80,7 +80,7 @@ export default function HomeworkDashboard() {
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
       <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div className="rounded-lg bg-card/80 p-4 backdrop-blur-sm">
+        <div className="rounded-lg border bg-card/80 p-4 backdrop-blur-sm">
           <h1 className="text-4xl font-bold font-headline text-foreground">
             Salut, {userData.name}!
           </h1>
