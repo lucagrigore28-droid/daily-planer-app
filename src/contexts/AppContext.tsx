@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { HomeworkTask, UserData, UserNotifications } from '@/lib/types';
-import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, format } from 'date-fns';
+import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, format, isSaturday, isSunday } from 'date-fns';
 
 const initialUserData: UserData = {
   name: '',
@@ -14,6 +14,11 @@ const initialUserData: UserData = {
     enabled: false,
     afterSchoolTime: '15:00',
     eveningTime: '20:00',
+    weekendEnabled: true,
+    saturdayMorningTime: '10:00',
+    saturdayEveningTime: '20:00',
+    sundayMorningTime: '11:00',
+    sundayEveningTime: '20:00',
   }
 };
 
@@ -39,27 +44,21 @@ type AppContextType = {
 export const AppContext = createContext<AppContextType | null>(null);
 
 // Helper function to check if a notification has been sent for a specific time slot on the current day
-const hasSentNotification = (timeSlot: 'afterSchool' | 'evening') => {
+const hasSentNotification = (timeSlot: string) => {
   const lastSent = localStorage.getItem(`dailyPlannerPro_lastNotification_${timeSlot}`);
   if (!lastSent) return false;
   return startOfDay(new Date(lastSent)).getTime() === startOfDay(new Date()).getTime();
 };
 
 // Helper function to mark a notification as sent
-const markNotificationAsSent = (timeSlot: 'afterSchool' | 'evening') => {
+const markNotificationAsSent = (timeSlot: string) => {
   localStorage.setItem(`dailyPlannerPro_lastNotification_${timeSlot}`, new Date().toISOString());
 };
 
-const sendNotification = (userName: string, tasks: HomeworkTask[]) => {
-  if (tasks.length === 0) return;
-
-  const subjectNames = Array.from(new Set(tasks.map(t => t.subjectName))).join(', ');
-  const notificationTitle = `Salut, ${userName}!`;
-  const notificationBody = `Pentru mâine mai ai de lucrat la: ${subjectNames}.`;
-
-  new Notification(notificationTitle, {
+const sendNotification = (notificationTitle: string, notificationBody: string) => {
+    new Notification(notificationTitle, {
     body: notificationBody,
-    icon: '/logo.png' // Assuming you have a logo in public folder
+    icon: '/icon.svg' 
   });
 };
 
@@ -77,7 +76,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (storedUserData) {
         // Merge stored data with initial data to ensure new fields are present
         const parsedData = JSON.parse(storedUserData);
-        setUserData(prevData => ({ ...prevData, ...parsedData }));
+        // Deep merge for notifications
+        const mergedNotifications = {
+            ...initialUserData.notifications,
+            ...(parsedData.notifications || {})
+        };
+        const mergedData = { 
+            ...initialUserData, 
+            ...parsedData, 
+            notifications: mergedNotifications 
+        };
+        setUserData(mergedData);
       }
       if (storedTasks) {
         setTasks(JSON.parse(storedTasks));
@@ -123,17 +132,68 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const tasksForTomorrow = tasks.filter(task => 
         !task.isCompleted && startOfDay(new Date(task.dueDate)).getTime() === tomorrow.getTime()
       );
-
-      // Check for after-school notification
+      
+      // Weekday notifications
       if (currentTime === userData.notifications.afterSchoolTime && !hasSentNotification('afterSchool')) {
-        sendNotification(userData.name, tasksForTomorrow);
+        if(tasksForTomorrow.length > 0) {
+            const subjectNames = Array.from(new Set(tasksForTomorrow.map(t => t.subjectName))).join(', ');
+            sendNotification(`Salut, ${userData.name}!`, `Pentru mâine mai ai de lucrat la: ${subjectNames}.`);
+        }
         markNotificationAsSent('afterSchool');
       }
       
-      // Check for evening notification
       if (currentTime === userData.notifications.eveningTime && !hasSentNotification('evening')) {
-        sendNotification(userData.name, tasksForTomorrow);
+        if(tasksForTomorrow.length > 0) {
+            const subjectNames = Array.from(new Set(tasksForTomorrow.map(t => t.subjectName))).join(', ');
+            sendNotification(`Salut, ${userData.name}!`, `Un ultim memento: mai ai de lucrat la: ${subjectNames}.`);
+        }
         markNotificationAsSent('evening');
+      }
+
+      // Weekend notifications
+      if (userData.notifications.weekendEnabled) {
+          const weekendTasks = getWeekendTasks();
+          const incompleteWeekendTasks = weekendTasks.filter(t => !t.isCompleted);
+          
+          if(isSaturday(now)) {
+              // Saturday Morning
+              if(currentTime === userData.notifications.saturdayMorningTime && !hasSentNotification('saturdayMorning')) {
+                  if(incompleteWeekendTasks.length > 0) {
+                      const plural = incompleteWeekendTasks.length > 1 ? 'teme' : 'temă';
+                      sendNotification('Salut, e sâmbătă!', `Ai ${incompleteWeekendTasks.length} ${plural} pentru săptămâna viitoare. Acum e un moment bun să te apuci de ele!`);
+                  }
+                  markNotificationAsSent('saturdayMorning');
+              }
+              // Saturday Evening
+              if(currentTime === userData.notifications.saturdayEveningTime && !hasSentNotification('saturdayEvening')) {
+                   if(incompleteWeekendTasks.length > 0) {
+                      const completedCount = weekendTasks.length - incompleteWeekendTasks.length;
+                      const completedText = completedCount > 0 ? `Bravo, ai terminat deja ${completedCount}!` : `Nu uita să te și relaxezi.`;
+                      sendNotification('Sumar de sâmbătă seara', `${completedText} Mai ai ${incompleteWeekendTasks.length} teme. O poți face!`);
+                   }
+                  markNotificationAsSent('saturdayEvening');
+              }
+          }
+
+          if(isSunday(now)) {
+              // Sunday Morning
+              if(currentTime === userData.notifications.sundayMorningTime && !hasSentNotification('sundayMorning')) {
+                  if(incompleteWeekendTasks.length > 0) {
+                      const subjectNames = Array.from(new Set(incompleteWeekendTasks.map(t => t.subjectName))).slice(0,3).join(', ');
+                      sendNotification('Neața de duminică!', `Mai ai de lucru la: ${subjectNames}. Profită de zi pentru a le termina!`);
+                  }
+                   markNotificationAsSent('sundayMorning');
+              }
+              // Sunday Evening
+              if(currentTime === userData.notifications.sundayEveningTime && !hasSentNotification('sundayEvening')) {
+                  if(incompleteWeekendTasks.length > 0) {
+                     sendNotification('Pregătit pentru o nouă săptămână?', `Mai ai ${incompleteWeekendTasks.length} teme nerezolvate. Verifică-le pentru a fi sigur că ești la zi!`);
+                  } else if (weekendTasks.length > 0) {
+                     sendNotification('Ești gata de săptămâna viitoare!', 'Felicitări, ai terminat toate temele importante. Acum relaxează-te!');
+                  }
+                  markNotificationAsSent('sundayEvening');
+              }
+          }
       }
     };
     
@@ -173,10 +233,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const resetData = useCallback(() => {
     try {
-      localStorage.removeItem('dailyPlannerPro_userData');
-      localStorage.removeItem('dailyPlannerPro_tasks');
-      localStorage.removeItem('dailyPlannerPro_lastNotification_afterSchool');
-      localStorage.removeItem('dailyPlannerPro_lastNotification_evening');
+      // Clear all related localStorage items
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('dailyPlannerPro_')) {
+          localStorage.removeItem(key);
+        }
+      });
       setUserData(initialUserData);
       setTasks(initialTasks);
       window.location.reload();
@@ -309,7 +371,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     const firstOccurrenceMap = new Map<string, HomeworkTask>();
-    for (const task of upcomingTasks) {
+    // Prioritize manual tasks
+    const sortedTasks = upcomingTasks.sort((a, b) => (a.isManual === b.isManual) ? 0 : a.isManual ? -1 : 1);
+
+    for (const task of sortedTasks) {
         if (!firstOccurrenceMap.has(task.subjectId)) {
             firstOccurrenceMap.set(task.subjectId, task);
         }
