@@ -152,7 +152,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => {
         const uniqueId = task.isManual
             ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
-            : `${task.subjectId}-${task.dueDate}`;
+            : `${task.subjectId}-${startOfDay(new Date(task.dueDate)).toISOString()}`;
         
         if (prev.some(t => t.id === uniqueId)) {
             return prev;
@@ -204,7 +204,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             );
 
             subjectsForDay.forEach(subject => {
-                const taskId = `${subject.id}-${dateToCheck.toISOString()}`;
+                const taskId = `${subject.id}-${startOfDay(dateToCheck).toISOString()}`;
                 const taskExists = prevTasks.some(t => t.id === taskId);
                 
                 if (!taskExists) {
