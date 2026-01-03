@@ -22,8 +22,7 @@ export function Logo({ className }: LogoProps) {
             <stop offset="100%" stopColor="hsl(var(--accent))" />
           </linearGradient>
         </defs>
-        <rect width="32" height="32" rx="8" fill="url(#logo-gradient)" />
-        <rect x="4" y="4" width="24" height="24" rx="5" fill="hsl(var(--background))" />
+        <rect x="4" y="4" width="24" height="24" rx="5" fill="currentColor" opacity="0.1" />
         <path
           d="M10 8H22"
           stroke="url(#logo-gradient)"

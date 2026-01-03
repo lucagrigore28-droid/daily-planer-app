@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#A099FF",
+  themeColor: "#09090b",
 };
 
 const fontPoppins = Poppins({
@@ -43,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ro">
+    <html lang="ro" className="dark">
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <AppProvider>
           {children}
