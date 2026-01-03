@@ -41,6 +41,7 @@ type AppContextType = {
   resetData: () => Promise<void>;
   logout: () => Promise<void>;
   isDataLoaded: boolean;
+  isThemeLoaded: boolean;
   currentDate: Date;
   getRelevantSchoolDays: () => Date[];
   getNextSchoolDayWithTasks: () => Date | null;
@@ -70,6 +71,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
   
   const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
 
@@ -81,6 +83,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       
       themes.forEach(t => root.classList.remove(t.className));
       root.classList.add(themeClass);
+    }
+    // This effect runs after userData is loaded, so theme is applied. We can now set theme as loaded.
+    // We check for isDataLoaded to ensure this logic runs after initial data fetching.
+    if(isDataLoaded) {
+      setIsThemeLoaded(true);
     }
   }, [userData, isDataLoaded]);
 
@@ -261,6 +268,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     resetData,
     logout,
     isDataLoaded,
+    isThemeLoaded,
     currentDate,
     getRelevantSchoolDays,
     getNextSchoolDayWithTasks,
