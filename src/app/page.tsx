@@ -1,14 +1,24 @@
 "use client";
 
-import { useContext } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import SetupWizard from '@/components/setup/SetupWizard';
 import HomeworkDashboard from '@/components/dashboard/HomeworkDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import SplashScreen from '@/components/SplashScreen';
 
 function AppContainer() {
   const context = useContext(AppContext);
+  const [splashScreenDone, setSplashScreenDone] = useState(false);
+
+  useEffect(() => {
+    // If setup is not complete, we don't want a splash screen, just the wizard.
+    if (context?.isDataLoaded && !context.userData.setupComplete) {
+      setSplashScreenDone(true);
+    }
+  }, [context?.isDataLoaded, context?.userData?.setupComplete]);
+
 
   if (context === null) {
     // This can happen briefly on initial render before context is available.
@@ -41,6 +51,10 @@ function AppContainer() {
   }
   
   const showWizard = userData ? !userData.setupComplete : true;
+
+  if (!splashScreenDone) {
+      return <SplashScreen onNext={() => setSplashScreenDone(true)} />;
+  }
 
   return (
     <div className={cn(showWizard ? "bg-background" : "dashboard-background min-h-screen")}>
