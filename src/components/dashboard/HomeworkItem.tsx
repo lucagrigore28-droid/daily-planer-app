@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Slider } from '../ui/slider';
 
 type HomeworkItemProps = {
   task: HomeworkTask;
@@ -30,7 +31,7 @@ type HomeworkItemProps = {
 export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
   const [description, setDescription] = useState(task.description);
-  const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime?.toString() || '');
+  const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 30);
   const [isCompleted, setIsCompleted] = useState(task.isCompleted);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -44,7 +45,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     setIsSaving(true);
     context?.updateTask(task.id, { 
         description,
-        estimatedTime: estimatedTime ? parseInt(estimatedTime, 10) : undefined,
+        estimatedTime: estimatedTime,
     });
     setTimeout(() => setIsSaving(false), 1000);
   };
@@ -57,10 +58,10 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   useEffect(() => {
     setDescription(task.description);
     setIsCompleted(task.isCompleted);
-    setEstimatedTime(task.estimatedTime?.toString() || '');
+    setEstimatedTime(task.estimatedTime || 30);
   }, [task]);
 
-  const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime?.toString() || '');
+  const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime || 30);
 
   return (
     <>
@@ -117,16 +118,17 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                     </div>
                      <div className="grid gap-2">
                         <Label htmlFor={`estimated-time-${task.id}`}>Timp estimat (minute)</Label>
-                        <div className="relative">
-                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                id={`estimated-time-${task.id}`}
-                                type="number"
-                                value={estimatedTime}
-                                onChange={(e) => setEstimatedTime(e.target.value)}
-                                placeholder="ex: 30"
-                                className="pl-9"
+                        <div className="flex items-center gap-4 pt-2">
+                             <Slider 
+                                defaultValue={[estimatedTime]} 
+                                max={180} 
+                                step={5} 
+                                onValueChange={(value) => setEstimatedTime(value[0])}
+                                className="flex-1"
                             />
+                            <div className="flex items-center gap-2">
+                                <span className="font-bold w-12 text-right">{estimatedTime} min</span>
+                            </div>
                         </div>
                      </div>
                      <div className="flex justify-between items-center">
