@@ -203,9 +203,9 @@ export default function WeekendView() {
                 </CardContent>
             </Card>
         ) : (
-            <div className="flex gap-4" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="flex flex-col md:flex-row gap-4" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 {/* Unplanned Column */}
-                <div className="w-64 flex-shrink-0 rounded-lg border bg-muted/40 p-3 flex flex-col">
+                <div className="md:w-72 flex-shrink-0 rounded-lg border bg-muted/40 p-3 flex flex-col">
                     <h3 className="text-lg font-bold text-center mb-4 flex-shrink-0">Teme neplanificate</h3>
                      <div 
                         onDragOver={handleDragOver}
