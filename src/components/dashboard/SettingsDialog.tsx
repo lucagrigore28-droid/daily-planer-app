@@ -71,7 +71,7 @@ const UserAccount = () => {
     )
 }
 
-const ResetZone = () => {
+const DangerZone = () => {
     const context = useContext(AppContext);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
 
@@ -84,8 +84,8 @@ const ResetZone = () => {
 
     return (
         <>
-            <div className="mt-8 pt-6 border-t border-border">
-                <h3 className="text-lg font-semibold text-foreground">Resetare Date</h3>
+            <div className="mt-8 pt-6 border-t border-destructive/20">
+                <h3 className="text-lg font-semibold text-destructive">Zonă de Pericol</h3>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
                     Această acțiune este ireversibilă. Toate datele tale, inclusiv materiile, orarul și temele vor fi șterse definitiv.
                 </p>
@@ -149,12 +149,12 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                                     <UserAccount />
                                     <StepName />
                                 </div>
-                                <ResetZone />
+                                <DangerZone />
                             </div>
                         </div>
                     </ScrollArea>
                 </TabsContent>
-                {TABS.filter(t => t.component).map(tab => {
+                {TABS.filter(t => t.value !== 'profile').map(tab => {
                   const Component = tab.component!;
                   return (
                      <TabsContent key={tab.value} value={tab.value} className="h-full flex flex-col mt-0">
@@ -171,4 +171,3 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     </Dialog>
   );
 }
-
