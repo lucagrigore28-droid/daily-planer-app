@@ -68,13 +68,12 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     <>
       <div
         className={cn(
-          "transition-all duration-500",
-          isCompleted && "opacity-80"
+          "transition-all duration-500"
         )}
       >
         <Card className={cn(
           "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
-          isCompleted ? 'bg-gradient-primary-accent text-primary-foreground' : 'bg-card'
+          isCompleted ? 'bg-gradient-primary-accent text-primary-foreground bg-opacity-80' : 'bg-card'
         )}>
           <CardContent className="p-3">
             <Accordion type="single" collapsible disabled={isCompleted}>
