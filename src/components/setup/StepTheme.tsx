@@ -11,7 +11,7 @@ import { Check } from 'lucide-react';
 
 type StepProps = {
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 };
 
 export default function StepTheme({ onNext, onBack }: StepProps) {
@@ -21,6 +21,8 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
     context?.updateUser({ theme: themeName });
   };
   
+  const isSetup = !!onBack;
+
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm-shadow-lg">
       <CardHeader>
@@ -55,10 +57,12 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
             ))}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-        <Button onClick={onNext}>Continuă</Button>
-      </CardFooter>
+      {isSetup && (
+        <CardFooter className="flex justify-between">
+          <Button variant="ghost" onClick={onBack}>Înapoi</Button>
+          <Button onClick={onNext}>Continuă</Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }
