@@ -139,13 +139,13 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                 </TabsTrigger>
               ))}
             </TabsList>
-            <div className="flex-1 min-h-0 overflow-y-auto pr-4 -mr-4">
+            <div className="flex-1">
               {TABS.map((tab) => {
                 const Component = tab.component;
                 return (
-                  <TabsContent key={tab.value} value={tab.value} className="h-full flex flex-col mt-0">
+                  <TabsContent key={tab.value} value={tab.value} className="h-full flex-col mt-0">
                      {tab.value === 'profile' ? (
-                        <div className="flex flex-col justify-between flex-1">
+                        <div className="flex flex-col justify-between flex-1 h-full">
                            <div>
                             <UserAccount />
                             <StepName />
