@@ -22,8 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -31,11 +30,11 @@ type SettingsDialogProps = {
 };
 
 const TABS = [
-    { value: 'profile', label: 'Profil', icon: User },
-    { value: 'subjects', label: 'Materii', icon: Book },
-    { value: 'schedule', label: 'Orar', icon: Calendar },
-    { value: 'notifications', label: 'Notificări', icon: Bell },
-    { value: 'appearance', label: 'Aspect', icon: Palette },
+    { value: 'profile', label: 'Profil', icon: User, component: null },
+    { value: 'subjects', label: 'Materii', icon: Book, component: StepSubjects },
+    { value: 'schedule', label: 'Orar', icon: Calendar, component: StepSchedule },
+    { value: 'notifications', label: 'Notificări', icon: Bell, component: StepNotifications },
+    { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
 ];
 
 const UserAccount = () => {
@@ -142,9 +141,9 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
             </TabsList>
             <div className="flex-1 min-h-0 overflow-y-auto pr-4 -mr-4">
               {TABS.map((tab) => {
-                const Component = tab.value === 'profile' ? null : TABS.find(t => t.value === tab.value)?.component;
+                const Component = tab.component;
                 return (
-                  <TabsContent key={tab.value} value={tab.value} className="h-full flex flex-col">
+                  <TabsContent key={tab.value} value={tab.value} className="h-full flex flex-col mt-0">
                      {tab.value === 'profile' ? (
                         <div className="flex flex-col justify-between flex-1">
                            <div>
