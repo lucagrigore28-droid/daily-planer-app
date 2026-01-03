@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext } from 'react';
@@ -20,7 +21,7 @@ export default function StepName({ onNext }: StepProps) {
     context?.updateUser({ name: newName.trim() });
   };
 
-  const isSetup = onNext !== (() => {});
+  const isSetup = onNext !== StepName.defaultProps.onNext;
 
   return (
     <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
@@ -51,3 +52,8 @@ export default function StepName({ onNext }: StepProps) {
     </Card>
   );
 }
+
+
+StepName.defaultProps = {
+    onNext: () => {},
+};

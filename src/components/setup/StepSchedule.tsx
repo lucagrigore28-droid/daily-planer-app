@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, useMemo, useEffect } from 'react';
@@ -41,7 +42,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     context?.updateUser({ schedule: newSchedule });
   };
   
-  const isSetup = onNext !== (() => {});
+  const isSetup = onNext !== StepSchedule.defaultProps.onNext;
 
   const scheduleDays = DAYS_OF_WEEK_SCHEDULE.filter(d => d.id <= 5); // Only Mon-Fri
 
@@ -87,4 +88,8 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
   );
 }
 
+StepSchedule.defaultProps = {
+  onNext: () => {},
+  onBack: () => {},
+};
     

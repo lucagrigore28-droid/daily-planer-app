@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -45,7 +46,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     }
   };
   
-  const isSetup = onNext !== (() => {});
+  const isSetup = onNext !== StepSubjects.defaultProps.onNext;
 
   const predefinedWithCustom = [...PREDEFINED_SUBJECTS];
   selectedSubjects.forEach(s => {
@@ -111,3 +112,8 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
+
+StepSubjects.defaultProps = {
+  onNext: () => {},
+  onBack: () => {},
+};

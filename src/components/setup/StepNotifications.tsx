@@ -15,7 +15,7 @@ type StepProps = {
   onBack: () => void;
 };
 
-export default function StepNotifications({ onBack }: StepProps) {
+export default function StepNotifications({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
   const [permission, setPermission] = useState<'default' | 'granted' | 'denied'>('default');
   const [notificationsEnabled, setNotificationsEnabled] = useState(context?.userData.notifications.enabled || false);
@@ -79,10 +79,11 @@ export default function StepNotifications({ onBack }: StepProps) {
 
   const handleFinishSetup = () => {
     context?.updateUser({ setupComplete: true });
-    // This is the final step, so it will transition to the dashboard automatically
+    // This is the final step, it will call onNext which is an empty function but in the wizard it transitions
+    onNext();
   };
 
-  const isSetup = onBack !== (() => {});
+  const isSetup = onNext !== StepNotifications.defaultProps.onNext;
 
   return (
     <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
@@ -150,3 +151,9 @@ export default function StepNotifications({ onBack }: StepProps) {
     </Card>
   );
 }
+
+
+StepNotifications.defaultProps = {
+  onNext: () => {},
+  onBack: () => {},
+};
