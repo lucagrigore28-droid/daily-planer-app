@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useEffect, useMemo } from 'react';
@@ -14,10 +15,10 @@ type HomeworkListProps = {
 
 export default function HomeworkList({ displayDate }: HomeworkListProps) {
   const context = useContext(AppContext);
-  const { tasks, userData, setTasks } = context!;
+  const { tasks, userData, addTask } = context!;
 
   useEffect(() => {
-    if (!userData.setupComplete) return;
+    if (!userData.setupComplete || !displayDate) return;
 
     const relevantDate = startOfDay(displayDate);
     const dayIndex = getDay(relevantDate);
@@ -26,45 +27,26 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
       userData.schedule[subject.id]?.includes(dayIndex)
     );
 
-    let generatedTasks: HomeworkTask[] = [];
-
     subjectsForDay.forEach(subject => {
-        const predictableId = `${subject.id}-${relevantDate.toISOString()}`;
-        
-        // This check is now against the full task list to prevent duplicates across sessions
-        const taskExists = tasks.some(task => task.id === predictableId);
-
-        if (!taskExists) {
-            const newScheduledTask: HomeworkTask = {
-                id: predictableId,
-                subjectId: subject.id,
-                subjectName: subject.name,
-                description: '',
-                dueDate: relevantDate.toISOString(),
-                isCompleted: false,
-                isManual: false,
-                estimatedTime: undefined, // Ensure it's optional
-            };
-            generatedTasks.push(newScheduledTask);
-        }
+        addTask({
+            subjectId: subject.id,
+            subjectName: subject.name,
+            description: '',
+            dueDate: relevantDate.toISOString(),
+            isCompleted: false,
+            isManual: false,
+            estimatedTime: undefined,
+        });
     });
-
-    if (generatedTasks.length > 0) {
-      setTasks(prevTasks => {
-        const currentTaskIds = new Set(prevTasks.map(t => t.id));
-        const newTasksToAdd = generatedTasks.filter(genTask => !currentTaskIds.has(genTask.id));
-        if (newTasksToAdd.length > 0) {
-            return [...prevTasks, ...newTasksToAdd];
-        }
-        return prevTasks;
-      });
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userData.setupComplete, userData.subjects, userData.schedule, displayDate, setTasks]);
+  }, [userData.setupComplete, userData.subjects, userData.schedule, displayDate, addTask]);
 
 
   const sortedTasks = useMemo(() => {
-    const tasksForDisplayDate = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayDate).getTime());
+    const tasksForDisplayDate = tasks.filter(task => {
+        if (!displayDate) return false;
+        return startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayDate).getTime()
+    });
     
     // Sort tasks: incomplete first, then completed
     return tasksForDisplayDate.sort((a, b) => {

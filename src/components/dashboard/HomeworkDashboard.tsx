@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
@@ -28,7 +29,7 @@ export default function HomeworkDashboard() {
 
   useEffect(() => {
     if (nextDayWithTasks) {
-      setDisplayedDay(nextDayWithTasks);
+      setDisplayedDay(startOfDay(nextDayWithTasks));
     }
   }, [nextDayWithTasks]);
 
@@ -46,7 +47,8 @@ export default function HomeworkDashboard() {
 
   const tasksForDisplayedDay = useMemo(() => {
     if (!context || !displayedDay) return [];
-    return context.tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayedDay).getTime());
+    const dayStart = startOfDay(displayedDay);
+    return context.tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === dayStart.getTime());
   }, [context, displayedDay]);
 
   const completedTasksCount = useMemo(() => {

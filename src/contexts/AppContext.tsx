@@ -158,7 +158,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     setTasks(prev => {
         if (prev.some(t => t.id === newTask.id)) {
-            return prev;
+            return prev; // Prevent adding duplicate tasks
         }
         return [...prev, newTask];
     });
@@ -237,13 +237,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // If not, find the next day with any scheduled or manual tasks
     let nextDay = addDays(today, 1);
     for (let i = 0; i < 30; i++) { // Check up to 30 days in the future
-      const tasksForNextDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === nextDay.getTime() && !task.isCompleted);
+      const dayStart = startOfDay(nextDay);
+      const tasksForNextDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === dayStart.getTime() && !task.isCompleted);
       
-      const dayIndex = getDay(nextDay);
+      const dayIndex = getDay(dayStart);
       const isScheduledDay = userData.subjects.some(subject => userData.schedule[subject.id]?.includes(dayIndex));
 
       if (tasksForNextDay.length > 0 || isScheduledDay) {
-        return nextDay;
+        return dayStart;
       }
       nextDay = addDays(nextDay, 1);
     }
