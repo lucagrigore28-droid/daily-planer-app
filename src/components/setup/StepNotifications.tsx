@@ -59,10 +59,19 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       alert("Acest browser nu suportă notificări.");
       return;
     }
+    // The result of requestPermission() is the source of truth.
     const status = await Notification.requestPermission();
     setPermission(status);
+    
     if (status === 'granted') {
-      handleMasterToggle(true);
+      // If permission is granted, toggle the state on.
+      setNotificationsEnabled(true);
+      context?.updateUser({
+        notifications: {
+          ...context.userData.notifications,
+          enabled: true,
+        }
+      });
     }
   };
   
