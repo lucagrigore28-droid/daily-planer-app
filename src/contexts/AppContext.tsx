@@ -21,6 +21,7 @@ type AppContextType = {
   updateUser: (data: Partial<UserData>) => void;
   addTask: (task: Omit<HomeworkTask, 'id'>) => void;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
+  deleteTask: (taskId: string) => void;
   isDataLoaded: boolean;
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
@@ -83,7 +84,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
-    // For manual tasks, we add a random string to ensure uniqueness even if others details are the same
     const uniqueId = task.isManual
         ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
         : `${task.subjectId}-${task.dueDate}`;
@@ -91,7 +91,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const newTask = { ...task, id: uniqueId };
 
     setTasks(prev => {
-        // Prevent adding duplicates based on the generated ID.
         if (prev.some(t => t.id === newTask.id)) {
             return prev;
         }
@@ -103,9 +102,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => prev.map(task => task.id === taskId ? { ...task, ...updates } : task));
   }, []);
 
+  const deleteTask = useCallback((taskId: string) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+  }, []);
+
   const isSchoolDay = useCallback((date: Date) => {
     const dayIndex = getDay(date);
-    // School days are Monday (1) to Friday (5)
     if (dayIndex < 1 || dayIndex > 5) return false;
     const hasSubjects = Object.values(userData.schedule).some(days => days.includes(dayIndex));
     return hasSubjects;
@@ -116,10 +118,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const relevantDays: Date[] = [];
     const today = startOfDay(currentDate);
 
-    // Add today
     relevantDays.push(today);
 
-    // Look forward 14 days to find the next school days
     let futureDay = addDays(today, 1);
     let daysAheadCount = 0;
     while (daysAheadCount < 14) {
@@ -130,7 +130,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
        daysAheadCount++;
     }
     
-    // Get past days that still have tasks, up to 7 days ago
     for (let i = 1; i <= 7; i++) {
         const pastDay = subDays(today, i);
         const tasksForDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === pastDay.getTime());
@@ -139,7 +138,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
     }
     
-    // Deduplicate and sort
     const uniqueDays = Array.from(new Set(relevantDays.map(d => d.getTime()))).map(time => new Date(time));
     uniqueDays.sort((a,b) => a.getTime() - b.getTime());
 
@@ -150,15 +148,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const getNextSchoolDayWithTasks = useCallback(() => {
     const today = startOfDay(currentDate);
     
-    // Check today first if it has any incomplete tasks
     const tasksForToday = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === today.getTime());
     if (tasksForToday.some(t => !t.isCompleted)) {
       return today;
     }
   
-    // If today's tasks are all done, or there are no tasks, find the next day
     let nextDay = addDays(today, 1);
-    for (let i = 0; i < 30; i++) { // Search up to 30 days in the future
+    for (let i = 0; i < 30; i++) {
       if (isSchoolDay(nextDay)) {
         return nextDay;
       }
@@ -169,7 +165,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       nextDay = addDays(nextDay, 1);
     }
   
-    // Fallback to today if no future day is found
     return today;
   }, [currentDate, tasks, isSchoolDay]);
 
@@ -178,16 +173,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const nextWeekStart = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
     const nextWeekEnd = endOfWeek(nextWeekStart, { weekStartsOn: 1 });
 
-    // 1. Get all tasks from the upcoming week
     const upcomingTasks = tasks.filter(task => {
         const taskDate = startOfDay(new Date(task.dueDate));
         return taskDate >= nextWeekStart && taskDate <= nextWeekEnd;
     });
 
-    // 2. Sort them by due date
     upcomingTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-    // 3. Group by subject and keep only the first occurrence (respecting completed status)
     const firstOccurrenceMap = new Map<string, HomeworkTask>();
     for (const task of upcomingTasks) {
         if (!firstOccurrenceMap.has(task.subjectId)) {
@@ -195,7 +187,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
     }
 
-    // 4. Return the unique list. The sorting between completed/incompleted will be done in the component.
     return Array.from(firstOccurrenceMap.values());
   }, [tasks, currentDate]);
   
@@ -207,6 +198,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     updateUser,
     addTask,
     updateTask,
+    deleteTask,
     isDataLoaded,
     currentDate,
     setCurrentDate,
