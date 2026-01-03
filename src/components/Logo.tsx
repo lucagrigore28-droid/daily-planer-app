@@ -19,10 +19,13 @@ export default function Logo({ className }: { className?: string }) {
         </linearGradient>
       </defs>
 
+      {/* Black background rect */}
+      <rect x="0" y="0" width="100" height="100" rx="22" ry="22" fill="black" />
+
       <g fill="none" stroke="url(#instaGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
         
         {/* Outer rounded square */}
-        <rect x="5" y="5" width="90" height="90" rx="22" ry="22" />
+        <rect x="5" y="5" width="90" height="90" rx="22" ry="22" fill="none"/>
 
         {/* Calendar rings */}
         <line x1="38" y1="5" x2="38" y2="15" />
