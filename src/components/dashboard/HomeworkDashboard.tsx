@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { format, getDay, addDays, subDays, isSameDay } from 'date-fns';
+import { format, getDay, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Plus, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
 import SettingsDialog from './SettingsDialog';
+import { Progress } from '../ui/progress';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
@@ -42,6 +43,18 @@ export default function HomeworkDashboard() {
       setDisplayedDay(addDays(displayedDay, 1));
     }
   };
+
+  const tasksForDisplayedDay = useMemo(() => {
+    if (!context || !displayedDay) return [];
+    return context.tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayedDay).getTime());
+  }, [context, displayedDay]);
+
+  const completedTasksCount = useMemo(() => {
+    return tasksForDisplayedDay.filter(task => task.isCompleted).length;
+  }, [tasksForDisplayedDay]);
+
+  const progressPercentage = tasksForDisplayedDay.length > 0 ? (completedTasksCount / tasksForDisplayedDay.length) * 100 : 0;
+
 
   if (!context) return null;
   const { userData, currentDate } = context;
@@ -90,7 +103,7 @@ export default function HomeworkDashboard() {
                 {displayedDay ? (
                     <Card>
                         <CardContent className="p-4">
-                            <div className="flex justify-between items-center mb-4">
+                            <div className="flex justify-between items-center mb-2">
                                 <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                                     <CalendarIcon className="h-6 w-6 text-primary"/>
                                     Teme pentru {format(displayedDay, "EEEE, d MMMM", { locale: ro })}
@@ -109,6 +122,15 @@ export default function HomeworkDashboard() {
                                     </Button>
                                 </div>
                             </div>
+                            {tasksForDisplayedDay.length > 0 && (
+                                <div className="px-1 mb-4">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <p className="text-sm font-medium text-muted-foreground">Progres</p>
+                                        <p className="text-sm font-bold">{completedTasksCount} / {tasksForDisplayedDay.length} teme finalizate</p>
+                                    </div>
+                                    <Progress value={progressPercentage} />
+                                </div>
+                            )}
                             <HomeworkList displayDate={displayedDay} />
                         </CardContent>
                     </Card>
