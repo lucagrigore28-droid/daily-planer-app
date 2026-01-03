@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -13,7 +12,7 @@ type StepProps = {
   onBack?: () => void;
 };
 
-export default function StepName({ onNext }: StepProps) {
+export default function StepName({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
   const [name, setName] = useState(context?.userData?.name || '');
 
@@ -57,7 +56,8 @@ export default function StepName({ onNext }: StepProps) {
         </div>
       </CardContent>
        {showNavButtons && (
-          <CardFooter>
+          <CardFooter className="flex justify-between">
+             <Button variant="ghost" onClick={onBack}>Înapoi</Button>
             <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
           </CardFooter>
        )}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import StepWelcome from './StepWelcome';
 import StepName from './StepName';
 import StepTheme from './StepTheme';
@@ -14,16 +15,21 @@ const TOTAL_STEPS = 6;
 
 export default function SetupWizard() {
   const [step, setStep] = useState(1);
+  const router = useRouter();
 
   const nextStep = () => setStep(prev => (prev < TOTAL_STEPS ? prev + 1 : prev));
   const prevStep = () => setStep(prev => (prev > 1 ? prev - 1 : prev));
+  
+  const handleBackToLogin = () => {
+    router.push('/login');
+  };
 
   const progressValue = (step / TOTAL_STEPS) * 100;
 
   const renderStep = () => {
     switch (step) {
       case 1: return <StepWelcome onNext={nextStep} />;
-      case 2: return <StepName onNext={nextStep} />;
+      case 2: return <StepName onNext={nextStep} onBack={handleBackToLogin} />;
       case 3: return <StepTheme onNext={nextStep} onBack={prevStep} />;
       case 4: return <StepSubjects onNext={nextStep} onBack={prevStep} />;
       case 5: return <StepSchedule onNext={nextStep} onBack={prevStep} />;
