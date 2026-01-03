@@ -64,7 +64,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-72 pr-4">
+        <ScrollArea className="h-[400px] pr-4">
           <div className="grid grid-cols-2 gap-4">
             {predefinedWithCustom.map(subjectName => {
               const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
