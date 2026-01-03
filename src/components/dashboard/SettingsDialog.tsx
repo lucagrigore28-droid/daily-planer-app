@@ -71,7 +71,7 @@ const UserAccount = () => {
     )
 }
 
-const DangerZone = () => {
+const ResetZone = () => {
     const context = useContext(AppContext);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
 
@@ -84,8 +84,8 @@ const DangerZone = () => {
 
     return (
         <>
-            <div className="mt-8 pt-6 border-t border-destructive/50">
-                <h3 className="text-lg font-semibold text-destructive">Zonă de Pericol</h3>
+            <div className="mt-8 pt-6 border-t border-border">
+                <h3 className="text-lg font-semibold text-foreground">Resetare Date</h3>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
                     Această acțiune este ireversibilă. Toate datele tale, inclusiv materiile, orarul și temele vor fi șterse definitiv.
                 </p>
@@ -124,15 +124,15 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>Setări</DialogTitle>
           <DialogDescription>
             Modifică-ți preferințele, materiile, orarul și notificările.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row gap-6 h-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row gap-6 h-full p-6">
             <TabsList className="flex-col h-auto justify-start md:w-48">
               {TABS.map(tab => (
                 <TabsTrigger key={tab.value} value={tab.value} className="w-full justify-start gap-2">
@@ -141,24 +141,28 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               ))}
             </TabsList>
             <div className="flex-1 min-h-0">
-              {TABS.map((tab) => {
-                const Component = tab.component;
-                return (
-                  <TabsContent key={tab.value} value={tab.value} className="h-full flex-col mt-0">
-                     {tab.value === 'profile' ? (
-                        <div className="flex flex-col justify-between flex-1 h-full">
-                           <div>
-                            <UserAccount />
-                            <StepName />
-                           </div>
-                           
-                        </div>
-                     ) : Component ? (
-                        <Component />
-                     ) : null}
-                  </TabsContent>
-                )
-              })}
+                {TABS.map((tab) => {
+                    const Component = tab.component;
+                    return (
+                        <TabsContent key={tab.value} value={tab.value} className="h-full flex flex-col mt-0">
+                            <ScrollArea className="flex-grow">
+                                <div className="pr-4 h-full flex flex-col">
+                                    {tab.value === 'profile' ? (
+                                        <div className="flex flex-col justify-between flex-1 h-full">
+                                            <div>
+                                                <UserAccount />
+                                                <StepName />
+                                            </div>
+                                            <ResetZone />
+                                        </div>
+                                    ) : Component ? (
+                                        <Component />
+                                    ) : null}
+                                </div>
+                            </ScrollArea>
+                        </TabsContent>
+                    )
+                })}
             </div>
           </Tabs>
         </div>
