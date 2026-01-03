@@ -5,7 +5,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { format, getDay, addDays, subDays, isSameDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import ManualTimeDialog from './ManualTimeDialog';
 import AddTaskDialog from './AddTaskDialog';
@@ -15,11 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
 import { cn } from '@/lib/utils';
+import SettingsDialog from './SettingsDialog';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isManualTimeOpen, setManualTimeOpen] = useState(false);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -80,13 +82,19 @@ export default function HomeworkDashboard() {
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
       <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
-          <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Salut, {userData.name}!
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
-          </p>
+        <div className="flex items-center gap-4 rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
+           <div>
+            <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Salut, {userData.name}!
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
+            </p>
+          </div>
+           <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+              <Settings className="h-6 w-6" />
+              <span className="sr-only">Setări</span>
+            </Button>
         </div>
         <Button onClick={() => setAddTaskOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Adaugă temă
@@ -151,6 +159,7 @@ export default function HomeworkDashboard() {
       
       <ManualTimeDialog open={isManualTimeOpen} onOpenChange={setManualTimeOpen} />
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
+      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </main>
   );
 }

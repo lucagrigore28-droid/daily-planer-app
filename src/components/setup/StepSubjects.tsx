@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,18 +19,22 @@ type StepProps = {
 
 export default function StepSubjects({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const [selectedSubjects, setSelectedSubjects] = useState<Subject[]>(context?.userData.subjects || []);
+  const [selectedSubjects, setSelectedSubjects] = useState<Subject[]>([]);
   const [customSubject, setCustomSubject] = useState('');
 
+  useEffect(() => {
+    if (context?.userData.subjects) {
+      setSelectedSubjects(context.userData.subjects);
+    }
+  }, [context?.userData.subjects]);
+
   const handleToggleSubject = (subjectName: string, isCustom: boolean) => {
-    setSelectedSubjects(prev => {
-      const existing = prev.find(s => s.name === subjectName);
-      if (existing) {
-        return prev.filter(s => s.name !== subjectName);
-      } else {
-        return [...prev, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom }];
-      }
-    });
+    const updatedSubjects = selectedSubjects.find(s => s.name === subjectName)
+      ? selectedSubjects.filter(s => s.name !== subjectName)
+      : [...selectedSubjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom }];
+    
+    setSelectedSubjects(updatedSubjects);
+    context?.updateUser({ subjects: updatedSubjects });
   };
 
   const handleAddCustomSubject = () => {
@@ -40,10 +44,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     }
   };
   
-  const handleNext = () => {
-    context?.updateUser({ subjects: selectedSubjects });
-    onNext();
-  };
+  const isSetup = onNext !== (() => {});
 
   const predefinedWithCustom = [...PREDEFINED_SUBJECTS];
   selectedSubjects.forEach(s => {
@@ -54,7 +55,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
 
 
   return (
-    <Card className="border-0 shadow-none sm:border sm:shadow-lg">
+    <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Ce materii ai?</CardTitle>
         <CardDescription>
@@ -97,10 +98,12 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
           </Button>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-        <Button onClick={handleNext} disabled={selectedSubjects.length === 0}>Continuă</Button>
-      </CardFooter>
+      {isSetup && (
+        <CardFooter className="flex justify-between">
+          <Button variant="ghost" onClick={onBack}>Înapoi</Button>
+          <Button onClick={onNext} disabled={selectedSubjects.length === 0}>Continuă</Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

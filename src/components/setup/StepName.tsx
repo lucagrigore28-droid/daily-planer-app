@@ -15,15 +15,15 @@ export default function StepName({ onNext }: StepProps) {
   const context = useContext(AppContext);
   const [name, setName] = useState(context?.userData.name || '');
 
-  const handleNext = () => {
-    if (name.trim()) {
-      context?.updateUser({ name: name.trim() });
-      onNext();
-    }
+  const handleNameChange = (newName: string) => {
+    setName(newName);
+    context?.updateUser({ name: newName.trim() });
   };
 
+  const isSetup = onNext !== (() => {});
+
   return (
-    <Card className="border-0 shadow-none sm:border sm:shadow-lg">
+    <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Cum te numești?</CardTitle>
         <CardDescription>
@@ -37,15 +37,17 @@ export default function StepName({ onNext }: StepProps) {
             id="name"
             placeholder="ex: Alex"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => handleNameChange(e.target.value)}
             autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && handleNext()}
+            onKeyDown={(e) => e.key === 'Enter' && isSetup && name.trim() && onNext()}
           />
         </div>
       </CardContent>
-      <CardFooter>
-        <Button onClick={handleNext} disabled={!name.trim()} className="ml-auto">Continuă</Button>
-      </CardFooter>
+       {isSetup && (
+          <CardFooter>
+            <Button onClick={onNext} disabled={!name.trim()} className="ml-auto">Continuă</Button>
+          </CardFooter>
+       )}
     </Card>
   );
 }
