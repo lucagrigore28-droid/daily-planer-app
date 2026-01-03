@@ -66,6 +66,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0), radial-gradient(circle at top, hsl(var(--secondary)), transparent);
+    background-size: 2rem 2rem, 100% 50%;
+    background-repeat: repeat, no-repeat;
   }
 }
 
