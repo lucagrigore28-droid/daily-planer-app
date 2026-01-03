@@ -17,9 +17,16 @@ export type HomeworkTask = {
   plannedDate?: string; // ISO string for the day it's planned for weekend work
 };
 
+export type UserNotifications = {
+  enabled: boolean;
+  afterSchoolTime: string; // e.g. "15:00"
+  eveningTime: string; // e.g. "20:00"
+}
+
 export type UserData = {
   name: string;
   subjects: Subject[];
   schedule: Schedule;
   setupComplete: boolean;
+  notifications: UserNotifications;
 };

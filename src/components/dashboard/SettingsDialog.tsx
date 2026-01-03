@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StepName from '@/components/setup/StepName';
 import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
-import { User, Book, Calendar } from 'lucide-react';
+import StepNotifications from '@/components/setup/StepNotifications';
+import { User, Book, Calendar, Bell, LogOut } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +21,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '../ui/button';
-import { Separator } from '../ui/separator';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -31,6 +31,7 @@ type SettingsDialogProps = {
 const ProfileSettings = () => <StepName onNext={() => {}} />;
 const SubjectsSettings = () => <StepSubjects onNext={() => {}} onBack={() => {}} />;
 const ScheduleSettings = () => <StepSchedule onNext={() => {}} onBack={() => {}} />;
+const NotificationsSettings = () => <StepNotifications onNext={() => {}} onBack={() => {}} />;
 
 const DangerZone = () => {
     const context = useContext(AppContext);
@@ -79,11 +80,11 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[70vh] flex flex-col">
+      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Setări</DialogTitle>
           <DialogDescription>
-            Modifică-ți preferințele, materiile și orarul.
+            Modifică-ți preferințele, materiile, orarul și notificările.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
@@ -98,8 +99,11 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               <TabsTrigger value="schedule" className="w-full justify-start gap-2">
                 <Calendar className="h-4 w-4"/> Orar
               </TabsTrigger>
+               <TabsTrigger value="notifications" className="w-full justify-start gap-2">
+                <Bell className="h-4 w-4"/> Notificări
+              </TabsTrigger>
             </TabsList>
-            <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto pr-4 -mr-4">
               <TabsContent value="profile">
                 <ProfileSettings />
                 <DangerZone />
@@ -109,6 +113,9 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               </TabsContent>
               <TabsContent value="schedule">
                 <ScheduleSettings />
+              </TabsContent>
+              <TabsContent value="notifications">
+                <NotificationsSettings />
               </TabsContent>
             </div>
           </Tabs>

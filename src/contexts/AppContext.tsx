@@ -2,14 +2,19 @@
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import type { HomeworkTask, UserData } from '@/lib/types';
-import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
+import type { HomeworkTask, UserData, UserNotifications } from '@/lib/types';
+import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, format } from 'date-fns';
 
 const initialUserData: UserData = {
   name: '',
   subjects: [],
   schedule: {},
   setupComplete: false,
+  notifications: {
+    enabled: false,
+    afterSchoolTime: '15:00',
+    eveningTime: '20:00',
+  }
 };
 
 const initialTasks: HomeworkTask[] = [];
@@ -33,6 +38,31 @@ type AppContextType = {
 
 export const AppContext = createContext<AppContextType | null>(null);
 
+// Helper function to check if a notification has been sent for a specific time slot on the current day
+const hasSentNotification = (timeSlot: 'afterSchool' | 'evening') => {
+  const lastSent = localStorage.getItem(`dailyPlannerPro_lastNotification_${timeSlot}`);
+  if (!lastSent) return false;
+  return startOfDay(new Date(lastSent)).getTime() === startOfDay(new Date()).getTime();
+};
+
+// Helper function to mark a notification as sent
+const markNotificationAsSent = (timeSlot: 'afterSchool' | 'evening') => {
+  localStorage.setItem(`dailyPlannerPro_lastNotification_${timeSlot}`, new Date().toISOString());
+};
+
+const sendNotification = (userName: string, tasks: HomeworkTask[]) => {
+  if (tasks.length === 0) return;
+
+  const subjectNames = Array.from(new Set(tasks.map(t => t.subjectName))).join(', ');
+  const notificationTitle = `Salut, ${userName}!`;
+  const notificationBody = `Pentru mâine mai ai de lucrat la: ${subjectNames}.`;
+
+  new Notification(notificationTitle, {
+    body: notificationBody,
+    icon: '/logo.png' // Assuming you have a logo in public folder
+  });
+};
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [userData, setUserData] = useState<UserData>(initialUserData);
   const [tasks, setTasks] = useState<HomeworkTask[]>(initialTasks);
@@ -45,7 +75,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const storedTasks = localStorage.getItem('dailyPlannerPro_tasks');
 
       if (storedUserData) {
-        setUserData(JSON.parse(storedUserData));
+        // Merge stored data with initial data to ensure new fields are present
+        const parsedData = JSON.parse(storedUserData);
+        setUserData(prevData => ({ ...prevData, ...parsedData }));
       }
       if (storedTasks) {
         setTasks(JSON.parse(storedTasks));
@@ -76,6 +108,42 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [tasks, isDataLoaded]);
+
+
+   // Effect for handling notifications
+  useEffect(() => {
+    if (!isDataLoaded || !userData.setupComplete || !userData.notifications.enabled) {
+      return;
+    }
+    
+    const checkTimeAndNotify = () => {
+      const now = new Date();
+      const currentTime = format(now, 'HH:mm');
+      
+      const tomorrow = addDays(startOfDay(now), 1);
+      const tasksForTomorrow = tasks.filter(task => 
+        !task.isCompleted && startOfDay(new Date(task.dueDate)).getTime() === tomorrow.getTime()
+      );
+
+      // Check for after-school notification
+      if (currentTime === userData.notifications.afterSchoolTime && !hasSentNotification('afterSchool')) {
+        sendNotification(userData.name, tasksForTomorrow);
+        markNotificationAsSent('afterSchool');
+      }
+      
+      // Check for evening notification
+      if (currentTime === userData.notifications.eveningTime && !hasSentNotification('evening')) {
+        sendNotification(userData.name, tasksForTomorrow);
+        markNotificationAsSent('evening');
+      }
+    };
+    
+    // Check every minute
+    const intervalId = setInterval(checkTimeAndNotify, 60000);
+
+    return () => clearInterval(intervalId);
+
+  }, [isDataLoaded, userData, tasks]);
 
   const updateUser = useCallback((data: Partial<UserData>) => {
     setUserData(prev => ({ ...prev, ...data }));
@@ -108,9 +176,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       localStorage.removeItem('dailyPlannerPro_userData');
       localStorage.removeItem('dailyPlannerPro_tasks');
+      localStorage.removeItem('dailyPlannerPro_lastNotification_afterSchool');
+      localStorage.removeItem('dailyPlannerPro_lastNotification_evening');
       setUserData(initialUserData);
       setTasks(initialTasks);
-      // Force a reload to go back to the setup wizard cleanly
       window.location.reload();
     } catch (error) {
       console.error("Failed to reset data", error);
@@ -188,18 +257,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const taskDate = startOfDay(new Date(task.dueDate));
         return taskDate >= nextWeekStart && taskDate <= nextWeekEnd;
     });
-
-    // Sort by due date first, then completed status
-    upcomingTasks.sort((a, b) => {
-        const dateA = new Date(a.dueDate).getTime();
-        const dateB = new Date(b.dueDate).getTime();
-        if (dateA !== dateB) {
-            return dateA - dateB;
-        }
-        if (a.isCompleted === b.isCompleted) return 0;
-        return a.isCompleted ? 1 : -1;
-    });
-
 
     const firstOccurrenceMap = new Map<string, HomeworkTask>();
     for (const task of upcomingTasks) {
