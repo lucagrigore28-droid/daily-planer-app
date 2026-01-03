@@ -31,7 +31,6 @@ type SettingsDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-const DANGER_ZONE_TAB_VALUE = 'danger-zone';
 const TABS = [
     { value: 'profile', label: 'Profil', icon: User, component: StepName },
     { value: 'subjects', label: 'Materii', icon: Book, component: StepSubjects },
@@ -39,57 +38,6 @@ const TABS = [
     { value: 'notifications', label: 'Notificări', icon: Bell, component: StepNotifications },
     { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
 ];
-
-
-const AppearanceSettings = () => {
-    const context = useContext(AppContext);
-
-    const handleThemeChange = (themeName: string) => {
-        context?.updateUser({ theme: themeName });
-    }
-
-    return (
-        <div className="space-y-8">
-            <div>
-                <h3 className="text-lg font-semibold mb-4">Mod afișare</h3>
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                        <h4 className="font-semibold">Temă vizuală</h4>
-                        <p className="text-sm text-muted-foreground">
-                            Alege între tema luminoasă și cea întunecată.
-                        </p>
-                    </div>
-                    <ThemeToggle />
-                </div>
-            </div>
-            <div>
-                <h3 className="text-lg font-semibold mb-4">Culori</h3>
-                <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Alege o paletă de culori pentru aplicație.</p>
-                    <div className="grid grid-cols-3 gap-4 pt-2">
-                        {themes.map((theme) => (
-                            <div key={theme.name}>
-                                <button
-                                    onClick={() => handleThemeChange(theme.name)}
-                                    className={cn(
-                                        "relative flex items-center justify-center w-full h-16 rounded-lg border-2 transition-all",
-                                        context?.userData.theme === theme.name ? 'border-primary' : 'border-transparent'
-                                    )}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-8 w-8 rounded-full" style={{ backgroundColor: `hsl(${theme.primary})` }} />
-                                        <div className="h-8 w-8 rounded-full" style={{ backgroundColor: `hsl(${theme.accent})` }} />
-                                    </div>
-                                </button>
-                                <p className="text-center text-sm font-medium mt-2">{theme.label}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
 
 const DangerZone = () => {
     const context = useContext(AppContext);
@@ -102,14 +50,16 @@ const DangerZone = () => {
 
     return (
         <>
-            <div className="mt-8 pt-6 border-t">
+            <div className="mt-8 pt-6 border-t text-center">
                 <h3 className="text-lg font-semibold text-destructive">Deconectare și Resetare</h3>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
                     Această acțiune este ireversibilă. Toate datele tale, inclusiv numele, materiile, orarul și temele vor fi șterse definitiv, iar aplicația va fi resetată la starea inițială.
                 </p>
-                <Button variant="destructive" onClick={() => setIsAlertOpen(true)}>
-                    Deconectare / Resetare
-                </Button>
+                <div className="flex justify-center">
+                    <Button variant="destructive" onClick={() => setIsAlertOpen(true)}>
+                        Deconectare / Resetare
+                    </Button>
+                </div>
             </div>
              <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
                 <AlertDialogContent>
@@ -134,9 +84,8 @@ const DangerZone = () => {
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const context = useContext(AppContext);
   const [activeTab, setActiveTab] = useState(TABS[0].value);
-
+  
   if (!context) return null;
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
