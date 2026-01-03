@@ -1,0 +1,125 @@
+/**
+ * This ruleset enforces a strict user-ownership model for the Daily Planner Pro application.
+ *
+ * Core Philosophy:
+ * All user-generated data, including subjects, schedules, and tasks, is stored in
+ * subcollections under that user's specific document. This creates a secure "data silo"
+ * for each user, ensuring that they can only access their own information. The default
+ * posture is to deny all access unless explicitly granted.
+ *
+ * Data Structure:
+ * The database is structured hierarchically with a top-level `users` collection. Each user
+ * document, identified by their Firebase Authentication UID, serves as a root for their private
+ * data: /users/{userId}/subjects/{subjectId}. Schedules and tasks are further nested
+ * under their respective subjects.
+ *
+ * Key Security Decisions:
+ * - Strict Ownership: Users can only read and write data within their own document tree
+ *   (i.e., paths starting with /users/{request.auth.uid}).
+ * - No User Listing: It is not possible for any user to list all documents in the top-level
+ *   `users` collection, protecting user privacy.
+ * - Self-Creation: A newly authenticated user is permitted to create their own user profile
+ *   document, but no one else's.
+ * - Relational Integrity: To ensure data is correctly associated, rules validate that key
+ *   denormalized IDs (like `userId` and `subjectId`) in a document's data match the IDs in
+ *   the document's path. This prevents data from being orphaned or linked to the wrong parent.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions to improve readability and maintainability.
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the primary function for enforcing data ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if a document currently exists in Firestore.
+     * Crucial for protecting against writes to non-existent documents.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * A composite check for update/delete operations, ensuring the user is the
+     * owner AND the document they are trying to modify already exists.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+    /**
+     * @description Rules for the user profile document.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user can create their own profile document.
+     * @deny  (list) A user cannot list all other user profiles in the database.
+     * @deny  (delete) A user cannot delete their own profile.
+     * @principle Restricts access to a user's own data tree and allows for self-creation.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isOwner(userId);
+      allow delete: if false;
+
+      /**
+       * @description Rules for a user's collection of subjects.
+       * @path /users/{userId}/subjects/{subjectId}
+       * @allow (create) The user can create a new subject in their own collection.
+       * @deny  (get) An attacker cannot read a subject from another user's collection.
+       * @principle Enforces document ownership and validates the relational link (`userId`) back to the parent user.
+       */
+      match /subjects/{subjectId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description Rules for schedules, which are nested under a subject.
+         * @path /users/{userId}/subjects/{subjectId}/schedules/{scheduleId}
+         * @allow (list) The user can list all schedules for one of their own subjects.
+         * @deny  (create) A user cannot create a schedule under another user's subject.
+         * @principle Inherits ownership from the top-level user and validates the relational link (`subjectId`) to the parent subject.
+         */
+        match /schedules/{scheduleId} {
+          allow get: if isOwner(userId);
+          allow list: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.subjectId == subjectId;
+          allow update: if isExistingOwner(userId) && request.resource.data.subjectId == resource.data.subjectId;
+          allow delete: if isExistingOwner(userId);
+        }
+
+        /**
+         * @description Rules for tasks, which are nested under a subject.
+         * @path /users/{userId}/subjects/{subjectId}/tasks/{taskId}
+         * @allow (update) The user can update a task (e.g., mark as complete) for one of their own subjects.
+         * @deny  (delete) A user cannot delete a task belonging to another user.
+         * @principle Inherits ownership from the top-level user and validates the relational link (`subjectId`) to the parent subject.
+         */
+        match /tasks/{taskId} {
+          allow get: if isOwner(userId);
+          allow list: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.subjectId == subjectId;
+          allow update: if isExistingOwner(userId) && request.resource.data.subjectId == resource.data.subjectId;
+          allow delete: if isExistingOwner(userId);
+        }
+      }
+    }
+  }
+}
