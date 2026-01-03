@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AppContext } from '@/contexts/AppContext';
 import { themes } from '@/lib/themes';
 import { cn } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import Logo from '../Logo';
 
 type StepProps = {
   onNext?: () => void;
@@ -25,35 +25,40 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm-shadow-lg">
-      <CardHeader>
+      <CardHeader className="text-center">
+        <div className="flex justify-center mb-4">
+          <Logo />
+        </div>
         <CardTitle className="font-headline text-2xl">Alege-ți stilul</CardTitle>
         <CardDescription>
           Selectează o paletă de culori care ți se potrivește. Poți schimba acest lucru oricând din setări.
         </CardDescription>
       </CardHeader>
       <CardContent>
-         <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 pt-2">
+         <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 pt-2">
             {themes.map((theme) => (
-                <div key={theme.name}>
+                <div key={theme.name} className="flex flex-col items-center gap-2">
                     <button
                         onClick={() => handleThemeChange(theme.name)}
                         className={cn(
-                            "relative flex items-center justify-center w-full h-20 rounded-lg border-2 transition-all",
+                            "relative flex items-center justify-center w-16 h-16 rounded-full border-4 transition-all",
                             context?.userData.theme === theme.name ? 'border-primary' : 'border-muted'
                         )}
                     >
-                        <div className="flex items-center gap-2">
-                            <div className="h-10 w-10 rounded-full" style={{ backgroundColor: `hsl(${theme.primary})` }} />
-                            <div className="h-10 w-10 rounded-full" style={{ backgroundColor: `hsl(${theme.accent})` }} />
-                        </div>
+                        <div 
+                          className="w-full h-full rounded-full" 
+                          style={{
+                            backgroundImage: `linear-gradient(to bottom right, hsl(${theme.primary}), hsl(${theme.accent}))`
+                          }}
+                        />
                     </button>
-                    <p className="text-center text-sm font-medium mt-2">{theme.label}</p>
+                    <p className="text-center text-sm font-medium">{theme.label}</p>
                 </div>
             ))}
         </div>
       </CardContent>
       {showNavButtons && (
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-between mt-4">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
           <Button onClick={onNext}>Continuă</Button>
         </CardFooter>

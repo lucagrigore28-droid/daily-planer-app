@@ -14,13 +14,12 @@ export default function Logo({ className }: { className?: string }) {
     >
       <rect x="0" y="0" width="100" height="100" rx="22" ry="22" fill="black" />
       <defs>
-        <linearGradient id="instaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style={{stopColor:"hsl(var(--primary))", stopOpacity:1}} />
-          <stop offset="50%" style={{stopColor:"#FF0066", stopOpacity:1}} />
-          <stop offset="100%" style={{stopColor:"#CC00CC", stopOpacity:1}} />
+          <stop offset="100%" style={{stopColor:"hsl(var(--accent))", stopOpacity:1}} />
         </linearGradient>
       </defs>
-      <g fill="none" stroke="url(#instaGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
+      <g fill="none" stroke="url(#logoGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
         
         {/* Outer rounded square */}
         <rect x="5" y="5" width="90" height="90" rx="22" ry="22" fill="none"/>
@@ -46,7 +45,7 @@ export default function Logo({ className }: { className?: string }) {
           C 72.3137 75 75 72.3137 75 69
           V 47
           H 60 L 48 62 L 40 54 H 25 Z
-        " fill="url(#instaGradient)" stroke="none"/>
+        " fill="url(#logoGradient)" stroke="none"/>
         
       </g>
     </svg>
