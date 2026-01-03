@@ -15,6 +15,10 @@ export const PREDEFINED_SUBJECTS = [
   'Muzică',
   'Educație Fizică',
   'Religie',
+  'Arte',
+  'Psihologie',
+  'Antreprenoriala',
+  'T.I.C',
 ];
 
 export const DAYS_OF_WEEK = [
