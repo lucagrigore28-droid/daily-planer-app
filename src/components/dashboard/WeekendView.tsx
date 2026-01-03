@@ -96,7 +96,9 @@ export default function WeekendView() {
   const weekendTasks = useMemo(() => {
     if (!context) return [];
     return context.getWeekendTasks().sort((a, b) => {
-        if (a.isCompleted === b.isCompleted) return 0;
+        const dateA = new Date(a.dueDate).getTime();
+        const dateB = new Date(b.dueDate).getTime();
+        if (a.isCompleted === b.isCompleted) return dateA - dateB;
         return a.isCompleted ? 1 : -1;
     });
   }, [context]);
@@ -190,6 +192,7 @@ export default function WeekendView() {
   const completedTasksCount = weekendTasks.filter(t => t.isCompleted).length;
   const totalTasksCount = weekendTasks.length;
   const progressPercentage = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
+  const allTasksCompleted = totalTasksCount > 0 && completedTasksCount === totalTasksCount;
 
 
   return (
@@ -220,7 +223,15 @@ export default function WeekendView() {
         {!isPlanningMode ? (
              <Card>
                 <CardContent className="p-4">
-                    <p className="text-muted-foreground mb-6">Finalizează prima temă de la fiecare materie pentru a fi cu un pas înainte.</p>
+                    {allTasksCompleted ? (
+                         <div className="p-6 text-center">
+                            <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                            <h3 className="text-xl font-semibold">Felicitări!</h3>
+                            <p className="text-muted-foreground">Ai terminat toate temele pentru săptămâna viitoare. Ești gata de weekend!</p>
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground mb-6">Finalizează prima temă de la fiecare materie pentru a fi cu un pas înainte.</p>
+                    )}
                     <div className="space-y-4">
                         {weekendTasks.map(task => (
                              <div key={task.id} className="flex items-center justify-between">
