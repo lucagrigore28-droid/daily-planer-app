@@ -43,6 +43,27 @@ export const themes: Theme[] = [
     primary: '0 84% 60%',
     accent: '348 83% 60%',
   },
+  {
+    name: 'cyan',
+    label: 'Neon',
+    className: 'theme-cyan',
+    primary: '180 80% 45%',
+    accent: '240 70% 70%',
+  },
+  {
+    name: 'pink',
+    label: 'Cireașă',
+    className: 'theme-pink',
+    primary: '340 100% 90%',
+    accent: '0 0% 100%',
+  },
+  {
+    name: 'graphite',
+    label: 'Grafit',
+    className: 'theme-graphite',
+    primary: '220 10% 50%',
+    accent: '220 10% 70%',
+  },
 ];
 
     
