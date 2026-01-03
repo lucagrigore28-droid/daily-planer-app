@@ -210,8 +210,8 @@ export default function WeekendView() {
                     </div>
                 )}
             </div>
-            <div className="flex justify-end mt-4">
-                <Button onClick={() => setIsPlanningMode(!isPlanningMode)}>
+            <div className="mt-4">
+                <Button onClick={() => setIsPlanningMode(!isPlanningMode)} className="w-full">
                     {isPlanningMode ? 'Vezi Lista' : 'Organizare'}
                 </Button>
             </div>
@@ -263,3 +263,5 @@ export default function WeekendView() {
     </div>
   );
 }
+
+    
