@@ -12,11 +12,10 @@ import type { Subject } from '@/lib/types';
 import { PREDEFINED_SUBJECTS } from '@/lib/constants';
 import { PlusCircle, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
 
 type StepProps = {
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 };
 
 export default function StepSubjects({ onNext, onBack }: StepProps) {
@@ -46,7 +45,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     }
   };
   
-  const isSetup = onNext !== StepSubjects.defaultProps.onNext;
+  const showNavButtons = !!onBack;
 
   const predefinedWithCustom = [...PREDEFINED_SUBJECTS];
   selectedSubjects.forEach(s => {
@@ -103,7 +102,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
           </Button>
         </div>
       </CardContent>
-      {isSetup && (
+      {showNavButtons && (
         <CardFooter className="flex justify-between">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
           <Button onClick={onNext} disabled={selectedSubjects.length === 0}>Continuă</Button>

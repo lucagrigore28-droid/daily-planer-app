@@ -21,8 +21,9 @@ export default function StepName({ onNext }: StepProps) {
     setName(newName);
     context?.updateUser({ name: newName.trim() });
   };
+  
+  const showNavButtons = !!onNext && onNext !== StepName.defaultProps.onNext;
 
-  const isSetup = onNext !== StepName.defaultProps.onNext;
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -41,11 +42,11 @@ export default function StepName({ onNext }: StepProps) {
             value={name}
             onChange={(e) => handleNameChange(e.target.value)}
             autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && isSetup && name.trim() && onNext()}
+            onKeyDown={(e) => e.key === 'Enter' && showNavButtons && name.trim() && onNext()}
           />
         </div>
       </CardContent>
-       {isSetup && (
+       {showNavButtons && (
           <CardFooter>
             <Button onClick={onNext} disabled={!name.trim()} className="ml-auto">Continuă</Button>
           </CardFooter>

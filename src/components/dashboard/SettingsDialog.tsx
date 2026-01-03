@@ -9,7 +9,8 @@ import StepName from '@/components/setup/StepName';
 import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
 import StepNotifications from '@/components/setup/StepNotifications';
-import { User, Book, Calendar, Bell, LogOut, Palette, Check } from 'lucide-react';
+import StepTheme from '@/components/setup/StepTheme';
+import { User, Book, Calendar, Bell, Palette } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,11 +31,15 @@ type SettingsDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-// Wrapper components to adapt Step components for use inside the dialog
-const ProfileSettings = () => <StepName onNext={() => {}} />;
-const SubjectsSettings = () => <StepSubjects onNext={() => {}} onBack={() => {}} />;
-const ScheduleSettings = () => <StepSchedule onNext={() => {}} onBack={() => {}} />;
-const NotificationsSettings = () => <StepNotifications onNext={() => {}} onBack={() => {}} />;
+const DANGER_ZONE_TAB_VALUE = 'danger-zone';
+const TABS = [
+    { value: 'profile', label: 'Profil', icon: User, component: StepName },
+    { value: 'subjects', label: 'Materii', icon: Book, component: StepSubjects },
+    { value: 'schedule', label: 'Orar', icon: Calendar, component: StepSchedule },
+    { value: 'notifications', label: 'Notificări', icon: Bell, component: StepNotifications },
+    { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
+];
+
 
 const AppearanceSettings = () => {
     const context = useContext(AppContext);
@@ -128,8 +133,24 @@ const DangerZone = () => {
 
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const context = useContext(AppContext);
+  const [activeTab, setActiveTab] = useState(TABS[0].value);
 
   if (!context) return null;
+
+  const activeTabIndex = TABS.findIndex(tab => tab.value === activeTab);
+
+  const goToNextTab = () => {
+    if (activeTabIndex < TABS.length - 1) {
+      setActiveTab(TABS[activeTabIndex + 1].value);
+    }
+  };
+
+  const goToPrevTab = () => {
+    if (activeTabIndex > 0) {
+      setActiveTab(TABS[activeTabIndex - 1].value);
+    }
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -141,41 +162,24 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
-          <Tabs defaultValue="profile" className="flex flex-col md:flex-row gap-6 h-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row gap-6 h-full">
             <TabsList className="flex-col h-auto justify-start md:w-48">
-              <TabsTrigger value="profile" className="w-full justify-start gap-2">
-                <User className="h-4 w-4"/> Profil
-              </TabsTrigger>
-              <TabsTrigger value="subjects" className="w-full justify-start gap-2">
-                <Book className="h-4 w-4"/> Materii
-              </TabsTrigger>
-              <TabsTrigger value="schedule" className="w-full justify-start gap-2">
-                <Calendar className="h-4 w-4"/> Orar
-              </TabsTrigger>
-               <TabsTrigger value="notifications" className="w-full justify-start gap-2">
-                <Bell className="h-4 w-4"/> Notificări
-              </TabsTrigger>
-              <TabsTrigger value="appearance" className="w-full justify-start gap-2">
-                <Palette className="h-4 w-4"/> Aspect
-              </TabsTrigger>
+              {TABS.map(tab => (
+                <TabsTrigger key={tab.value} value={tab.value} className="w-full justify-start gap-2">
+                    <tab.icon className="h-4 w-4"/> {tab.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
             <div className="flex-1 min-h-0 overflow-y-auto pr-4 -mr-4">
-              <TabsContent value="profile">
-                <ProfileSettings />
-                <DangerZone />
-              </TabsContent>
-              <TabsContent value="subjects">
-                <SubjectsSettings />
-              </TabsContent>
-              <TabsContent value="schedule">
-                <ScheduleSettings />
-              </TabsContent>
-              <TabsContent value="notifications">
-                <NotificationsSettings />
-              </TabsContent>
-              <TabsContent value="appearance">
-                <AppearanceSettings />
-              </TabsContent>
+              {TABS.map((tab) => {
+                const Component = tab.component;
+                return (
+                  <TabsContent key={tab.value} value={tab.value}>
+                    <Component onNext={goToNextTab} onBack={goToPrevTab} />
+                     {tab.value === 'profile' && <DangerZone />}
+                  </TabsContent>
+                )
+              })}
             </div>
           </Tabs>
         </div>

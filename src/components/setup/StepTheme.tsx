@@ -21,7 +21,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
     context?.updateUser({ theme: themeName });
   };
   
-  const isSetup = !!onBack;
+  const showNavButtons = !!onBack;
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm-shadow-lg">
@@ -57,7 +57,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
             ))}
         </div>
       </CardContent>
-      {isSetup && (
+      {showNavButtons && (
         <CardFooter className="flex justify-between">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
           <Button onClick={onNext}>Continuă</Button>

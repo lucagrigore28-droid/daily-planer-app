@@ -6,14 +6,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
-import { BellRing, BellOff, CalendarDays } from 'lucide-react';
+import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
 
 type StepProps = {
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 };
 
 export default function StepNotifications({ onNext, onBack }: StepProps) {
@@ -106,7 +106,8 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     }
   };
 
-  const isSetup = onNext !== StepNotifications.defaultProps.onNext;
+  const showNavButtons = !!onBack;
+  const isFinalStep = onNext.toString() === (() => {}).toString();
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -233,8 +234,17 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
                 </div>
             </div>
         )}
-
       </CardContent>
+       {showNavButtons && (
+         <CardFooter className="flex justify-between">
+           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
+           {isFinalStep ? (
+             <Button onClick={handleFinishSetup}>Finalizează Configurarea</Button>
+           ) : (
+             <Button onClick={onNext}>Continuă</Button>
+           )}
+         </CardFooter>
+       )}
     </Card>
   );
 }
@@ -244,5 +254,3 @@ StepNotifications.defaultProps = {
   onNext: () => {},
   onBack: () => {},
 };
-
-    

@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 type StepProps = {
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 };
 
 export default function StepSchedule({ onNext, onBack }: StepProps) {
@@ -42,7 +42,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     context?.updateUser({ schedule: newSchedule });
   };
   
-  const isSetup = onNext !== StepSchedule.defaultProps.onNext;
+  const showNavButtons = !!onBack;
 
   const scheduleDays = DAYS_OF_WEEK_SCHEDULE.filter(d => d.id <= 5); // Only Mon-Fri
 
@@ -78,7 +78,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
           </div>
         </ScrollArea>
       </CardContent>
-      {isSetup ? (
+      {showNavButtons ? (
         <CardFooter className="flex justify-between">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
           <Button onClick={handleNext}>Continuă</Button>
@@ -92,4 +92,3 @@ StepSchedule.defaultProps = {
   onNext: () => {},
   onBack: () => {},
 };
-    
