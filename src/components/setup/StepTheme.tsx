@@ -24,7 +24,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
   const showNavButtons = !!onBack;
 
   return (
-    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm-shadow-lg">
+    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm-shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Alege-ți stilul</CardTitle>
         <CardDescription>
@@ -46,11 +46,6 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
                             <div className="h-10 w-10 rounded-full" style={{ backgroundColor: `hsl(${theme.primary})` }} />
                             <div className="h-10 w-10 rounded-full" style={{ backgroundColor: `hsl(${theme.accent})` }} />
                         </div>
-                        {context?.userData.theme === theme.name && (
-                            <div className="absolute top-1 right-1 p-0.5 bg-primary text-primary-foreground rounded-full">
-                                <Check className="h-4 w-4" />
-                            </div>
-                        )}
                     </button>
                     <p className="text-center text-sm font-medium mt-2">{theme.label}</p>
                 </div>
@@ -60,9 +55,14 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
       {showNavButtons && (
         <CardFooter className="flex justify-between">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={onNext}>Continuă</Button>
+          <Button onClick={onNext} className="invisible">Continuă</Button>
         </CardFooter>
       )}
     </Card>
   );
 }
+
+StepTheme.defaultProps = {
+  onNext: () => {},
+  onBack: () => {},
+};
