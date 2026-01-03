@@ -12,6 +12,7 @@ import { Button } from '../ui/button';
 import { GripVertical } from 'lucide-react';
 import type { HomeworkTask } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Progress } from '../ui/progress';
 
 type PlanningColumnProps = {
   title: string;
@@ -186,15 +187,28 @@ export default function WeekendView() {
     e.preventDefault();
   };
 
+  const completedTasksCount = weekendTasks.filter(t => t.isCompleted).length;
+  const totalTasksCount = weekendTasks.length;
+  const progressPercentage = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
+
 
   return (
     <div className="w-full max-w-6xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-             <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
+             <div className="flex-1 rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
                 <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                     Planificator Weekend
                 </h2>
                 <p className="text-muted-foreground">Organizează-ți temele pentru zilele următoare.</p>
+                {totalTasksCount > 0 && (
+                    <div className="mt-4">
+                        <div className="flex justify-between items-center mb-1 text-sm font-medium">
+                            <span className="text-muted-foreground">Progres</span>
+                            <span className="text-primary">{completedTasksCount} / {totalTasksCount} teme</span>
+                        </div>
+                        <Progress value={progressPercentage} className="h-2" />
+                    </div>
+                )}
             </div>
             <Button onClick={() => setIsPlanningMode(!isPlanningMode)}>
                 {isPlanningMode ? 'Vezi Lista' : 'Organizare'}
