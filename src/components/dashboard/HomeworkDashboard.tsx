@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
 import SettingsDialog from './SettingsDialog';
+import { Progress } from '../ui/progress';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
@@ -46,7 +47,7 @@ export default function HomeworkDashboard() {
 
 
   if (!context) return null;
-  const { userData, currentDate } = context;
+  const { userData, currentDate, tasks } = context;
 
   const dayOfWeek = getDay(currentDate);
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
@@ -56,6 +57,15 @@ export default function HomeworkDashboard() {
     tabs.push({ value: "weekend", label: "Weekend" });
   }
   tabs.push({ value: "calendar", label: "Calendar" });
+
+  const tasksForDisplayedDay = useMemo(() => {
+    if (!displayedDay) return [];
+    return tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === displayedDay.getTime());
+  }, [tasks, displayedDay]);
+
+  const completedTasksCount = tasksForDisplayedDay.filter(t => t.isCompleted).length;
+  const totalTasksCount = tasksForDisplayedDay.length;
+  const progressPercentage = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
 
 
   return (
@@ -92,7 +102,7 @@ export default function HomeworkDashboard() {
                 {displayedDay ? (
                     <Card>
                         <CardContent className="p-4">
-                            <div className="flex justify-between items-center mb-4">
+                            <div className="flex justify-between items-center mb-2">
                                 <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                                     <CalendarIcon className="h-6 w-6 text-primary"/>
                                     Teme pentru {format(displayedDay, "EEEE, d MMMM", { locale: ro })}
@@ -111,6 +121,15 @@ export default function HomeworkDashboard() {
                                     </Button>
                                 </div>
                             </div>
+                             {totalTasksCount > 0 && (
+                                <div className="mt-2 mb-4">
+                                    <div className="flex justify-between items-center mb-1 text-sm font-medium">
+                                        <span className="text-muted-foreground">Progres zilnic</span>
+                                        <span className="text-primary">{completedTasksCount} / {totalTasksCount} teme</span>
+                                    </div>
+                                    <Progress value={progressPercentage} className="h-2" />
+                                </div>
+                            )}
                             <HomeworkList displayDate={displayedDay} />
                         </CardContent>
                     </Card>
