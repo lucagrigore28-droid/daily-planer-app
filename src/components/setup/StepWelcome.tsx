@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import Logo from '@/components/Logo';
 
 type StepProps = {
   onNext: () => void;
@@ -9,10 +10,11 @@ type StepProps = {
 
 export default function StepWelcome({ onNext }: StepProps) {
   return (
-    <div className="flex flex-col items-center justify-center text-center h-full p-4 bg-background text-foreground">
+    <div className="flex flex-col items-center justify-center text-center h-full p-4 bg-black text-foreground">
       <div className="flex-grow flex flex-col items-center justify-center gap-6">
-        <div className="space-y-3">
-          <h1 className="text-5xl font-extrabold font-headline tracking-tight text-primary">
+        <Logo />
+        <div className="space-y-3 mt-4">
+          <h1 className="text-5xl font-extrabold font-headline tracking-tight" style={{ color: 'hsl(var(--primary))' }}>
             Daily Planner Pro
           </h1>
           <p className="text-xl text-primary/80 max-w-md mx-auto">
@@ -21,7 +23,7 @@ export default function StepWelcome({ onNext }: StepProps) {
         </div>
       </div>
       <div className="w-full max-w-md pb-8">
-        <Button onClick={onNext} size="lg" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-bold h-14 rounded-full shadow-lg">
+        <Button onClick={onNext} size="lg" variant="default" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-bold h-14 rounded-full shadow-lg">
           Începe Configurarea
         </Button>
         <p className="text-xs text-muted-foreground mt-4">Durează mai puțin de un minut.</p>
