@@ -28,6 +28,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const handleAddTask = () => {
     if (!selectedSubject || !dueDate) {
@@ -64,6 +65,11 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
     const subject = context?.userData.subjects.find(s => s.id === subjectId);
     setSelectedSubject(subject || null);
   };
+  
+  const handleDateSelect = (date: Date | undefined) => {
+    setDueDate(date);
+    setIsCalendarOpen(false);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,7 +98,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="due-date" className="text-right">Termen</Label>
-            <Popover>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
@@ -105,12 +111,37 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                   {dueDate ? format(dueDate, "PPP", { locale: ro }) : <span>Alege o dată</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={dueDate}
-                  onSelect={setDueDate}
+                  onSelect={handleDateSelect}
                   initialFocus
+                  locale={ro}
+                  classNames={{
+                    day_selected: 'bg-primary text-primary-foreground hover:bg-primary/90 focus:bg-primary/90 rounded-lg',
+                    day_today: 'bg-accent/50 rounded-lg',
+                    day: 'h-12 w-12 text-base rounded-lg',
+                    head_cell: 'text-muted-foreground rounded-md w-12 font-normal text-sm',
+                    row: 'flex w-full mt-2',
+                    cell: 'text-center text-sm p-0 relative focus-within:relative focus-within:z-20',
+                    caption: 'flex items-center justify-between pt-1 px-2 relative',
+                    caption_label: 'text-xl font-extrabold text-primary uppercase',
+                    nav_button_previous: 'h-8 w-8',
+                    nav_button_next: 'h-8 w-8',
+                  }}
+                  components={{
+                    CaptionLabel: ({ displayMonth }) => (
+                      <>
+                        <span className="text-xl font-extrabold text-primary uppercase">
+                          {format(displayMonth, 'LLLL', { locale: ro })}
+                        </span>
+                        <span className="text-xl font-extrabold text-foreground ml-2">
+                          {format(displayMonth, 'yyyy', { locale: ro })}
+                        </span>
+                      </>
+                    )
+                  }}
                 />
               </PopoverContent>
             </Popover>
