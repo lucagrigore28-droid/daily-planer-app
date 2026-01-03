@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
@@ -22,6 +23,7 @@ type AppContextType = {
   addTask: (task: Omit<HomeworkTask, 'id'>) => void;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
   deleteTask: (taskId: string) => void;
+  resetData: () => void;
   isDataLoaded: boolean;
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
@@ -106,6 +108,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTasks(prev => prev.filter(task => task.id !== taskId));
   }, []);
 
+  const resetData = useCallback(() => {
+    try {
+      localStorage.removeItem('dailyPlannerPro_userData');
+      localStorage.removeItem('dailyPlannerPro_tasks');
+      setUserData(initialUserData);
+      setTasks(initialTasks);
+      // Force a reload to go back to the setup wizard cleanly
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to reset data", error);
+    }
+  }, []);
+
   const isSchoolDay = useCallback((date: Date) => {
     const dayIndex = getDay(date);
     if (dayIndex < 1 || dayIndex > 5) return false;
@@ -178,7 +193,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return taskDate >= nextWeekStart && taskDate <= nextWeekEnd;
     });
 
-    upcomingTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    // Sort by due date first, then completed status
+    upcomingTasks.sort((a, b) => {
+        const dateA = new Date(a.dueDate).getTime();
+        const dateB = new Date(b.dueDate).getTime();
+        if (dateA !== dateB) {
+            return dateA - dateB;
+        }
+        if (a.isCompleted === b.isCompleted) return 0;
+        return a.isCompleted ? 1 : -1;
+    });
+
 
     const firstOccurrenceMap = new Map<string, HomeworkTask>();
     for (const task of upcomingTasks) {
@@ -199,6 +224,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addTask,
     updateTask,
     deleteTask,
+    resetData,
     isDataLoaded,
     currentDate,
     setCurrentDate,
