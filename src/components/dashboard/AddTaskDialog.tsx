@@ -89,10 +89,10 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="subject-name" className="text-right">Materie</Label>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="subject-name">Materie</Label>
             <Select onValueChange={handleSubjectChange} value={selectedSubject?.id || ''}>
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger id="subject-name">
                     <SelectValue placeholder="Alege materia" />
                 </SelectTrigger>
                 <SelectContent>
@@ -104,20 +104,20 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                 </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="due-date" className="text-right">Termen</Label>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="due-date">Termen</Label>
             <Input
               id="due-date"
               type="date"
               value={formatDateForInput(dueDate)}
               onChange={(e) => handleDateChange(e.target.value)}
-              className="col-span-3"
             />
           </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="estimated-time" className="text-right">Timp estimat</Label>
-            <div className="col-span-3 flex items-center gap-4">
+           <div className="flex flex-col gap-2">
+            <Label htmlFor="estimated-time">Timp estimat</Label>
+            <div className="flex items-center gap-4">
                 <Slider 
+                    id="estimated-time"
                     value={[estimatedTime]} 
                     max={180} 
                     step={5} 
@@ -130,9 +130,9 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                 </div>
             </div>
           </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="description" className="text-right pt-2">Descriere</Label>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="description" className="pt-2">Descriere</Label>
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
         </div>
         <DialogFooter>

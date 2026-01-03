@@ -83,8 +83,8 @@ export default function HomeworkDashboard() {
                 <span className="sr-only">Setări</span>
             </Button>
         </div>
-        <Button onClick={() => setAddTaskOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Adaugă temă
+        <Button onClick={() => setAddTaskOpen(true)} size="default" className="sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" /> <span className="sm:inline">Adaugă temă</span>
         </Button>
       </header>
       

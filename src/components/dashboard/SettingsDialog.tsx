@@ -38,6 +38,51 @@ const TABS = [
     { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
 ];
 
+const DangerZone = () => {
+    const context = useContext(AppContext);
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+    const handleReset = async () => {
+        if (context) {
+            await context.resetData();
+        }
+        setIsAlertOpen(false);
+    }
+
+    return (
+        <>
+            <div className="mt-8 pt-6 border-t">
+                <h3 className="text-lg font-semibold">Resetare Aplicație</h3>
+                <p className="text-sm text-muted-foreground mt-1 mb-4">
+                    Această acțiune este ireversibilă. Toate datele tale, inclusiv materiile, orarul și temele vor fi șterse definitiv.
+                </p>
+                <div className="flex justify-center">
+                    <Button variant="destructive" onClick={() => setIsAlertOpen(true)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Resetează Aplicația
+                    </Button>
+                </div>
+            </div>
+             <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+                <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Ești absolut sigur?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Această acțiune nu poate fi anulată. Toate datele tale vor fi șterse permanent. Aplicația se va reîncărca la starea inițială.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Anulează</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Da, resetează
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    )
+}
+
 const UserAccount = () => {
     const context = useContext(AppContext);
     
@@ -71,50 +116,6 @@ const UserAccount = () => {
     )
 }
 
-const DangerZone = () => {
-    const context = useContext(AppContext);
-    const [isAlertOpen, setIsAlertOpen] = useState(false);
-
-    const handleReset = async () => {
-        if (context) {
-            await context.resetData();
-        }
-        setIsAlertOpen(false);
-    }
-
-    return (
-        <>
-            <div className="mt-8 pt-6 border-t border-destructive/20">
-                <h3 className="text-lg font-semibold">Resetare Aplicație</h3>
-                <p className="text-sm text-muted-foreground mt-1 mb-4">
-                    Această acțiune este ireversibilă. Toate datele tale, inclusiv materiile, orarul și temele vor fi șterse definitiv.
-                </p>
-                <div className="flex justify-center">
-                    <Button variant="destructive" onClick={() => setIsAlertOpen(true)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Resetează Aplicația
-                    </Button>
-                </div>
-            </div>
-             <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-                <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Ești absolut sigur?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Această acțiune nu poate fi anulată. Toate datele tale vor fi șterse permanent. Aplicația se va reîncărca la starea inițială.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Anulează</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Da, resetează
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </>
-    )
-}
 
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const context = useContext(AppContext);
@@ -124,7 +125,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0">
+      <DialogContent className="max-w-3xl h-[90vh] md:h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Setări</DialogTitle>
           <DialogDescription>
@@ -132,8 +133,8 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col md:flex-row gap-6 h-full p-6">
-            <TabsList className="flex-col h-auto justify-start md:w-48">
+          <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="flex flex-col md:flex-row gap-6 h-full p-6">
+            <TabsList className="flex-col h-auto justify-start shrink-0">
               {TABS.map(tab => (
                 <TabsTrigger key={tab.value} value={tab.value} className="w-full justify-start gap-2">
                     <tab.icon className="h-4 w-4"/> {tab.label}
@@ -142,22 +143,22 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
             </TabsList>
             <div className="flex-1 min-h-0">
               <ScrollArea className="h-full pr-4">
-                <TabsContent value="profile" className="h-full flex flex-col mt-0">
-                  <div className="flex flex-col justify-between flex-1 h-full">
-                      <div>
-                          <UserAccount />
-                          <StepName />
-                      </div>
-                      <DangerZone />
-                  </div>
+                 <TabsContent value='profile' className="h-full flex flex-col mt-0">
+                    <div className="flex flex-col justify-between flex-1 h-full">
+                        <div>
+                            <UserAccount />
+                            <StepName />
+                        </div>
+                       <DangerZone />
+                    </div>
                 </TabsContent>
                 {TABS.filter(t => t.value !== 'profile').map(tab => {
-                  const Component = tab.component!;
-                  return (
-                     <TabsContent key={tab.value} value={tab.value} className="mt-0">
-                        <Component />
-                    </TabsContent>
-                  )
+                    const Component = tab.component;
+                    return (
+                        <TabsContent key={tab.value} value={tab.value} className="mt-0">
+                            <Component />
+                        </TabsContent>
+                    )
                 })}
               </ScrollArea>
             </div>

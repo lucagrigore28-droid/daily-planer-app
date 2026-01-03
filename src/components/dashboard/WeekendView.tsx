@@ -246,9 +246,9 @@ export default function WeekendView() {
                 </CardContent>
             </Card>
         ) : (
-            <div className="flex flex-col md:flex-row gap-4" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="flex flex-col lg:flex-row gap-4" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 {/* Unplanned Column */}
-                <div className="md:w-72 flex-shrink-0 rounded-lg border bg-muted/40 p-3 flex flex-col">
+                <div className="lg:w-72 flex-shrink-0 rounded-lg border bg-muted/40 p-3 flex flex-col">
                     <h3 className="text-lg font-bold text-center mb-4 flex-shrink-0">Teme neplanificate</h3>
                      <div 
                         onDragOver={handleDragOver}
@@ -264,7 +264,7 @@ export default function WeekendView() {
                      </div>
                 </div>
                 {/* Planning Columns */}
-                <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <PlanningColumn title="Vineri" date={friday} tasks={plannedTasks.fridayTasks} onDragOver={handleDragOver} onDrop={handleDrop(friday)} isDragging={isDragging} />
                     <PlanningColumn title="Sâmbătă" date={saturday} tasks={plannedTasks.saturdayTasks} onDragOver={handleDragOver} onDrop={handleDrop(saturday)} isDragging={isDragging} />
                     <PlanningColumn title="Duminică" date={sunday} tasks={plannedTasks.sundayTasks} onDragOver={handleDragOver} onDrop={handleDrop(sunday)} isDragging={isDragging} />
