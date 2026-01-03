@@ -52,6 +52,7 @@ export default function StepName({ onNext }: StepProps) {
             onChange={(e) => setName(e.target.value)}
             autoFocus
             onKeyDown={(e) => e.key === 'Enter' && showNavButtons && name.trim() && handleContinue()}
+            onBlur={() => context?.updateUser({ name: name.trim() })}
           />
         </div>
       </CardContent>
