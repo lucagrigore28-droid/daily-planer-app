@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useState, useEffect } from 'react';
@@ -19,7 +20,6 @@ type AddTaskDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-// Helper function to format date to YYYY-MM-DD for the input
 const formatDateForInput = (date: Date): string => {
   return format(date, 'yyyy-MM-dd');
 };
@@ -34,7 +34,6 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
 
   useEffect(() => {
     if (open) {
-      // Reset state when dialog opens
       setSelectedSubject(null);
       setDescription('');
       setDueDate(new Date());
@@ -71,13 +70,11 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
   };
 
   const handleSubjectChange = (subjectId: string) => {
-    const subject = context?.userData.subjects.find(s => s.id === subjectId);
+    const subject = context?.userData?.subjects.find(s => s.id === subjectId);
     setSelectedSubject(subject || null);
   };
   
   const handleDateChange = (dateString: string) => {
-    // The input gives a YYYY-MM-DD string. We need to parse it correctly.
-    // Parsing as ISO and adding timezone info to avoid off-by-one day errors.
     const date = new Date(dateString + 'T00:00:00');
     setDueDate(date);
   }
@@ -99,7 +96,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                     <SelectValue placeholder="Alege materia" />
                 </SelectTrigger>
                 <SelectContent>
-                    {context?.userData.subjects.map(subject => (
+                    {context?.userData?.subjects.map(subject => (
                         <SelectItem key={subject.id} value={subject.id}>
                             {subject.name}
                         </SelectItem>

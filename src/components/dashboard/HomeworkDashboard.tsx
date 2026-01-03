@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
@@ -26,11 +25,9 @@ export default function HomeworkDashboard() {
 
   const nextDayWithTasks = useMemo(() => {
     return context?.getNextSchoolDayWithTasks();
-  }, [context?.tasks, context?.currentDate, context?.userData.schedule]);
+  }, [context?.tasks, context?.currentDate, context?.userData?.schedule]);
 
   useEffect(() => {
-    // Set the initial displayed day only once when the component loads
-    // and `displayedDay` hasn't been set yet.
     if (!displayedDay && nextDayWithTasks) {
       setDisplayedDay(startOfDay(nextDayWithTasks));
     }
@@ -48,11 +45,10 @@ export default function HomeworkDashboard() {
     }
   };
 
-  if (!context) return null;
+  if (!context || !context.userData) return null; // Wait for user data
   const { userData, currentDate, tasks } = context;
 
   const dayOfWeek = getDay(currentDate);
-  // Show weekend tab on Friday (5), Saturday (6), and Sunday (0)
   const showWeekendTab = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
 
   const tabs = [{ value: "next-tasks", label: "Teme următoare" }];
@@ -69,7 +65,6 @@ export default function HomeworkDashboard() {
   const completedTasksCount = tasksForDisplayedDay.filter(t => t.isCompleted).length;
   const totalTasksCount = tasksForDisplayedDay.length;
   const progressPercentage = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
-
 
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">

@@ -24,10 +24,10 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   const [customSubject, setCustomSubject] = useState('');
 
   useEffect(() => {
-    if (context?.userData.subjects) {
+    if (context?.userData?.subjects) {
       setSelectedSubjects(context.userData.subjects);
     }
-  }, [context?.userData.subjects]);
+  }, [context?.userData?.subjects]);
 
   const handleToggleSubject = (subjectName: string, isCustom: boolean) => {
     const updatedSubjects = selectedSubjects.find(s => s.name === subjectName)

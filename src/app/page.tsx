@@ -1,6 +1,8 @@
+
 "use client";
 
 import { useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppContext } from '@/contexts/AppContext';
 import SetupWizard from '@/components/setup/SetupWizard';
 import HomeworkDashboard from '@/components/dashboard/HomeworkDashboard';
@@ -10,36 +12,27 @@ import SplashScreen from '@/components/SplashScreen';
 
 function AppContainer() {
   const context = useContext(AppContext);
+  const router = useRouter();
   const [splashScreenDone, setSplashScreenDone] = useState(false);
+
+  const { user, isUserLoading, userData, isDataLoaded } = context || {};
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   useEffect(() => {
     // If setup is not complete, we don't want a splash screen, just the wizard.
-    if (context?.isDataLoaded && !context.userData.setupComplete) {
+    if (isDataLoaded && userData && !userData.setupComplete) {
       setSplashScreenDone(true);
     }
-  }, [context?.isDataLoaded, context?.userData?.setupComplete]);
+  }, [isDataLoaded, userData]);
 
-
-  if (context === null) {
-    // This can happen briefly on initial render before context is available.
+  if (isUserLoading || !isDataLoaded || !context) {
     return (
       <div className="flex h-screen w-screen items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-4">
-          <Skeleton className="h-12 w-1/2" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w
--full" />
-          <Skeleton className="h-10 w-1/3 ml-auto" />
-        </div>
-      </div>
-    );
-  }
-
-  const { userData, isDataLoaded } = context;
-
-  if (!isDataLoaded) {
-    return (
-       <div className="flex h-screen w-screen items-center justify-center p-4">
         <div className="w-full max-w-md space-y-4">
           <Skeleton className="h-12 w-1/2" />
           <Skeleton className="h-8 w-full" />
@@ -52,7 +45,7 @@ function AppContainer() {
   
   const showWizard = userData ? !userData.setupComplete : true;
 
-  if (!splashScreenDone) {
+  if (userData?.setupComplete && !splashScreenDone) {
       return <SplashScreen onNext={() => setSplashScreenDone(true)} />;
   }
 

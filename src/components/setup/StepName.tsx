@@ -15,14 +15,14 @@ type StepProps = {
 
 export default function StepName({ onNext }: StepProps) {
   const context = useContext(AppContext);
-  const [name, setName] = useState(context?.userData.name || '');
+  const [name, setName] = useState(context?.userData?.name || '');
 
   useEffect(() => {
     // Sync local state if context changes
-    if (context?.userData.name) {
+    if (context?.userData?.name) {
       setName(context.userData.name);
     }
-  }, [context?.userData.name]);
+  }, [context?.userData?.name]);
 
   const handleContinue = () => {
     if (name.trim()) {

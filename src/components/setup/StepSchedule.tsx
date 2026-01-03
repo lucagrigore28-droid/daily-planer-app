@@ -19,14 +19,14 @@ type StepProps = {
 
 export default function StepSchedule({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const subjects = useMemo(() => context?.userData.subjects || [], [context?.userData.subjects]);
+  const subjects = useMemo(() => context?.userData?.subjects || [], [context?.userData?.subjects]);
   const [schedule, setSchedule] = useState<Schedule>({});
 
   useEffect(() => {
-    if (context?.userData.schedule) {
+    if (context?.userData?.schedule) {
       setSchedule(context.userData.schedule);
     }
-  }, [context?.userData.schedule]);
+  }, [context?.userData?.schedule]);
 
   const handleNext = () => {
     context?.updateUser({ schedule });

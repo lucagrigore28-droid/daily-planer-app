@@ -22,9 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '../ui/button';
-import { ThemeToggle } from '../ThemeToggle';
-import { themes } from '@/lib/themes';
-import { cn } from '@/lib/utils';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -43,8 +40,10 @@ const DangerZone = () => {
     const context = useContext(AppContext);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
 
-    const handleReset = () => {
-        context?.resetData();
+    const handleReset = async () => {
+        if (context) {
+            await context.resetData();
+        }
         setIsAlertOpen(false);
     }
 

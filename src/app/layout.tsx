@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { FirebaseClientProvider } from '@/firebase';
 
 
 export const metadata: Metadata = {
@@ -48,12 +49,14 @@ export default function RootLayout({
         <link id="apple-touch-icon" rel="apple-touch-icon" href={`data:image/svg+xml,${defaultIconSvg}`} />
       </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
-        <ThemeProvider>
-          <AppProvider>
-            {children}
-            <Toaster />
-          </AppProvider>
-        </ThemeProvider>
+        <FirebaseClientProvider>
+          <ThemeProvider>
+            <AppProvider>
+              {children}
+              <Toaster />
+            </AppProvider>
+          </ThemeProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );

@@ -20,27 +20,26 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
   const [permission, setPermission] = useState<'default' | 'granted' | 'denied'>('default');
   
-  // Local state to manage form inputs
-  const [notificationsEnabled, setNotificationsEnabled] = useState(context?.userData.notifications.enabled || false);
-  const [afterSchoolTime, setAfterSchoolTime] = useState(context?.userData.notifications.afterSchoolTime || '15:00');
-  const [eveningTime, setEveningTime] = useState(context?.userData.notifications.eveningTime || '20:00');
-  const [weekendEnabled, setWeekendEnabled] = useState(context?.userData.notifications.weekendEnabled || true);
-  const [saturdayMorningTime, setSaturdayMorningTime] = useState(context?.userData.notifications.saturdayMorningTime || '10:00');
-  const [saturdayEveningTime, setSaturdayEveningTime] = useState(context?.userData.notifications.saturdayEveningTime || '20:00');
-  const [sundayMorningTime, setSundayMorningTime] = useState(context?.userData.notifications.sundayMorningTime || '11:00');
-  const [sundayEveningTime, setSundayEveningTime] = useState(context?.userData.notifications.sundayEveningTime || '20:00');
+  const notifications = context?.userData?.notifications;
+
+  const [notificationsEnabled, setNotificationsEnabled] = useState(notifications?.enabled || false);
+  const [afterSchoolTime, setAfterSchoolTime] = useState(notifications?.afterSchoolTime || '15:00');
+  const [eveningTime, setEveningTime] = useState(notifications?.eveningTime || '20:00');
+  const [weekendEnabled, setWeekendEnabled] = useState(notifications?.weekendEnabled || true);
+  const [saturdayMorningTime, setSaturdayMorningTime] = useState(notifications?.saturdayMorningTime || '10:00');
+  const [saturdayEveningTime, setSaturdayEveningTime] = useState(notifications?.saturdayEveningTime || '20:00');
+  const [sundayMorningTime, setSundayMorningTime] = useState(notifications?.sundayMorningTime || '11:00');
+  const [sundayEveningTime, setSundayEveningTime] = useState(notifications?.sundayEveningTime || '20:00');
 
 
   useEffect(() => {
-    // This check runs only on the client-side, avoiding SSR errors.
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setPermission(Notification.permission);
     }
   }, []);
 
   useEffect(() => {
-    // Sync local state if context changes (e.g. in settings dialog)
-    const notifications = context?.userData.notifications;
+    const notifications = context?.userData?.notifications;
     if (notifications) {
       setNotificationsEnabled(notifications.enabled);
       setAfterSchoolTime(notifications.afterSchoolTime);
@@ -51,7 +50,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       setSundayMorningTime(notifications.sundayMorningTime);
       setSundayEveningTime(notifications.sundayEveningTime);
     }
-  }, [context?.userData.notifications]);
+  }, [context?.userData?.notifications]);
 
 
   const requestPermission = async () => {
@@ -59,19 +58,19 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       alert("Acest browser nu suportă notificări.");
       return;
     }
-    // The result of requestPermission() is the source of truth.
     const status = await Notification.requestPermission();
     setPermission(status);
     
     if (status === 'granted') {
-      // If permission is granted, toggle the state on.
       setNotificationsEnabled(true);
-      context?.updateUser({
-        notifications: {
-          ...context.userData.notifications,
-          enabled: true,
-        }
-      });
+      if (context?.userData) {
+        context?.updateUser({
+          notifications: {
+            ...context.userData.notifications,
+            enabled: true,
+          }
+        });
+      }
     }
   };
   
@@ -81,21 +80,25 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
         return;
     }
     setNotificationsEnabled(enabled);
-    context?.updateUser({
-      notifications: {
-        ...context.userData.notifications,
-        enabled,
-      }
-    });
+    if (context?.userData) {
+      context?.updateUser({
+        notifications: {
+          ...context.userData.notifications,
+          enabled,
+        }
+      });
+    }
   }
 
   const handleUpdateNotificationSettings = (key: string, value: any) => {
-      context?.updateUser({
-          notifications: {
-              ...context.userData.notifications,
-              [key]: value
-          }
-      });
+      if (context?.userData) {
+        context?.updateUser({
+            notifications: {
+                ...context.userData.notifications,
+                [key]: value
+            }
+        });
+      }
   };
 
   const handleFinishSetup = () => {

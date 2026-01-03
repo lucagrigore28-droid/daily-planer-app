@@ -44,7 +44,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
                         onClick={() => handleThemeChange(theme.name)}
                         className={cn(
                             "relative flex items-center justify-center w-16 h-16 rounded-full border-4 transition-all",
-                            context?.userData.theme === theme.name ? 'border-primary' : 'border-muted'
+                            context?.userData?.theme === theme.name ? 'border-primary' : 'border-muted'
                         )}
                     >
                         <div 
