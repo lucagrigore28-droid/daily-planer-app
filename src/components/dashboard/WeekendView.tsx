@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useMemo, useState } from 'react';
@@ -11,7 +12,6 @@ import { Button } from '../ui/button';
 import { GripVertical } from 'lucide-react';
 import type { HomeworkTask } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Progress } from '../ui/progress';
 
 type PlanningColumnProps = {
   title: string;
@@ -99,13 +99,6 @@ export default function WeekendView() {
         return a.isCompleted ? 1 : -1;
     });
   }, [context]);
-  
-  const completedTasksCount = useMemo(() => {
-    return weekendTasks.filter(task => task.isCompleted).length;
-  }, [weekendTasks]);
-
-  const progressPercentage = weekendTasks.length > 0 ? (completedTasksCount / weekendTasks.length) * 100 : 0;
-
 
   const { currentDate, updateTask } = context!;
 
@@ -197,20 +190,11 @@ export default function WeekendView() {
   return (
     <div className="w-full max-w-6xl mx-auto">
         <header className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-            <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm flex-1">
+             <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
                 <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                     Planificator Weekend
                 </h2>
-                <p className="text-muted-foreground mb-2">Organizează-ți temele pentru zilele următoare.</p>
-                {weekendTasks.length > 0 && (
-                  <>
-                    <div className="flex justify-between items-center mb-1">
-                        <p className="text-sm font-medium text-muted-foreground">Progres Weekend</p>
-                        <p className="text-sm font-bold">{completedTasksCount} / {weekendTasks.length} teme finalizate</p>
-                    </div>
-                    <Progress value={progressPercentage} />
-                  </>
-                )}
+                <p className="text-muted-foreground">Organizează-ți temele pentru zilele următoare.</p>
             </div>
             <Button onClick={() => setIsPlanningMode(!isPlanningMode)}>
                 {isPlanningMode ? 'Vezi Lista' : 'Organizare'}

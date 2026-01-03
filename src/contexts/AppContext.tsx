@@ -150,11 +150,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
     const uniqueId = task.isManual
-        ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
-        : `${task.subjectId}-${startOfDay(new Date(task.dueDate)).toISOString()}`;
+      ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
+      : `${task.subjectId}-${startOfDay(new Date(task.dueDate)).toISOString()}`;
     
     setTasks(prev => {
-        if (prev.some(t => t.id === uniqueId)) {
+        // Prevent adding duplicate scheduled tasks
+        if (!task.isManual && prev.some(t => t.id === uniqueId)) {
             return prev;
         }
         const newTask = { ...task, id: uniqueId };
@@ -187,50 +188,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Effect to auto-generate scheduled tasks
   useEffect(() => {
     if (!isDataLoaded || !userData.setupComplete || userData.subjects.length === 0) {
-      return;
+        return;
     }
 
-    const today = startOfDay(new Date());
-    
     setTasks(prevTasks => {
         const newTasks: HomeworkTask[] = [];
-        const existingTaskIds = new Set(prevTasks.map(t => t.id));
+        const taskIds = new Set(prevTasks.map(t => t.id));
 
-        // Check a range of days around today to ensure tasks are populated
-        for (let i = -7; i < 14; i++) {
+        const today = startOfDay(new Date());
+
+        for (let i = -14; i < 21; i++) { // Check a wider range to be safe
             const dateToCheck = addDays(today, i);
-            // getDay returns 0 for Sunday, 1 for Monday... We map Sunday to 7 to match schedule.
             const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
 
-            const subjectsForDay = userData.subjects.filter(subject => 
-                userData.schedule[subject.id]?.includes(dayIndex)
-            );
-
-            subjectsForDay.forEach(subject => {
-                const taskId = `${subject.id}-${startOfDay(dateToCheck).toISOString()}`;
-                
-                if (!existingTaskIds.has(taskId)) {
-                    newTasks.push({
-                        id: taskId,
-                        subjectId: subject.id,
-                        subjectName: subject.name,
-                        description: '',
-                        dueDate: dateToCheck.toISOString(),
-                        isCompleted: false,
-                        isManual: false,
-                    });
-                    existingTaskIds.add(taskId); // Add to set to prevent duplicates in the same run
-                }
-            });
+            if (dayIndex >= 1 && dayIndex <= 5) { // Only school days
+                userData.subjects.forEach(subject => {
+                    if (userData.schedule[subject.id]?.includes(dayIndex)) {
+                        const taskId = `${subject.id}-${startOfDay(dateToCheck).toISOString()}`;
+                        if (!taskIds.has(taskId)) {
+                            newTasks.push({
+                                id: taskId,
+                                subjectId: subject.id,
+                                subjectName: subject.name,
+                                description: '',
+                                dueDate: dateToCheck.toISOString(),
+                                isCompleted: false,
+                                isManual: false,
+                                estimatedTime: undefined
+                            });
+                            taskIds.add(taskId); // prevent duplicates in the same run
+                        }
+                    }
+                });
+            }
         }
-        
+
         if (newTasks.length > 0) {
             return [...prevTasks, ...newTasks];
         }
+        
         return prevTasks;
     });
-
-  }, [isDataLoaded, userData.setupComplete, userData.subjects, userData.schedule]);
+}, [isDataLoaded, userData.setupComplete, userData.subjects, userData.schedule]);
 
   const isSchoolDay = useCallback((date: Date) => {
     const dayIndex = getDay(date) === 0 ? 7 : getDay(date);
@@ -338,5 +337,3 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    
