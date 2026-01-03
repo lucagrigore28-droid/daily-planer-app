@@ -13,15 +13,15 @@ type ThemeProviderState = {
 const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
     const storedTheme = localStorage.getItem("daily-planner-pro-theme") as Theme | null;
     if (storedTheme) {
       setTheme(storedTheme);
     } else {
-      setTheme("system");
+      setTheme("dark");
     }
   }, []);
 
