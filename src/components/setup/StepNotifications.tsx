@@ -235,12 +235,6 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
         )}
 
       </CardContent>
-      {isSetup && (
-        <CardFooter className="flex justify-between">
-          <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={handleFinishSetup}>Finalizează Configurarea</Button>
-        </CardFooter>
-      )}
     </Card>
   );
 }
