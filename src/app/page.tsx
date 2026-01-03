@@ -17,7 +17,8 @@ function AppContainer() {
         <div className="w-full max-w-md space-y-4">
           <Skeleton className="h-12 w-1/2" />
           <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w
+-full" />
           <Skeleton className="h-10 w-1/3 ml-auto" />
         </div>
       </div>
@@ -38,10 +39,12 @@ function AppContainer() {
       </div>
     );
   }
+  
+  const showWizard = userData ? !userData.setupComplete : true;
 
   return (
-    <div className={cn(!userData.setupComplete ? "" : "dashboard-background")}>
-        {userData && !userData.setupComplete ? <SetupWizard /> : <HomeworkDashboard />}
+    <div className={cn(showWizard ? "bg-background" : "dashboard-background min-h-screen")}>
+        {showWizard ? <SetupWizard /> : <HomeworkDashboard />}
     </div>
   );
 }

@@ -39,8 +39,8 @@ export default function SetupWizard() {
         "flex min-h-screen flex-col items-center justify-center p-4",
         !isWelcomeStep && "bg-gradient-primary-accent"
       )}>
-      <div className={cn("w-full max-w-2xl flex flex-col justify-between", isWelcomeStep ? "h-full" : "min-h-[550px]")}>
-        <div className="flex-grow flex items-center">
+      <div className={cn("w-full max-w-2xl flex flex-col justify-between", isWelcomeStep ? "flex-1" : "min-h-[550px]")}>
+        <div className={cn("flex-grow flex items-center", isWelcomeStep && "justify-center")}>
             <div className="w-full fade-in-up">
               {renderStep()}
             </div>
