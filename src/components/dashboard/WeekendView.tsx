@@ -194,7 +194,7 @@ export default function WeekendView() {
 
   return (
     <div className="w-full max-w-6xl mx-auto">
-        <header className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <div className="mb-6">
              <div className="flex-1 rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
                 <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                     Planificator Weekend
@@ -210,10 +210,12 @@ export default function WeekendView() {
                     </div>
                 )}
             </div>
-            <Button onClick={() => setIsPlanningMode(!isPlanningMode)}>
-                {isPlanningMode ? 'Vezi Lista' : 'Organizare'}
-            </Button>
-        </header>
+            <div className="flex justify-end mt-4">
+                <Button onClick={() => setIsPlanningMode(!isPlanningMode)}>
+                    {isPlanningMode ? 'Vezi Lista' : 'Organizare'}
+                </Button>
+            </div>
+        </div>
 
         {!isPlanningMode ? (
              <Card>
