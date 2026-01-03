@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
@@ -47,9 +48,14 @@ export default function HomeworkDashboard() {
     }
   };
 
+  const handleTestDateChange = (direction: 'prev' | 'next') => {
+    const newDate = direction === 'prev' ? subDays(context!.currentDate, 1) : addDays(context!.currentDate, 1);
+    context?._setCurrentDateForTesting(newDate);
+  }
+
 
   if (!context) return null;
-  const { userData, currentDate, tasks } = context;
+  const { userData, currentDate, tasks, _setCurrentDateForTesting } = context;
 
   const dayOfWeek = getDay(currentDate);
   // Show weekend tab on Friday (5), Saturday (6), and Sunday (0)
@@ -83,10 +89,18 @@ export default function HomeworkDashboard() {
               Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
             </p>
           </div>
-           <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
-              <Settings className="h-6 w-6" />
-              <span className="sr-only">Setări</span>
-            </Button>
+           <div className="flex items-center gap-1">
+             <Button variant="ghost" size="icon" onClick={() => handleTestDateChange('prev')}>
+                <ChevronLeft className="h-6 w-6" />
+             </Button>
+              <Button variant="ghost" size="icon" onClick={() => handleTestDateChange('next')}>
+                  <ChevronRight className="h-6 w-6" />
+              </Button>
+               <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                  <Settings className="h-6 w-6" />
+                  <span className="sr-only">Setări</span>
+                </Button>
+           </div>
         </div>
         <Button onClick={() => setAddTaskOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Adaugă temă
