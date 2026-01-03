@@ -19,7 +19,7 @@ export default function StepName({ onNext }: StepProps) {
 
   const handleNameChange = (newName: string) => {
     setName(newName);
-    context?.updateUser({ name: newName.trim() });
+    context?.updateUser({ name: newName });
   };
   
   const showNavButtons = !!onNext;
