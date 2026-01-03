@@ -41,7 +41,6 @@ type AppContextType = {
   resetData: () => Promise<void>;
   logout: () => Promise<void>;
   isDataLoaded: boolean;
-  isThemeLoaded: boolean;
   currentDate: Date;
   getRelevantSchoolDays: () => Date[];
   getNextSchoolDayWithTasks: () => Date | null;
@@ -71,7 +70,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [isThemeLoaded, setIsThemeLoaded] = useState(false);
   
   const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
 
@@ -83,9 +81,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       
       themes.forEach(t => root.classList.remove(t.className));
       root.classList.add(themeClass);
-    }
-    if(isDataLoaded) {
-      setIsThemeLoaded(true);
     }
   }, [userData, isDataLoaded]);
 
@@ -133,10 +128,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const resetData = useCallback(async () => {
     if (userDocRef) {
-        await deleteDoc(userDocRef);
+        // This is a destructive operation. We first delete all tasks in the subcollection.
+        if (tasks) {
+            for (const task of tasks) {
+                const taskDocRef = doc(tasksCollectionRef!, task.id);
+                await deleteDoc(taskDocRef);
+            }
+        }
+        // Then we can reset the user data by setting it to initial state.
+        await setDoc(userDocRef, initialUserData, { merge: false });
+        // Or delete the doc and logout
+        // await deleteDoc(userDocRef);
+        // await logout();
+        window.location.reload(); // Reload to reflect changes
     }
-    await logout();
-  }, [userDocRef, logout]);
+  }, [userDocRef, tasks, tasksCollectionRef, logout]);
 
 
   // Effect to auto-generate scheduled tasks
@@ -255,7 +261,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [tasks, currentDate]);
 
   const memoizedUserData = useMemo(() => {
-    if (userData === undefined) return undefined; // Still loading
+    if (userData === undefined) return null; // Still loading, but we need to return a consistent shape.
     if (userData === null) return initialUserData; // No data in Firestore, use initial
     return { ...initialUserData, ...userData }; // Merge fetched data with initial
   }, [userData]);
@@ -270,7 +276,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     resetData,
     logout,
     isDataLoaded,
-    isThemeLoaded,
     currentDate,
     getRelevantSchoolDays,
     getNextSchoolDayWithTasks,
