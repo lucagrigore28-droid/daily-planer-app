@@ -1,4 +1,4 @@
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { AppProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
@@ -9,6 +9,18 @@ export const metadata: Metadata = {
   title: 'Daily Planner Pro',
   description: 'Un planificator inteligent pentru temele tale zilnice.',
   manifest: '/manifest.webmanifest',
+  icons: {
+    apple: "/icon.svg",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Planner Pro",
+    statusBarStyle: "black-translucent",
+  }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#A099FF",
 };
 
 const fontPoppins = Poppins({
