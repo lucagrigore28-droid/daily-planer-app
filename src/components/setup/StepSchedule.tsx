@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 type StepProps = {
-  onNext: () => void;
+  onNext?: () => void;
   onBack?: () => void;
 };
 
@@ -30,7 +30,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
 
   const handleNext = () => {
     context?.updateUser({ schedule });
-    onNext();
+    if(onNext) onNext();
   };
 
   const handleScheduleChange = (subjectId: string, days: string[]) => {
@@ -42,7 +42,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     context?.updateUser({ schedule: newSchedule });
   };
   
-  const showNavButtons = !!onBack;
+  const showNavButtons = !!onNext;
 
   const scheduleDays = DAYS_OF_WEEK_SCHEDULE.filter(d => d.id <= 5); // Only Mon-Fri
 
@@ -87,8 +87,3 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
-
-StepSchedule.defaultProps = {
-  onNext: () => {},
-  onBack: () => {},
-};

@@ -137,20 +137,6 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
 
   if (!context) return null;
 
-  const activeTabIndex = TABS.findIndex(tab => tab.value === activeTab);
-
-  const goToNextTab = () => {
-    if (activeTabIndex < TABS.length - 1) {
-      setActiveTab(TABS[activeTabIndex + 1].value);
-    }
-  };
-
-  const goToPrevTab = () => {
-    if (activeTabIndex > 0) {
-      setActiveTab(TABS[activeTabIndex - 1].value);
-    }
-  };
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -175,7 +161,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                 const Component = tab.component;
                 return (
                   <TabsContent key={tab.value} value={tab.value}>
-                    <Component onNext={goToNextTab} onBack={goToPrevTab} />
+                    <Component />
                      {tab.value === 'profile' && <DangerZone />}
                   </TabsContent>
                 )

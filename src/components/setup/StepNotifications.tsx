@@ -12,7 +12,7 @@ import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
 
 type StepProps = {
-  onNext: () => void;
+  onNext?: () => void;
   onBack?: () => void;
 };
 
@@ -101,13 +101,13 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   const handleFinishSetup = () => {
     context?.updateUser({ setupComplete: true });
     // This is the final step, it will call onNext which is an empty function but in the wizard it transitions
-    if(onNext !== StepNotifications.defaultProps.onNext) {
+    if(onNext) {
       onNext();
     }
   };
 
-  const showNavButtons = !!onBack;
-  const isFinalStep = onNext.toString() === (() => {}).toString();
+  const showNavButtons = !!onNext;
+  const isFinalStep = onNext?.toString() === (() => {}).toString();
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -248,9 +248,3 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
-
-
-StepNotifications.defaultProps = {
-  onNext: () => {},
-  onBack: () => {},
-};

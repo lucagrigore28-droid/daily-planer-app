@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
 
 type StepProps = {
-  onNext: () => void;
+  onNext?: () => void;
   onBack?: () => void;
 };
 
@@ -22,7 +22,7 @@ export default function StepName({ onNext }: StepProps) {
     context?.updateUser({ name: newName.trim() });
   };
   
-  const showNavButtons = !!onNext && onNext !== StepName.defaultProps.onNext;
+  const showNavButtons = !!onNext;
 
 
   return (
@@ -42,7 +42,7 @@ export default function StepName({ onNext }: StepProps) {
             value={name}
             onChange={(e) => handleNameChange(e.target.value)}
             autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && showNavButtons && name.trim() && onNext()}
+            onKeyDown={(e) => e.key === 'Enter' && showNavButtons && name.trim() && onNext && onNext()}
           />
         </div>
       </CardContent>
@@ -54,8 +54,3 @@ export default function StepName({ onNext }: StepProps) {
     </Card>
   );
 }
-
-
-StepName.defaultProps = {
-    onNext: () => {},
-};

@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
 
 type StepProps = {
-  onNext: () => void;
+  onNext?: () => void;
   onBack?: () => void;
 };
 
@@ -21,7 +21,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
     context?.updateUser({ theme: themeName });
   };
   
-  const showNavButtons = !!onBack;
+  const showNavButtons = !!onNext;
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm-shadow-lg">
@@ -55,14 +55,9 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
       {showNavButtons && (
         <CardFooter className="flex justify-between">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={onNext} className="invisible">Continuă</Button>
+          <Button onClick={onNext}>Continuă</Button>
         </CardFooter>
       )}
     </Card>
   );
 }
-
-StepTheme.defaultProps = {
-  onNext: () => {},
-  onBack: () => {},
-};

@@ -14,7 +14,7 @@ import { PlusCircle, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 type StepProps = {
-  onNext: () => void;
+  onNext?: () => void;
   onBack?: () => void;
 };
 
@@ -45,7 +45,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     }
   };
   
-  const showNavButtons = !!onBack;
+  const showNavButtons = !!onNext;
 
   const predefinedWithCustom = [...PREDEFINED_SUBJECTS];
   selectedSubjects.forEach(s => {
@@ -111,8 +111,3 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
-
-StepSubjects.defaultProps = {
-  onNext: () => {},
-  onBack: () => {},
-};
