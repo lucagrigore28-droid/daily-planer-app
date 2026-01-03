@@ -89,9 +89,9 @@ export default function HomeworkDashboard() {
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className="flex w-full max-w-lg mx-auto mb-6">
+        <TabsList className="flex flex-col sm:flex-row h-auto sm:h-10 w-full max-w-lg mx-auto mb-6">
           {tabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className="flex-1">{tab.label}</TabsTrigger>
+            <TabsTrigger key={tab.value} value={tab.value} className="flex-1 w-full sm:w-auto">{tab.label}</TabsTrigger>
           ))}
         </TabsList>
         

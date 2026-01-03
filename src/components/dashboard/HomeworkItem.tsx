@@ -98,7 +98,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                       {task.subjectName}
                     </Label>
                     {task.estimatedTime && task.estimatedTime > 0 && (
-                        <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground")}>
+                        <div className={cn("flex items-center gap-1.5 text-xs", isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
                             <Clock className="h-3 w-3" />
                             <span>{task.estimatedTime} minute</span>
                         </div>
