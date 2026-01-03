@@ -15,6 +15,7 @@ import * as z from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Eye, EyeOff } from 'lucide-react';
 
 const FormSchema = z.object({
   email: z.string().email({ message: 'Te rog introdu o adresă de email validă.' }),
@@ -29,6 +30,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -107,6 +109,10 @@ export default function LoginPage() {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   if (!isClient) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-primary-accent p-4">
@@ -170,7 +176,12 @@ export default function LoginPage() {
                         Ai uitat parola?
                      </Button>
                   </div>
-                  <Input id="password-login" type="password" {...register('password')} />
+                  <div className="relative">
+                    <Input id="password-login" type={showPassword ? 'text' : 'password'} {...register('password')} />
+                    <button type="button" onClick={togglePasswordVisibility} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground">
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                   {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
                 </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
@@ -187,7 +198,12 @@ export default function LoginPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password-register">Parolă</Label>
-                  <Input id="password-register" type="password" {...register('password')} />
+                  <div className="relative">
+                    <Input id="password-register" type={showPassword ? 'text' : 'password'} {...register('password')} />
+                    <button type="button" onClick={togglePasswordVisibility} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground">
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                   {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
                 </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
