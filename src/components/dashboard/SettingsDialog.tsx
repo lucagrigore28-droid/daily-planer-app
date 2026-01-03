@@ -77,7 +77,7 @@ const AppearanceSettings = () => {
                                     </div>
                                     {context?.userData.theme === theme.name && (
                                         <div className="absolute top-1 right-1 p-0.5 bg-primary text-primary-foreground rounded-full">
-                                            <Check className="h-3 w-3" />
+                                            <Check className="h-4 w-4" />
                                         </div>
                                     )}
                                 </button>
