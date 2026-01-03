@@ -88,7 +88,7 @@ const DangerZone = () => {
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
                     Această acțiune este ireversibilă. Toate datele tale, inclusiv materiile, orarul și temele vor fi șterse definitiv.
                 </p>
-                <div className="flex">
+                <div className="flex justify-center">
                     <Button variant="destructive" onClick={() => setIsAlertOpen(true)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Resetează Aplicația
