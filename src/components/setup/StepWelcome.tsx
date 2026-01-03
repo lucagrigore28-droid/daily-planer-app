@@ -30,7 +30,10 @@ export default function StepWelcome({ onNext }: StepProps) {
          </div>
       )}
       <CardHeader className="pt-0">
-        <Logo className="mb-4" />
+        <div className="mb-4 flex items-center gap-2">
+            <Logo />
+            <span className="text-xl font-bold text-foreground">Daily Planner Pro</span>
+        </div>
         <CardTitle className="font-headline text-3xl">Bun venit!</CardTitle>
         <CardDescription>
           Organizează-ți temele și nu mai uita niciodată ce ai de făcut. Hai să-ți configurăm contul în câțiva pași simpli.

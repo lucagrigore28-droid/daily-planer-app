@@ -50,7 +50,6 @@ export function Logo({ className }: LogoProps) {
           strokeLinejoin="round"
         />
       </svg>
-       <span className="text-xl font-bold text-foreground">Daily Planner Pro</span>
     </div>
   );
 }
