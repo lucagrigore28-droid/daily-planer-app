@@ -66,7 +66,7 @@ export default function LoginPage() {
       let description = "A apărut o eroare. Te rog încearcă din nou.";
       if (error.code === 'auth/email-already-in-use') {
         description = "Această adresă de email este deja folosită.";
-      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         description = "Emailul sau parola sunt incorecte.";
       }
       toast({
