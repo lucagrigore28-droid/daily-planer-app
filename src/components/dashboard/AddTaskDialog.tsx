@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,15 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
   const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
+  useEffect(() => {
+    if (open) {
+      // Reset state when dialog opens
+      setSelectedSubject(null);
+      setDescription('');
+      setDueDate(new Date());
+    }
+  }, [open]);
+
   const handleAddTask = () => {
     if (!selectedSubject || !dueDate) {
       toast({
@@ -54,10 +63,6 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
         description: `Tema pentru "${selectedSubject.name}" a fost adăugată cu succes.`,
     });
 
-    // Reset form and close dialog
-    setSelectedSubject(null);
-    setDescription('');
-    setDueDate(new Date());
     onOpenChange(false);
   };
 
@@ -83,7 +88,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="subject-name" className="text-right">Materie</Label>
-            <Select onValueChange={handleSubjectChange} value={selectedSubject?.id}>
+            <Select onValueChange={handleSubjectChange} value={selectedSubject?.id || ''}>
                 <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Alege materia" />
                 </SelectTrigger>
