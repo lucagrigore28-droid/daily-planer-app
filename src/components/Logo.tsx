@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -11,6 +12,7 @@ export default function Logo({ className }: { className?: string }) {
         xmlns="http://www.w3.org/2000/svg"
         className={className}
     >
+      <rect x="0" y="0" width="100" height="100" rx="22" ry="22" fill="black" />
       <defs>
         <linearGradient id="instaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style={{stopColor:"hsl(var(--primary))", stopOpacity:1}} />
@@ -18,10 +20,6 @@ export default function Logo({ className }: { className?: string }) {
           <stop offset="100%" style={{stopColor:"#CC00CC", stopOpacity:1}} />
         </linearGradient>
       </defs>
-
-      {/* Black background rect */}
-      <rect x="0" y="0" width="100" height="100" rx="22" ry="22" fill="black" />
-
       <g fill="none" stroke="url(#instaGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
         
         {/* Outer rounded square */}
