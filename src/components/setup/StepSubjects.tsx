@@ -57,7 +57,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
 
 
   return (
-    <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
+    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Ce materii ai?</CardTitle>
         <CardDescription>

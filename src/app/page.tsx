@@ -5,6 +5,7 @@ import { AppContext } from '@/contexts/AppContext';
 import SetupWizard from '@/components/setup/SetupWizard';
 import HomeworkDashboard from '@/components/dashboard/HomeworkDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 function AppContainer() {
   const context = useContext(AppContext);
@@ -38,11 +39,11 @@ function AppContainer() {
     );
   }
 
-  if (userData && !userData.setupComplete) {
-    return <SetupWizard />;
-  }
-
-  return <HomeworkDashboard />;
+  return (
+    <div className={cn(!userData.setupComplete ? "" : "dashboard-background")}>
+        {userData && !userData.setupComplete ? <SetupWizard /> : <HomeworkDashboard />}
+    </div>
+  );
 }
 
 export default function Home() {

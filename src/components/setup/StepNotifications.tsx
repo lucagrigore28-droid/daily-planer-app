@@ -100,7 +100,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   const isSetup = onNext !== StepNotifications.defaultProps.onNext;
 
   return (
-    <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
+    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Notificări Inteligente</CardTitle>
         <CardDescription>
@@ -108,7 +108,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
-        <div className="flex items-center justify-between rounded-lg border p-4">
+        <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50">
             <div className="flex items-center space-x-3">
                 {permission === 'granted' && notificationsEnabled ? <BellRing className="h-6 w-6 text-primary" /> : <BellOff className="h-6 w-6 text-muted-foreground" />}
                 <div>

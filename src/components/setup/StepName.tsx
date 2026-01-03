@@ -24,7 +24,7 @@ export default function StepName({ onNext }: StepProps) {
   const isSetup = onNext !== StepName.defaultProps.onNext;
 
   return (
-    <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
+    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Cum te numești?</CardTitle>
         <CardDescription>

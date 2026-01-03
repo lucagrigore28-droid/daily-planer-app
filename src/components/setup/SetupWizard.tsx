@@ -7,6 +7,7 @@ import StepSubjects from './StepSubjects';
 import StepSchedule from './StepSchedule';
 import StepNotifications from './StepNotifications';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 const TOTAL_STEPS = 5;
 
@@ -29,13 +30,24 @@ export default function SetupWizard() {
     }
   }
 
+  const isWelcomeStep = step === 1;
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-2xl">
-        <Progress value={progressValue} className="mb-8 h-2" />
-        <div className="min-h-[500px] fade-in-up">
-          {renderStep()}
+    <div className={cn(
+        "flex min-h-screen flex-col items-center justify-center p-4",
+        !isWelcomeStep && "bg-gradient-primary-accent"
+      )}>
+      <div className={cn("w-full max-w-2xl flex flex-col justify-between", isWelcomeStep ? "h-full" : "min-h-[550px]")}>
+        <div className="flex-grow flex items-center">
+            <div className="w-full fade-in-up">
+              {renderStep()}
+            </div>
         </div>
+        {!isWelcomeStep && (
+            <div className="mt-8">
+                <Progress value={progressValue} className="h-2" />
+            </div>
+        )}
       </div>
     </div>
   );

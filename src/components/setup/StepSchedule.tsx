@@ -47,7 +47,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
   const scheduleDays = DAYS_OF_WEEK_SCHEDULE.filter(d => d.id <= 5); // Only Mon-Fri
 
   return (
-    <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
+    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Setează-ți orarul săptămânal</CardTitle>
         <CardDescription>
