@@ -9,8 +9,8 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { themes } from '@/lib/themes';
 
 export const metadata: Metadata = {
-  title: 'Daily Planner Pro',
-  description: 'Un planificator inteligent pentru temele tale zilnice.',
+  title: 'Homework Planner',
+  description: 'Planificatorul tău inteligent pentru teme.',
   manifest: '/manifest.webmanifest',
   icons: {
     icon: '/icon.svg',
