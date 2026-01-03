@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
@@ -22,6 +23,7 @@ const initialUserData: UserData = {
     sundayEveningTime: '20:00',
   },
   theme: 'purple',
+  appIconSvg: '',
 };
 
 const initialTasks: HomeworkTask[] = [];
