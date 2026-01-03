@@ -84,8 +84,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       themes.forEach(t => root.classList.remove(t.className));
       root.classList.add(themeClass);
     }
-    // This effect runs after userData is loaded, so theme is applied. We can now set theme as loaded.
-    // We check for isDataLoaded to ensure this logic runs after initial data fetching.
     if(isDataLoaded) {
       setIsThemeLoaded(true);
     }
@@ -256,7 +254,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return Array.from(firstOccurrenceMap.values());
   }, [tasks, currentDate]);
 
-  const memoizedUserData = useMemo(() => userData ? { ...initialUserData, ...userData } : null, [userData]);
+  const memoizedUserData = useMemo(() => {
+    if (userData === undefined) return undefined; // Still loading
+    if (userData === null) return initialUserData; // No data in Firestore, use initial
+    return { ...initialUserData, ...userData }; // Merge fetched data with initial
+  }, [userData]);
   
   const value = {
     userData: memoizedUserData,

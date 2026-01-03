@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -18,11 +19,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const storedTheme = localStorage.getItem("daily-planner-pro-theme") as Theme | null;
-    if (storedTheme) {
-      setTheme(storedTheme);
-    } else {
-      setTheme("dark");
-    }
+    setTheme(storedTheme || "dark");
   }, []);
 
   useEffect(() => {
