@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,9 +17,18 @@ export default function StepName({ onNext }: StepProps) {
   const context = useContext(AppContext);
   const [name, setName] = useState(context?.userData.name || '');
 
-  const handleNameChange = (newName: string) => {
-    setName(newName);
-    context?.updateUser({ name: newName });
+  useEffect(() => {
+    // Sync local state if context changes
+    if (context?.userData.name) {
+      setName(context.userData.name);
+    }
+  }, [context?.userData.name]);
+
+  const handleContinue = () => {
+    if (name.trim()) {
+      context?.updateUser({ name: name.trim() });
+      if(onNext) onNext();
+    }
   };
   
   const showNavButtons = !!onNext;
@@ -40,15 +49,15 @@ export default function StepName({ onNext }: StepProps) {
             id="name"
             placeholder="ex: Alex"
             value={name}
-            onChange={(e) => handleNameChange(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && showNavButtons && name.trim() && onNext && onNext()}
+            onKeyDown={(e) => e.key === 'Enter' && showNavButtons && name.trim() && handleContinue()}
           />
         </div>
       </CardContent>
        {showNavButtons && (
           <CardFooter>
-            <Button onClick={onNext} disabled={!name.trim()} className="ml-auto">Continuă</Button>
+            <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
           </CardFooter>
        )}
     </Card>
