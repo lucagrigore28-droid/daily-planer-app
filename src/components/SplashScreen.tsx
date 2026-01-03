@@ -24,7 +24,7 @@ export default function SplashScreen({ onNext }: SplashScreenProps) {
       </div>
       <div className="w-full max-w-md pb-8 pt-12">
         <Button onClick={onNext} size="lg" variant="default" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-bold h-14 rounded-full shadow-lg">
-          Intră în aplicație
+          Vezi temele
         </Button>
       </div>
     </div>
