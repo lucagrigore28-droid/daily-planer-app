@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Logo from '@/components/Logo';
@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const FormSchema = z.object({
   email: z.string().email({ message: 'Te rog introdu o adresă de email validă.' }),
@@ -27,6 +28,11 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -72,6 +78,39 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (!isClient) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-primary-accent p-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center">
+             <div className="flex justify-center mb-4">
+                <Skeleton className="h-[80px] w-[80px] rounded-2xl" />
+             </div>
+             <Skeleton className="h-7 w-32 mx-auto" />
+             <Skeleton className="h-4 w-full mt-2" />
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="h-10 w-full grid grid-cols-2 p-1 rounded-md bg-muted">
+                <Skeleton className="h-full w-full rounded-sm bg-background" />
+                <Skeleton className="h-full w-full" />
+            </div>
+             <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="space-y-2">
+                     <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+                 <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-primary-accent p-4">
