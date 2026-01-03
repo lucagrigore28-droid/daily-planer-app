@@ -155,7 +155,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                       const taskExists = tasks?.some(t => t.id === taskId);
                       
                       if (!taskExists && tasksCollectionRef) {
-                           addDocumentNonBlocking(doc(tasksCollectionRef, taskId), {
+                           setDocumentNonBlocking(doc(tasksCollectionRef, taskId), {
                               subjectId: subject.id,
                               subjectName: subject.name,
                               description: '',
@@ -163,7 +163,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                               isCompleted: false,
                               isManual: false,
                               estimatedTime: undefined
-                          });
+                          }, { merge: true });
                       }
                   }
               });
