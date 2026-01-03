@@ -88,16 +88,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUser = useCallback((data: Partial<UserData>) => {
     if (userDocRef) {
-      const payload = {...data};
-      // For new users, we might not have the full userData object yet
-      if (userData) {
-        payload.name = data.name ?? userData.name;
-        payload.subjects = data.subjects ?? userData.subjects;
-        payload.schedule = data.schedule ?? userData.schedule;
-        payload.theme = data.theme ?? userData.theme;
-        payload.notifications = data.notifications ?? userData.notifications;
-      }
-       setDocumentNonBlocking(userDocRef, payload, { merge: true });
+        // Create the payload with only the data that was passed in.
+        const updateData: Partial<UserData> = { ...data };
+
+        // If the user document doesn't exist yet (userData is null),
+        // we merge the new data with the initial template to ensure no undefined fields.
+        if (!userData) {
+            const payloadForCreation = { ...initialUserData, ...updateData };
+            setDocumentNonBlocking(userDocRef, payloadForCreation, { merge: true });
+        } else {
+            // If the document exists, just send the partial update.
+            setDocumentNonBlocking(userDocRef, updateData, { merge: true });
+        }
     }
   }, [userDocRef, userData]);
 
@@ -154,8 +156,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                       const taskId = `${subject.id}-${startOfDay(dateToCheck).toISOString()}`;
                       const taskExists = tasks?.some(t => t.id === taskId);
                       
-                      if (!taskExists) {
-                           addDocumentNonBlocking(tasksCollectionRef!, {
+                      if (!taskExists && tasksCollectionRef) {
+                           addDocumentNonBlocking(doc(tasksCollectionRef, taskId), {
                               subjectId: subject.id,
                               subjectName: subject.name,
                               description: '',
@@ -163,17 +165,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                               isCompleted: false,
                               isManual: false,
                               estimatedTime: undefined
-                          }).then(docRef => {
-                              // After adding, we set the document with the specific ID we want
-                              // This is a way to enforce our custom ID format
-                              const createdDocId = docRef.id;
-                              const desiredDocRef = doc(tasksCollectionRef!, taskId);
-                              
-                              // We can't just setDoc because the document already exists.
-                              // A better approach would be to check existence first, then add.
-                              // This simplified logic might create temporary docs with Firestore-generated IDs
-                              // before we try to enforce our own ID.
-                              // For this prototype, we'll accept this behavior.
                           });
                       }
                   }
@@ -282,3 +273,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
