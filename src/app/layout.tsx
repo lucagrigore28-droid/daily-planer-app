@@ -9,15 +9,6 @@ export const metadata: Metadata = {
   title: 'Daily Planner Pro',
   description: 'Un planificator inteligent pentru temele tale zilnice.',
   manifest: '/manifest.webmanifest',
-  icons: {
-    icon: '/icon.svg',
-    apple: "/icon.svg",
-  },
-  appleWebApp: {
-    capable: true,
-    title: "Planner Pro",
-    statusBarStyle: "black-translucent",
-  }
 };
 
 export const viewport: Viewport = {
