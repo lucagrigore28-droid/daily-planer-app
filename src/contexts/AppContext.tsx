@@ -149,11 +149,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
-    const uniqueId = task.isManual
-        ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
-        : `${task.subjectId}-${task.dueDate}`;
-        
     setTasks(prev => {
+        const uniqueId = task.isManual
+            ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
+            : `${task.subjectId}-${task.dueDate}`;
+        
         if (prev.some(t => t.id === uniqueId)) {
             return prev;
         }
@@ -191,40 +191,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const today = startOfDay(new Date());
-    const newTasks: HomeworkTask[] = [];
+    
+    setTasks(prevTasks => {
+        const newTasks: HomeworkTask[] = [];
+        // Check a range of days around today to ensure tasks are populated
+        for (let i = -7; i < 14; i++) {
+            const dateToCheck = addDays(today, i);
+            const dayIndex = getDay(dateToCheck);
 
-    // Check a range of days around today to ensure tasks are populated
-    for (let i = -7; i < 14; i++) {
-        const dateToCheck = addDays(today, i);
-        const dayIndex = getDay(dateToCheck);
+            const subjectsForDay = userData.subjects.filter(subject => 
+                userData.schedule[subject.id]?.includes(dayIndex)
+            );
 
-        const subjectsForDay = userData.subjects.filter(subject => 
-            userData.schedule[subject.id]?.includes(dayIndex)
-        );
+            subjectsForDay.forEach(subject => {
+                const taskId = `${subject.id}-${dateToCheck.toISOString()}`;
+                const taskExists = prevTasks.some(t => t.id === taskId);
+                
+                if (!taskExists) {
+                    newTasks.push({
+                        id: taskId,
+                        subjectId: subject.id,
+                        subjectName: subject.name,
+                        description: '',
+                        dueDate: dateToCheck.toISOString(),
+                        isCompleted: false,
+                        isManual: false,
+                    });
+                }
+            });
+        }
+        
+        if (newTasks.length > 0) {
+            return [...prevTasks, ...newTasks];
+        }
+        return prevTasks;
+    });
 
-        subjectsForDay.forEach(subject => {
-            const taskId = `${subject.id}-${dateToCheck.toISOString()}`;
-            const taskExists = tasks.some(t => t.id === taskId);
-            
-            if (!taskExists) {
-                newTasks.push({
-                    id: taskId,
-                    subjectId: subject.id,
-                    subjectName: subject.name,
-                    description: '',
-                    dueDate: dateToCheck.toISOString(),
-                    isCompleted: false,
-                    isManual: false,
-                });
-            }
-        });
-    }
-
-    if (newTasks.length > 0) {
-        setTasks(prevTasks => [...prevTasks, ...newTasks]);
-    }
-
-  }, [isDataLoaded, userData.setupComplete, userData.subjects, userData.schedule, tasks]); // tasks is a dependency to re-check if it gets cleared
+  }, [isDataLoaded, userData.setupComplete, userData.subjects, userData.schedule]);
 
   const isSchoolDay = useCallback((date: Date) => {
     const dayIndex = getDay(date);
