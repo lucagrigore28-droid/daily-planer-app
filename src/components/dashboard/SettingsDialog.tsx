@@ -151,9 +151,6 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               <TabsTrigger value="profile" className="w-full justify-start gap-2">
                 <User className="h-4 w-4"/> Profil
               </TabsTrigger>
-               <TabsTrigger value="appearance" className="w-full justify-start gap-2">
-                <Palette className="h-4 w-4"/> Aspect
-              </TabsTrigger>
               <TabsTrigger value="subjects" className="w-full justify-start gap-2">
                 <Book className="h-4 w-4"/> Materii
               </TabsTrigger>
@@ -163,14 +160,14 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                <TabsTrigger value="notifications" className="w-full justify-start gap-2">
                 <Bell className="h-4 w-4"/> Notificări
               </TabsTrigger>
+              <TabsTrigger value="appearance" className="w-full justify-start gap-2">
+                <Palette className="h-4 w-4"/> Aspect
+              </TabsTrigger>
             </TabsList>
             <div className="flex-1 min-h-0 overflow-y-auto pr-4 -mr-4">
               <TabsContent value="profile">
                 <ProfileSettings />
                 <DangerZone />
-              </TabsContent>
-              <TabsContent value="appearance">
-                <AppearanceSettings />
               </TabsContent>
               <TabsContent value="subjects">
                 <SubjectsSettings />
@@ -181,6 +178,9 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               <TabsContent value="notifications">
                 <NotificationsSettings />
               </TabsContent>
+              <TabsContent value="appearance">
+                <AppearanceSettings />
+              </TabsContent>
             </div>
           </Tabs>
         </div>
@@ -188,5 +188,3 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     </Dialog>
   );
 }
-
-    
