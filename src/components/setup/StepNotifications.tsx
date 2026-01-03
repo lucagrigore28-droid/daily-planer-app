@@ -17,10 +17,17 @@ type StepProps = {
 
 export default function StepNotifications({ onBack }: StepProps) {
   const context = useContext(AppContext);
-  const [permission, setPermission] = useState(Notification.permission);
+  const [permission, setPermission] = useState<'default' | 'granted' | 'denied'>('default');
   const [notificationsEnabled, setNotificationsEnabled] = useState(context?.userData.notifications.enabled || false);
   const [afterSchoolTime, setAfterSchoolTime] = useState(context?.userData.notifications.afterSchoolTime || '15:00');
   const [eveningTime, setEveningTime] = useState(context?.userData.notifications.eveningTime || '20:00');
+
+  useEffect(() => {
+    // This check runs only on the client-side, avoiding SSR errors.
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPermission(Notification.permission);
+    }
+  }, []);
 
   useEffect(() => {
     // Sync local state if context changes (e.g. in settings dialog)
