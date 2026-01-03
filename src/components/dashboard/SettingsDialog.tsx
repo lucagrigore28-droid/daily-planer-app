@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StepName from '@/components/setup/StepName';
 import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
-import { User, Book, Calendar, LogOut } from 'lucide-react';
+import { User, Book, Calendar } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -42,13 +43,13 @@ const DangerZone = () => {
 
     return (
         <>
-            <div className="rounded-lg border border-destructive/50 p-4">
-                <h3 className="text-lg font-semibold text-destructive">Resetează Aplicația</h3>
+            <div className="mt-8 pt-6 border-t">
+                <h3 className="text-lg font-semibold text-destructive">Deconectare și Resetare</h3>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
-                    Această acțiune este ireversibilă. Toate datele tale, inclusiv numele, materiile, orarul și temele vor fi șterse definitiv.
+                    Această acțiune este ireversibilă. Toate datele tale, inclusiv numele, materiile, orarul și temele vor fi șterse definitiv, iar aplicația va fi resetată la starea inițială.
                 </p>
                 <Button variant="destructive" onClick={() => setIsAlertOpen(true)}>
-                    Resetează Toate Datele
+                    Deconectare / Resetare
                 </Button>
             </div>
              <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
@@ -97,22 +98,17 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               <TabsTrigger value="schedule" className="w-full justify-start gap-2">
                 <Calendar className="h-4 w-4"/> Orar
               </TabsTrigger>
-               <TabsTrigger value="logout" className="w-full justify-start gap-2 text-destructive data-[state=active]:border-destructive/50">
-                <LogOut className="h-4 w-4"/> Deconectare
-              </TabsTrigger>
             </TabsList>
             <div className="flex-1 min-h-0 overflow-y-auto">
               <TabsContent value="profile">
                 <ProfileSettings />
+                <DangerZone />
               </TabsContent>
               <TabsContent value="subjects">
                 <SubjectsSettings />
               </TabsContent>
               <TabsContent value="schedule">
                 <ScheduleSettings />
-              </TabsContent>
-              <TabsContent value="logout">
-                <DangerZone />
               </TabsContent>
             </div>
           </Tabs>
