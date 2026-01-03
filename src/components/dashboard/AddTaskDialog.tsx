@@ -131,16 +131,19 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                     nav_button_next: 'h-8 w-8',
                   }}
                   components={{
-                    CaptionLabel: ({ displayMonth }) => (
-                      <>
-                        <span className="text-xl font-extrabold text-primary uppercase">
-                          {format(displayMonth, 'LLLL', { locale: ro })}
-                        </span>
-                        <span className="text-xl font-extrabold text-foreground ml-2">
-                          {format(displayMonth, 'yyyy', { locale: ro })}
-                        </span>
-                      </>
-                    )
+                    CaptionLabel: ({ displayMonth }) => {
+                        if (!displayMonth) return null;
+                        return (
+                          <>
+                            <span className="text-xl font-extrabold text-primary uppercase">
+                              {format(displayMonth, 'LLLL', { locale: ro })}
+                            </span>
+                            <span className="text-xl font-extrabold text-foreground ml-2">
+                              {format(displayMonth, 'yyyy', { locale: ro })}
+                            </span>
+                          </>
+                        )
+                    }
                   }}
                 />
               </PopoverContent>
