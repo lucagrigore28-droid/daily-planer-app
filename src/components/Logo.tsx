@@ -44,7 +44,7 @@ export default function Logo({ className }: { className?: string }) {
           H 69
           C 72.3137 75 75 72.3137 75 69
           V 47
-          H 63 L 60 50 L 48 62 L 40 54 L 37 51 H 25 Z
+          H 60 L 48 62 L 40 47 H 25 Z
         " fill="url(#instaGradient)" stroke="none"/>
         
       </g>
