@@ -100,14 +100,12 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
 
   const handleFinishSetup = () => {
     context?.updateUser({ setupComplete: true });
-    // This is the final step, it will call onNext which is an empty function but in the wizard it transitions
     if(onNext) {
       onNext();
     }
   };
 
   const showNavButtons = !!onNext;
-  const isFinalStep = onNext?.toString() === (() => {}).toString();
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -238,11 +236,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
        {showNavButtons && (
          <CardFooter className="flex justify-between">
            <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-           {isFinalStep ? (
-             <Button onClick={handleFinishSetup}>Finalizează Configurarea</Button>
-           ) : (
-             <Button onClick={onNext}>Continuă</Button>
-           )}
+           <Button onClick={handleFinishSetup}>Finalizează Configurarea</Button>
          </CardFooter>
        )}
     </Card>
