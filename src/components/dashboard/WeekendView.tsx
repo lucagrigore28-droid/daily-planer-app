@@ -93,7 +93,10 @@ export default function WeekendView() {
 
   const weekendTasks = useMemo(() => {
     if (!context) return [];
-    return context.getWeekendTasks();
+    return context.getWeekendTasks().sort((a, b) => {
+        if (a.isCompleted === b.isCompleted) return 0;
+        return a.isCompleted ? 1 : -1;
+    });
   }, [context]);
 
   const { currentDate, updateTask } = context!;
@@ -101,6 +104,13 @@ export default function WeekendView() {
   const friday = nextFriday(startOfDay(currentDate));
   const saturday = nextSaturday(startOfDay(currentDate));
   const sunday = nextSunday(startOfDay(currentDate));
+
+  const sortTasks = (tasks: HomeworkTask[]) => {
+    return tasks.sort((a, b) => {
+      if (a.isCompleted === b.isCompleted) return 0;
+      return a.isCompleted ? 1 : -1;
+    });
+  };
 
   const plannedTasks = useMemo(() => {
     const fridayTasks: HomeworkTask[] = [];
@@ -125,7 +135,12 @@ export default function WeekendView() {
       }
     });
 
-    return { fridayTasks, saturdayTasks, sundayTasks, unplannedTasks };
+    return { 
+        fridayTasks: sortTasks(fridayTasks), 
+        saturdayTasks: sortTasks(saturdayTasks), 
+        sundayTasks: sortTasks(sundayTasks), 
+        unplannedTasks: sortTasks(unplannedTasks)
+    };
   }, [weekendTasks, friday, saturday, sunday]);
 
 
