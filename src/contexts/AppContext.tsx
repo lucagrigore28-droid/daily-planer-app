@@ -109,8 +109,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [tasks, isDataLoaded]);
 
-
-   // Effect for handling notifications
+  // Effect for handling notifications
   useEffect(() => {
     if (!isDataLoaded || !userData.setupComplete || !userData.notifications.enabled) {
       return;
@@ -154,12 +153,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
         : `${task.subjectId}-${task.dueDate}`;
         
-    const newTask = { ...task, id: uniqueId };
-
     setTasks(prev => {
-        if (prev.some(t => t.id === newTask.id)) {
-            return prev; // Prevent adding duplicate tasks
+        if (prev.some(t => t.id === uniqueId)) {
+            return prev;
         }
+        const newTask = { ...task, id: uniqueId };
         return [...prev, newTask];
     });
   }, []);
@@ -185,6 +183,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       console.error("Failed to reset data", error);
     }
   }, []);
+
+  // Effect to auto-generate scheduled tasks
+  useEffect(() => {
+    if (!isDataLoaded || !userData.setupComplete || userData.subjects.length === 0) {
+      return;
+    }
+
+    const today = startOfDay(new Date());
+    const newTasks: HomeworkTask[] = [];
+
+    // Check a range of days around today to ensure tasks are populated
+    for (let i = -7; i < 14; i++) {
+        const dateToCheck = addDays(today, i);
+        const dayIndex = getDay(dateToCheck);
+
+        const subjectsForDay = userData.subjects.filter(subject => 
+            userData.schedule[subject.id]?.includes(dayIndex)
+        );
+
+        subjectsForDay.forEach(subject => {
+            const taskId = `${subject.id}-${dateToCheck.toISOString()}`;
+            const taskExists = tasks.some(t => t.id === taskId);
+            
+            if (!taskExists) {
+                newTasks.push({
+                    id: taskId,
+                    subjectId: subject.id,
+                    subjectName: subject.name,
+                    description: '',
+                    dueDate: dateToCheck.toISOString(),
+                    isCompleted: false,
+                    isManual: false,
+                });
+            }
+        });
+    }
+
+    if (newTasks.length > 0) {
+        setTasks(prevTasks => [...prevTasks, ...newTasks]);
+    }
+
+  }, [isDataLoaded, userData.setupComplete, userData.subjects, userData.schedule, tasks]); // tasks is a dependency to re-check if it gets cleared
 
   const isSchoolDay = useCallback((date: Date) => {
     const dayIndex = getDay(date);
@@ -238,7 +278,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     let nextDay = addDays(today, 1);
     for (let i = 0; i < 30; i++) { // Check up to 30 days in the future
       const dayStart = startOfDay(nextDay);
-      const tasksForNextDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === dayStart.getTime() && !task.isCompleted);
+      const tasksForNextDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === dayStart.getTime());
       
       const dayIndex = getDay(dayStart);
       const isScheduledDay = userData.subjects.some(subject => userData.schedule[subject.id]?.includes(dayIndex));
@@ -251,7 +291,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
     // If no tasks are found, default to today
     return today;
-  }, [currentDate, tasks, isSchoolDay, userData]);
+  }, [currentDate, tasks, userData.subjects, userData.schedule]);
 
   const getWeekendTasks = useCallback(() => {
     const today = startOfDay(currentDate);

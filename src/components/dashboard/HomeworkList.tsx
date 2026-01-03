@@ -1,10 +1,9 @@
 
 "use client";
 
-import React, { useContext, useEffect, useMemo } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { getDay, startOfDay } from 'date-fns';
-import type { HomeworkTask } from '@/lib/types';
+import { startOfDay } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
 import { CheckCircle2, ClipboardList } from 'lucide-react';
@@ -15,36 +14,12 @@ type HomeworkListProps = {
 
 export default function HomeworkList({ displayDate }: HomeworkListProps) {
   const context = useContext(AppContext);
-  const { tasks, userData, addTask } = context!;
-
-  useEffect(() => {
-    if (!userData.setupComplete || !displayDate) return;
-
-    const relevantDate = startOfDay(displayDate);
-    const dayIndex = getDay(relevantDate);
-
-    const subjectsForDay = userData.subjects.filter(subject =>
-      userData.schedule[subject.id]?.includes(dayIndex)
-    );
-
-    subjectsForDay.forEach(subject => {
-        addTask({
-            subjectId: subject.id,
-            subjectName: subject.name,
-            description: '',
-            dueDate: relevantDate.toISOString(),
-            isCompleted: false,
-            isManual: false,
-            estimatedTime: undefined,
-        });
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userData.setupComplete, userData.subjects, userData.schedule, displayDate, addTask]);
-
+  const { tasks } = context!;
 
   const sortedTasks = useMemo(() => {
+    if (!displayDate) return [];
+    
     const tasksForDisplayDate = tasks.filter(task => {
-        if (!displayDate) return false;
         return startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayDate).getTime()
     });
     
