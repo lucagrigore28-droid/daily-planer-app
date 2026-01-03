@@ -14,6 +14,8 @@ import { ro } from 'date-fns/locale';
 import { AppContext } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Subject } from '@/lib/types';
 
 type AddTaskDialogProps = {
   open: boolean;
@@ -23,23 +25,23 @@ type AddTaskDialogProps = {
 export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps) {
   const context = useContext(AppContext);
   const { toast } = useToast();
-  const [subjectName, setSubjectName] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
 
   const handleAddTask = () => {
-    if (!subjectName.trim() || !dueDate) {
+    if (!selectedSubject || !dueDate) {
       toast({
         title: 'Câmpuri incomplete',
-        description: 'Te rog să introduci numele materiei și termenul limită.',
+        description: 'Te rog să selectezi materia și termenul limită.',
         variant: 'destructive',
       });
       return;
     }
 
     context?.addTask({
-      subjectId: 'manual_' + subjectName.toLowerCase().replace(/\s/g, '_'),
-      subjectName: subjectName.trim(),
+      subjectId: selectedSubject.id,
+      subjectName: selectedSubject.name,
       description: description.trim(),
       dueDate: dueDate.toISOString(),
       isCompleted: false,
@@ -48,14 +50,19 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
     
     toast({
         title: 'Temă adăugată!',
-        description: `Tema pentru "${subjectName}" a fost adăugată cu succes.`,
+        description: `Tema pentru "${selectedSubject.name}" a fost adăugată cu succes.`,
     });
 
     // Reset form and close dialog
-    setSubjectName('');
+    setSelectedSubject(null);
     setDescription('');
     setDueDate(new Date());
     onOpenChange(false);
+  };
+
+  const handleSubjectChange = (subjectId: string) => {
+    const subject = context?.userData.subjects.find(s => s.id === subjectId);
+    setSelectedSubject(subject || null);
   };
 
   return (
@@ -70,7 +77,18 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="subject-name" className="text-right">Materie</Label>
-            <Input id="subject-name" value={subjectName} onChange={(e) => setSubjectName(e.target.value)} className="col-span-3" />
+            <Select onValueChange={handleSubjectChange} value={selectedSubject?.id}>
+                <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Alege materia" />
+                </SelectTrigger>
+                <SelectContent>
+                    {context?.userData.subjects.map(subject => (
+                        <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="due-date" className="text-right">Termen</Label>
@@ -79,7 +97,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-[280px] justify-start text-left font-normal col-span-3",
+                    "w-full justify-start text-left font-normal col-span-3",
                     !dueDate && "text-muted-foreground"
                   )}
                 >
