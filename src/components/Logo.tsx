@@ -17,10 +17,16 @@ export function Logo({ className }: LogoProps) {
         xmlns="http://www.w3.org/2000/svg"
         className="text-primary"
       >
-        <rect x="5" y="5" width="22" height="22" rx="4" stroke="currentColor" strokeWidth="2"/>
-        <path d="M12 9V7M20 9V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        <rect x="9" y="12" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="2"/>
-        <path d="M13 18L15.5 20.5L19 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <defs>
+            <linearGradient id="logo-gradient" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#FDB84A"/>
+                <stop offset="1" stopColor="#D74C9D"/>
+            </linearGradient>
+        </defs>
+        <rect x="4" y="4" width="24" height="24" rx="6" stroke="url(#logo-gradient)" strokeWidth="2.5"/>
+        <path d="M10 8V6M22 8V6" stroke="url(#logo-gradient)" strokeWidth="2.5" strokeLinecap="round"/>
+        <rect x="8" y="12" width="16" height="12" rx="2" stroke="url(#logo-gradient)" strokeWidth="2.5"/>
+        <path d="M12 18L15 21L20 15" stroke="url(#logo-gradient)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     </div>
   );
