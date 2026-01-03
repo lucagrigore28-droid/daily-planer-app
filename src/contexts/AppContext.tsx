@@ -21,7 +21,7 @@ const initialUserData: UserData = {
     sundayMorningTime: '11:00',
     sundayEveningTime: '20:00',
   },
-  theme: 'orange',
+  theme: 'purple',
 };
 
 const initialTasks: HomeworkTask[] = [];
@@ -87,7 +87,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             ...initialUserData, 
             ...parsedData, 
             notifications: mergedNotifications,
-            theme: parsedData.theme || 'orange' // Ensure theme is loaded
+            theme: parsedData.theme || 'purple' // Ensure theme is loaded
         };
         setUserData(mergedData);
       }
@@ -107,8 +107,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('dailyPlannerPro_userData', JSON.stringify(userData));
         
         // Handle color theme
-        const themeName = userData.theme || 'orange';
-        const themeClass = themes.find(t => t.name === themeName)?.className || 'theme-orange';
+        const themeName = userData.theme || 'purple';
+        const themeClass = themes.find(t => t.name === themeName)?.className || 'theme-purple';
         const root = window.document.documentElement;
         
         // Remove old theme classes

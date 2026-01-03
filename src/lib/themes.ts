@@ -9,6 +9,13 @@ export type Theme = {
 
 export const themes: Theme[] = [
   {
+    name: 'purple',
+    label: 'Apus',
+    className: 'theme-purple',
+    primary: '262 84% 60%',
+    accent: '289 84% 65%',
+  },
+  {
     name: 'orange',
     label: 'Apune',
     className: 'theme-orange',
@@ -28,13 +35,6 @@ export const themes: Theme[] = [
     className: 'theme-green',
     primary: '142 76% 36%',
     accent: '158 64% 52%',
-  },
-  {
-    name: 'purple',
-    label: 'Apus',
-    className: 'theme-purple',
-    primary: '262 84% 60%',
-    accent: '289 84% 65%',
   },
   {
     name: 'red',
