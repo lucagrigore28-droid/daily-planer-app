@@ -11,7 +11,6 @@ export default function Logo({ className }: { className?: string }) {
         xmlns="http://www.w3.org/2000/svg"
         className={className}
     >
-      <rect width="100" height="100" fill="black" />
       <defs>
         <linearGradient id="instaGradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" style={{stopColor:"hsl(var(--primary))", stopOpacity:1}} />
