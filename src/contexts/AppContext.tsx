@@ -26,9 +26,6 @@ type AppContextType = {
   resetData: () => void;
   isDataLoaded: boolean;
   currentDate: Date;
-  setCurrentDate: (date: Date) => void;
-  hasGpsAccess: boolean | null;
-  setHasGpsAccess: (hasAccess: boolean) => void;
   getRelevantSchoolDays: () => Date[];
   getNextSchoolDayWithTasks: () => Date | null;
   getWeekendTasks: () => HomeworkTask[];
@@ -41,7 +38,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tasks, setTasks] = useState<HomeworkTask[]>(initialTasks);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [hasGpsAccess, setHasGpsAccess] = useState<boolean | null>(null);
 
   useEffect(() => {
     try {
@@ -227,9 +223,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     resetData,
     isDataLoaded,
     currentDate,
-    setCurrentDate,
-    hasGpsAccess,
-    setHasGpsAccess,
     getRelevantSchoolDays,
     getNextSchoolDayWithTasks,
     getWeekendTasks,

@@ -7,43 +7,20 @@ import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Plus, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import HomeworkList from './HomeworkList';
-import ManualTimeDialog from './ManualTimeDialog';
 import AddTaskDialog from './AddTaskDialog';
 import { CalendarIcon } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
-import { cn } from '@/lib/utils';
 import SettingsDialog from './SettingsDialog';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
-  const [isManualTimeOpen, setManualTimeOpen] = useState(false);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
-  useEffect(() => {
-    if (context?.isDataLoaded && context.hasGpsAccess === null) {
-      navigator.permissions.query({ name: 'geolocation' }).then((permissionStatus) => {
-        if (permissionStatus.state === 'denied') {
-          context.setHasGpsAccess(false);
-          setManualTimeOpen(true);
-        } else {
-          context.setHasGpsAccess(true);
-        }
-        permissionStatus.onchange = () => {
-            const hasAccess = permissionStatus.state !== 'denied';
-            context.setHasGpsAccess(hasAccess);
-            if(!hasAccess) setManualTimeOpen(true);
-        };
-      });
-    } else if (context?.isDataLoaded && context.hasGpsAccess === false) {
-      setManualTimeOpen(true);
-    }
-  }, [context]);
-  
   const nextDayWithTasks = React.useMemo(() => {
     return context?.getNextSchoolDayWithTasks();
   }, [context]);
@@ -157,7 +134,6 @@ export default function HomeworkDashboard() {
         </TabsContent>
       </Tabs>
       
-      <ManualTimeDialog open={isManualTimeOpen} onOpenChange={setManualTimeOpen} />
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
       <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </main>

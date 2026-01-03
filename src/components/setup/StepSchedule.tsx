@@ -27,6 +27,11 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     }
   }, [context?.userData.schedule]);
 
+  const handleFinishSetup = () => {
+    context?.updateUser({ setupComplete: true });
+    // onNext is not called because this is the last step.
+    // The main app component will detect setupComplete and switch to the dashboard.
+  };
 
   const handleScheduleChange = (subjectId: string, days: string[]) => {
     const newSchedule = {
@@ -71,12 +76,12 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
           </div>
         </ScrollArea>
       </CardContent>
-      {isSetup && (
+      {isSetup ? (
         <CardFooter className="flex justify-between">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={onNext}>Continuă</Button>
+          <Button onClick={handleFinishSetup}>Finalizează</Button>
         </CardFooter>
-      )}
+      ) : null}
     </Card>
   );
 }
