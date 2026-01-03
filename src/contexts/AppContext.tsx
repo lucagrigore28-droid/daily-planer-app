@@ -39,6 +39,7 @@ type AppContextType = {
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
   deleteTask: (taskId: string) => void;
   resetData: () => Promise<void>;
+  logout: () => Promise<void>;
   isDataLoaded: boolean;
   currentDate: Date;
   getRelevantSchoolDays: () => Date[];
@@ -125,6 +126,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [tasksCollectionRef]);
 
+  const logout = useCallback(async () => {
+    await signOut(auth);
+    window.location.href = '/login';
+  }, [auth]);
+
   const resetData = useCallback(async () => {
     if (userDocRef) {
         // This is a simplified reset. A more robust solution
@@ -132,10 +138,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         // For now, we delete the user doc and sign out.
         await deleteDoc(userDocRef);
     }
-    await signOut(auth);
-    // Reload to clear all state and redirect to login
-    window.location.href = '/login';
-  }, [userDocRef, auth]);
+    await logout();
+  }, [userDocRef, logout]);
 
 
   // Effect to auto-generate scheduled tasks
@@ -262,6 +266,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     updateTask,
     deleteTask,
     resetData,
+    logout,
     isDataLoaded,
     currentDate,
     getRelevantSchoolDays,
@@ -273,5 +278,3 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    

@@ -10,7 +10,7 @@ import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
 import StepNotifications from '@/components/setup/StepNotifications';
 import StepTheme from '@/components/setup/StepTheme';
-import { User, Book, Calendar, Bell, Palette } from 'lucide-react';
+import { User, Book, Calendar, Bell, Palette, LogOut, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +22,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -29,12 +31,45 @@ type SettingsDialogProps = {
 };
 
 const TABS = [
-    { value: 'profile', label: 'Profil', icon: User, component: StepName },
-    { value: 'subjects', label: 'Materii', icon: Book, component: StepSubjects },
-    { value: 'schedule', label: 'Orar', icon: Calendar, component: StepSchedule },
-    { value: 'notifications', label: 'Notificări', icon: Bell, component: StepNotifications },
-    { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
+    { value: 'profile', label: 'Profil', icon: User },
+    { value: 'subjects', label: 'Materii', icon: Book },
+    { value: 'schedule', label: 'Orar', icon: Calendar },
+    { value: 'notifications', label: 'Notificări', icon: Bell },
+    { value: 'appearance', label: 'Aspect', icon: Palette },
 ];
+
+const UserAccount = () => {
+    const context = useContext(AppContext);
+    
+    const handleLogout = () => {
+        context?.logout();
+    };
+
+    if (!context || !context.user) return null;
+
+    const { user } = context;
+    const isAnonymous = user.isAnonymous;
+    const email = isAnonymous ? "Cont de oaspete" : user.email;
+    const initial = email ? email.charAt(0).toUpperCase() : '?';
+
+    return (
+        <div className="p-4 rounded-lg border bg-background/50 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Contul Meu</h3>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Avatar>
+                         <AvatarFallback>{initial}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-sm text-muted-foreground">{email}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Deconectare
+                </Button>
+            </div>
+        </div>
+    )
+}
 
 const DangerZone = () => {
     const context = useContext(AppContext);
@@ -49,14 +84,15 @@ const DangerZone = () => {
 
     return (
         <>
-            <div className="mt-8 pt-6 border-t text-center">
-                <h3 className="text-lg font-semibold text-destructive">Deconectare și Resetare</h3>
+            <div className="mt-8 pt-6 border-t border-destructive/50">
+                <h3 className="text-lg font-semibold text-destructive">Zonă de Pericol</h3>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
-                    Această acțiune este ireversibilă. Toate datele tale, inclusiv numele, materiile, orarul și temele vor fi șterse definitiv, iar aplicația va fi resetată la starea inițială.
+                    Această acțiune este ireversibilă. Toate datele tale, inclusiv materiile, orarul și temele vor fi șterse definitiv.
                 </p>
-                <div className="flex justify-center">
+                <div className="flex">
                     <Button variant="destructive" onClick={() => setIsAlertOpen(true)}>
-                        Deconectare / Resetare
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Resetează Aplicația
                     </Button>
                 </div>
             </div>
@@ -106,11 +142,20 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
             </TabsList>
             <div className="flex-1 min-h-0 overflow-y-auto pr-4 -mr-4">
               {TABS.map((tab) => {
-                const Component = tab.component;
+                const Component = tab.value === 'profile' ? null : TABS.find(t => t.value === tab.value)?.component;
                 return (
-                  <TabsContent key={tab.value} value={tab.value}>
-                    <Component />
-                     {tab.value === 'profile' && <DangerZone />}
+                  <TabsContent key={tab.value} value={tab.value} className="h-full flex flex-col">
+                     {tab.value === 'profile' ? (
+                        <div className="flex flex-col justify-between flex-1">
+                           <div>
+                            <UserAccount />
+                            <StepName />
+                           </div>
+                           <DangerZone />
+                        </div>
+                     ) : Component ? (
+                        <Component />
+                     ) : null}
                   </TabsContent>
                 )
               })}
