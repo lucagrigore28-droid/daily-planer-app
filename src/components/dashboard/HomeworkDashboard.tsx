@@ -23,15 +23,17 @@ export default function HomeworkDashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
-  const nextDayWithTasks = React.useMemo(() => {
+  const nextDayWithTasks = useMemo(() => {
     return context?.getNextSchoolDayWithTasks();
-  }, [context]);
+  }, [context?.tasks, context?.currentDate, context?.userData.schedule]);
 
   useEffect(() => {
-    if (nextDayWithTasks) {
+    // Set the initial displayed day only once when the component loads
+    // and `displayedDay` hasn't been set yet.
+    if (!displayedDay && nextDayWithTasks) {
       setDisplayedDay(startOfDay(nextDayWithTasks));
     }
-  }, [nextDayWithTasks]);
+  }, [nextDayWithTasks, displayedDay]);
 
   const handlePrevDay = () => {
     if (displayedDay) {
