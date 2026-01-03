@@ -161,8 +161,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                               description: '',
                               dueDate: dateToCheck.toISOString(),
                               isCompleted: false,
-                              isManual: false,
-                              estimatedTime: undefined
+                              isManual: false
                           }, { merge: true });
                       }
                   }
