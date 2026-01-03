@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { ScrollArea } from '../ui/scroll-area';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -139,7 +140,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                 </TabsTrigger>
               ))}
             </TabsList>
-            <div className="flex-1">
+            <div className="flex-1 min-h-0">
               {TABS.map((tab) => {
                 const Component = tab.component;
                 return (
@@ -150,7 +151,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                             <UserAccount />
                             <StepName />
                            </div>
-                           <DangerZone />
+                           
                         </div>
                      ) : Component ? (
                         <Component />
