@@ -85,7 +85,7 @@ const DangerZone = () => {
     return (
         <>
             <div className="mt-8 pt-6 border-t border-destructive/20">
-                <h3 className="text-lg font-semibold text-destructive">Zonă de Pericol</h3>
+                <h3 className="text-lg font-semibold">Resetare Aplicație</h3>
                 <p className="text-sm text-muted-foreground mt-1 mb-4">
                     Această acțiune este ireversibilă. Toate datele tale, inclusiv materiile, orarul și temele vor fi șterse definitiv.
                 </p>
@@ -141,29 +141,25 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               ))}
             </TabsList>
             <div className="flex-1 min-h-0">
+              <ScrollArea className="h-full pr-4">
                 <TabsContent value="profile" className="h-full flex flex-col mt-0">
-                    <ScrollArea className="flex-grow">
-                        <div className="pr-4 h-full flex flex-col">
-                            <div className="flex flex-col justify-between flex-1 h-full">
-                                <div>
-                                    <UserAccount />
-                                    <StepName />
-                                </div>
-                                <DangerZone />
-                            </div>
-                        </div>
-                    </ScrollArea>
+                  <div className="flex flex-col justify-between flex-1 h-full">
+                      <div>
+                          <UserAccount />
+                          <StepName />
+                      </div>
+                      <DangerZone />
+                  </div>
                 </TabsContent>
                 {TABS.filter(t => t.value !== 'profile').map(tab => {
                   const Component = tab.component!;
                   return (
-                     <TabsContent key={tab.value} value={tab.value} className="h-full flex flex-col mt-0">
-                        <ScrollArea className="flex-grow pr-4">
-                            <Component />
-                        </ScrollArea>
+                     <TabsContent key={tab.value} value={tab.value} className="mt-0">
+                        <Component />
                     </TabsContent>
                   )
                 })}
+              </ScrollArea>
             </div>
           </Tabs>
         </div>
