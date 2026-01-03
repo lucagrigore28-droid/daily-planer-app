@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 export const metadata: Metadata = {
   title: 'Daily Planner Pro',
   description: 'Un planificator inteligent pentru temele tale zilnice.',
+  manifest: '/manifest.webmanifest',
 };
 
 const fontPoppins = Poppins({
