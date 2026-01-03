@@ -6,13 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { ro } from 'date-fns/locale';
+import { Clock } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 import { AppContext } from '@/contexts/AppContext';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Subject } from '@/lib/types';
@@ -23,14 +19,18 @@ type AddTaskDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+// Helper function to format date to YYYY-MM-DD for the input
+const formatDateForInput = (date: Date): string => {
+  return format(date, 'yyyy-MM-dd');
+};
+
 export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps) {
   const context = useContext(AppContext);
   const { toast } = useToast();
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
+  const [dueDate, setDueDate] = useState<Date>(new Date());
   const [estimatedTime, setEstimatedTime] = useState(0);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -43,10 +43,10 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
   }, [open]);
 
   const handleAddTask = () => {
-    if (!selectedSubject || !dueDate) {
+    if (!selectedSubject) {
       toast({
         title: 'Câmpuri incomplete',
-        description: 'Te rog să selectezi materia și termenul limită.',
+        description: 'Te rog să selectezi materia.',
         variant: 'destructive',
       });
       return;
@@ -75,9 +75,11 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
     setSelectedSubject(subject || null);
   };
   
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateChange = (dateString: string) => {
+    // The input gives a YYYY-MM-DD string. We need to parse it correctly.
+    // Parsing as ISO and adding timezone info to avoid off-by-one day errors.
+    const date = new Date(dateString + 'T00:00:00');
     setDueDate(date);
-    setIsCalendarOpen(false);
   }
 
   return (
@@ -107,56 +109,13 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="due-date" className="text-right">Termen</Label>
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal col-span-3",
-                    !dueDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dueDate ? format(dueDate, "PPP", { locale: ro }) : <span>Alege o dată</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dueDate}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                  locale={ro}
-                  classNames={{
-                    day_selected: 'bg-primary text-primary-foreground hover:bg-primary/90 focus:bg-primary/90 rounded-lg',
-                    day_today: 'bg-accent/50 rounded-lg',
-                    day: 'h-12 w-12 text-base rounded-lg',
-                    head_cell: 'text-muted-foreground rounded-md w-12 font-normal text-sm',
-                    row: 'flex w-full mt-2',
-                    cell: 'text-center text-sm p-0 relative focus-within:relative focus-within:z-20',
-                    caption: 'flex items-center justify-between pt-1 px-2 relative',
-                    caption_label: 'text-xl font-extrabold text-primary uppercase',
-                    nav_button_previous: 'h-8 w-8',
-                    nav_button_next: 'h-8 w-8',
-                  }}
-                  components={{
-                    CaptionLabel: ({ displayMonth }) => {
-                        if (!displayMonth) return null;
-                        return (
-                          <>
-                            <span className="text-xl font-extrabold text-primary uppercase">
-                              {format(displayMonth, 'LLLL', { locale: ro })}
-                            </span>
-                            <span className="text-xl font-extrabold text-foreground ml-2">
-                              {format(displayMonth, 'yyyy', { locale: ro })}
-                            </span>
-                          </>
-                        )
-                    }
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
+            <Input
+              id="due-date"
+              type="date"
+              value={formatDateForInput(dueDate)}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="col-span-3"
+            />
           </div>
            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="estimated-time" className="text-right">Timp estimat</Label>
