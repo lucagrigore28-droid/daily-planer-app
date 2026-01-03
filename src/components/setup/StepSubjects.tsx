@@ -11,6 +11,7 @@ import type { Subject } from '@/lib/types';
 import { PREDEFINED_SUBJECTS } from '@/lib/constants';
 import { PlusCircle, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 type StepProps = {
   onNext: () => void;
@@ -69,15 +70,18 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
               const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
               const isChecked = !!selectedSubjects.find(s => s.name === subjectName);
               return (
-                <div key={subjectName} className="flex items-center space-x-2">
+                <div key={subjectName} className="flex items-center space-x-3 p-2 rounded-md transition-colors hover:bg-muted">
                   <Checkbox
                     id={subjectName}
                     checked={isChecked}
                     onCheckedChange={() => handleToggleSubject(subjectName, subjectIsCustom)}
+                    className="h-5 w-5"
                   />
-                  <Label htmlFor={subjectName} className="flex-1 cursor-pointer">{subjectName}</Label>
+                  <Label htmlFor={subjectName} className="flex-1 cursor-pointer text-base">
+                    {subjectName}
+                  </Label>
                    {subjectIsCustom && isChecked && (
-                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleToggleSubject(subjectName, true)}>
+                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggleSubject(subjectName, true)}>
                        <X className="h-4 w-4" />
                      </Button>
                    )}
