@@ -77,7 +77,7 @@ service cloud.firestore {
       allow delete: if false;
 
       /**
-       * @description Rules for a user's collection of subjects and their nested data.
+       * @description Rules for a user's collection of subjects.
        * @path /users/{userId}/subjects/{subjectId}
        * @principle Enforces document ownership and validates relational links.
        */
