@@ -43,6 +43,8 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
   
   const isSetup = onNext !== (() => {});
 
+  const scheduleDays = DAYS_OF_WEEK_SCHEDULE.filter(d => d.id <= 5); // Only Mon-Fri
+
   return (
     <Card className="border-0 shadow-none sm:border-transparent sm:shadow-none">
       <CardHeader>
@@ -64,7 +66,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
                   value={schedule[subject.id]?.map(String) || []}
                   onValueChange={(days) => handleScheduleChange(subject.id, days)}
                 >
-                  {DAYS_OF_WEEK_SCHEDULE.map(day => (
+                  {scheduleDays.map(day => (
                     <ToggleGroupItem key={day.id} value={String(day.id)} aria-label={day.name}>
                       {day.name}
                     </ToggleGroupItem>
@@ -84,3 +86,5 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
+
+    

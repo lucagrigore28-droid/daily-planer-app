@@ -33,4 +33,8 @@ export const DAYS_OF_WEEK_SCHEDULE = [
   { id: 3, name: 'Miercuri' },
   { id: 4, name: 'Joi' },
   { id: 5, name: 'Vineri' },
+  { id: 6, name: 'Sâmbătă' },
+  { id: 7, name: 'Duminică' },
 ];
+
+    

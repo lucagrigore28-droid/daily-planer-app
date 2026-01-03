@@ -149,11 +149,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
+    const uniqueId = task.isManual
+        ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
+        : `${task.subjectId}-${startOfDay(new Date(task.dueDate)).toISOString()}`;
+    
     setTasks(prev => {
-        const uniqueId = task.isManual
-            ? `${task.subjectId}-${task.dueDate}-${Math.random().toString(36).substring(2, 9)}`
-            : `${task.subjectId}-${startOfDay(new Date(task.dueDate)).toISOString()}`;
-        
         if (prev.some(t => t.id === uniqueId)) {
             return prev;
         }
@@ -194,10 +194,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     
     setTasks(prevTasks => {
         const newTasks: HomeworkTask[] = [];
+        const existingTaskIds = new Set(prevTasks.map(t => t.id));
+
         // Check a range of days around today to ensure tasks are populated
         for (let i = -7; i < 14; i++) {
             const dateToCheck = addDays(today, i);
-            const dayIndex = getDay(dateToCheck);
+            // getDay returns 0 for Sunday, 1 for Monday... We map Sunday to 7 to match schedule.
+            const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
 
             const subjectsForDay = userData.subjects.filter(subject => 
                 userData.schedule[subject.id]?.includes(dayIndex)
@@ -205,9 +208,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
             subjectsForDay.forEach(subject => {
                 const taskId = `${subject.id}-${startOfDay(dateToCheck).toISOString()}`;
-                const taskExists = prevTasks.some(t => t.id === taskId);
                 
-                if (!taskExists) {
+                if (!existingTaskIds.has(taskId)) {
                     newTasks.push({
                         id: taskId,
                         subjectId: subject.id,
@@ -217,6 +219,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                         isCompleted: false,
                         isManual: false,
                     });
+                    existingTaskIds.add(taskId); // Add to set to prevent duplicates in the same run
                 }
             });
         }
@@ -230,7 +233,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [isDataLoaded, userData.setupComplete, userData.subjects, userData.schedule]);
 
   const isSchoolDay = useCallback((date: Date) => {
-    const dayIndex = getDay(date);
+    const dayIndex = getDay(date) === 0 ? 7 : getDay(date);
     if (dayIndex < 1 || dayIndex > 5) return false;
     const hasSubjects = Object.values(userData.schedule).some(days => days.includes(dayIndex));
     return hasSubjects;
@@ -283,7 +286,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const dayStart = startOfDay(nextDay);
       const tasksForNextDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === dayStart.getTime());
       
-      const dayIndex = getDay(dayStart);
+      const dayIndex = getDay(dayStart) === 0 ? 7 : getDay(dayStart);
       const isScheduledDay = userData.subjects.some(subject => userData.schedule[subject.id]?.includes(dayIndex));
 
       if (tasksForNextDay.length > 0 || isScheduledDay) {
@@ -335,3 +338,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
