@@ -40,14 +40,14 @@ function PlanningColumn({ title, date, tasks, onDragOver, onDrop, isDragging }: 
   };
 
   return (
-    <div className="flex-1 rounded-lg border bg-muted/40 p-3 min-h-[300px]">
-      <h3 className="text-lg font-bold text-center mb-4">{title}</h3>
+    <div className="flex-1 rounded-lg border bg-muted/40 p-3 min-h-[300px] flex flex-col">
+      <h3 className="text-lg font-bold text-center mb-4 flex-shrink-0">{title}</h3>
       <div 
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "h-full space-y-3 p-2 rounded-md transition-colors",
+          "h-full space-y-3 p-2 rounded-md transition-colors flex-grow",
           isOver && isDragging && "bg-primary/20",
         )}
       >
@@ -75,9 +75,9 @@ function DraggableHomeworkItem({ task }: {task: HomeworkTask}) {
     };
 
     return (
-        <div draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} className="flex items-center gap-2 group">
+        <div draggable onDragStart={handleDragStart} onDragEnd={handleDragEnd} className="flex items-center gap-2 group flex-1">
              <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab group-hover:text-foreground transition-colors" />
-             <div className="flex-1">
+             <div className="min-w-0 flex-1">
                 <HomeworkItem task={task} />
              </div>
         </div>
@@ -205,13 +205,13 @@ export default function WeekendView() {
         ) : (
             <div className="flex gap-4" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 {/* Unplanned Column */}
-                <div className="w-64 flex-shrink-0 rounded-lg border bg-muted/40 p-3">
-                    <h3 className="text-lg font-bold text-center mb-4">Teme neplanificate</h3>
+                <div className="w-64 flex-shrink-0 rounded-lg border bg-muted/40 p-3 flex flex-col">
+                    <h3 className="text-lg font-bold text-center mb-4 flex-shrink-0">Teme neplanificate</h3>
                      <div 
                         onDragOver={handleDragOver}
                         onDrop={handleDrop(null)}
                         className={cn(
-                          "h-full space-y-3 p-2 rounded-md transition-colors",
+                          "h-full space-y-3 p-2 rounded-md transition-colors flex-grow",
                            isDragging && "border-2 border-dashed border-gray-400"
                         )}
                      >
