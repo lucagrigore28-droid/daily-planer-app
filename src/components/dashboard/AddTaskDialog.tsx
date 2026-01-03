@@ -29,7 +29,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
-  const [estimatedTime, setEstimatedTime] = useState(30);
+  const [estimatedTime, setEstimatedTime] = useState(0);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
       setSelectedSubject(null);
       setDescription('');
       setDueDate(new Date());
-      setEstimatedTime(30);
+      setEstimatedTime(0);
     }
   }, [open]);
 
@@ -59,7 +59,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
       dueDate: dueDate.toISOString(),
       isCompleted: false,
       isManual: true,
-      estimatedTime: estimatedTime,
+      estimatedTime: estimatedTime > 0 ? estimatedTime : undefined,
     });
     
     toast({
@@ -162,7 +162,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
             <Label htmlFor="estimated-time" className="text-right">Timp estimat</Label>
             <div className="col-span-3 flex items-center gap-4">
                 <Slider 
-                    defaultValue={[estimatedTime]} 
+                    value={[estimatedTime]} 
                     max={180} 
                     step={5} 
                     onValueChange={(value) => setEstimatedTime(value[0])}
@@ -170,7 +170,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                 />
                 <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-bold w-12 text-right">{estimatedTime} min</span>
+                    <span className="font-bold w-12 text-right">{estimatedTime > 0 ? `${estimatedTime} min` : 'N/A'}</span>
                 </div>
             </div>
           </div>

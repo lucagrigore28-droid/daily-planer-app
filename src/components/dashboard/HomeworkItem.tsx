@@ -31,7 +31,7 @@ type HomeworkItemProps = {
 export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
   const [description, setDescription] = useState(task.description);
-  const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 30);
+  const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
   const [isCompleted, setIsCompleted] = useState(task.isCompleted);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -45,7 +45,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     setIsSaving(true);
     context?.updateTask(task.id, { 
         description,
-        estimatedTime: estimatedTime,
+        estimatedTime: estimatedTime > 0 ? estimatedTime : undefined,
     });
     setTimeout(() => setIsSaving(false), 1000);
   };
@@ -58,10 +58,10 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   useEffect(() => {
     setDescription(task.description);
     setIsCompleted(task.isCompleted);
-    setEstimatedTime(task.estimatedTime || 30);
+    setEstimatedTime(task.estimatedTime || 0);
   }, [task]);
 
-  const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime || 30);
+  const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime || 0);
 
   return (
     <>
@@ -95,7 +95,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                     >
                       {task.subjectName}
                     </Label>
-                    {task.estimatedTime && (
+                    {task.estimatedTime && task.estimatedTime > 0 && (
                         <div className={cn("flex items-center gap-1.5 text-xs text-muted-foreground", isCompleted && "text-muted-foreground/70")}>
                             <Clock className="h-3 w-3" />
                             <span>{task.estimatedTime} minute</span>
@@ -120,14 +120,14 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                         <Label htmlFor={`estimated-time-${task.id}`}>Timp estimat (minute)</Label>
                         <div className="flex items-center gap-4 pt-2">
                              <Slider 
-                                defaultValue={[estimatedTime]} 
+                                value={[estimatedTime]} 
                                 max={180} 
                                 step={5} 
                                 onValueChange={(value) => setEstimatedTime(value[0])}
                                 className="flex-1"
                             />
                             <div className="flex items-center gap-2">
-                                <span className="font-bold w-12 text-right">{estimatedTime} min</span>
+                                <span className="font-bold w-12 text-right">{estimatedTime > 0 ? `${estimatedTime} min` : 'N/A'}</span>
                             </div>
                         </div>
                      </div>
