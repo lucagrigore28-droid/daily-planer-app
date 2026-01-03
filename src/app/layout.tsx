@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   description: 'Un planificator inteligent pentru temele tale zilnice.',
   manifest: '/manifest.webmanifest',
   icons: {
-    apple: "/icon.svg",
+    icon: '/icon.svg',
+    apple: "/apple-icon.png",
   },
   appleWebApp: {
     capable: true,
