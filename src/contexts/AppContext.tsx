@@ -42,7 +42,6 @@ type AppContextType = {
   getRelevantSchoolDays: () => Date[];
   getNextSchoolDayWithTasks: () => Date | null;
   getWeekendTasks: () => HomeworkTask[];
-  _setCurrentDateForTesting: (date: Date) => void; // For testing
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -71,10 +70,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [tasks, setTasks] = useState<HomeworkTask[]>(initialTasks);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-
-  const _setCurrentDateForTesting = (date: Date) => {
-    setCurrentDate(date);
-  };
 
   useEffect(() => {
     try {
@@ -419,7 +414,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     getRelevantSchoolDays,
     getNextSchoolDayWithTasks,
     getWeekendTasks,
-    _setCurrentDateForTesting,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
