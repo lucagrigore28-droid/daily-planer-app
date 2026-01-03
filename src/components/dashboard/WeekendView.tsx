@@ -40,7 +40,7 @@ function PlanningColumn({ title, date, tasks, onDragOver, onDrop, isDragging }: 
   };
 
   return (
-    <div className="flex-1 rounded-lg bg-muted/40 p-3 min-h-[300px]">
+    <div className="flex-1 rounded-lg border bg-muted/40 p-3 min-h-[300px]">
       <h3 className="text-lg font-bold text-center mb-4">{title}</h3>
       <div 
         onDragOver={handleDragOver}
@@ -205,7 +205,7 @@ export default function WeekendView() {
         ) : (
             <div className="flex gap-4" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 {/* Unplanned Column */}
-                <div className="w-64 flex-shrink-0 rounded-lg bg-muted/40 p-3">
+                <div className="w-64 flex-shrink-0 rounded-lg border bg-muted/40 p-3">
                     <h3 className="text-lg font-bold text-center mb-4">Teme neplanificate</h3>
                      <div 
                         onDragOver={handleDragOver}
