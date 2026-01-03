@@ -228,25 +228,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const getNextSchoolDayWithTasks = useCallback(() => {
     const today = startOfDay(currentDate);
     
-    const tasksForToday = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === today.getTime());
-    if (tasksForToday.some(t => !t.isCompleted)) {
+    // First, check if there are incomplete tasks for today
+    const tasksForToday = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === today.getTime() && !task.isCompleted);
+    if (tasksForToday.length > 0) {
       return today;
     }
   
+    // If not, find the next day with any scheduled or manual tasks
     let nextDay = addDays(today, 1);
-    for (let i = 0; i < 30; i++) {
-      if (isSchoolDay(nextDay)) {
-        return nextDay;
-      }
-      const tasksForNextDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === nextDay.getTime());
-      if (tasksForNextDay.length > 0) {
+    for (let i = 0; i < 30; i++) { // Check up to 30 days in the future
+      const tasksForNextDay = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === nextDay.getTime() && !task.isCompleted);
+      
+      const dayIndex = getDay(nextDay);
+      const isScheduledDay = userData.subjects.some(subject => userData.schedule[subject.id]?.includes(dayIndex));
+
+      if (tasksForNextDay.length > 0 || isScheduledDay) {
         return nextDay;
       }
       nextDay = addDays(nextDay, 1);
     }
   
+    // If no tasks are found, default to today
     return today;
-  }, [currentDate, tasks, isSchoolDay]);
+  }, [currentDate, tasks, isSchoolDay, userData]);
 
   const getWeekendTasks = useCallback(() => {
     const today = startOfDay(currentDate);

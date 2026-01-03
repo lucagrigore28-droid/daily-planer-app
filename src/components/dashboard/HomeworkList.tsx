@@ -19,33 +19,31 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
   useEffect(() => {
     if (!userData.setupComplete) return;
 
-    const nextSchoolDayDate = startOfDay(displayDate);
-    const nextDayIndex = getDay(nextSchoolDayDate);
+    const relevantDate = startOfDay(displayDate);
+    const dayIndex = getDay(relevantDate);
 
-    const subjectsForNextDay = userData.subjects.filter(subject =>
-      userData.schedule[subject.id]?.includes(nextDayIndex)
+    const subjectsForDay = userData.subjects.filter(subject =>
+      userData.schedule[subject.id]?.includes(dayIndex)
     );
-    
-    // We will collect new tasks here and add them all at once.
+
     let generatedTasks: HomeworkTask[] = [];
 
-    subjectsForNextDay.forEach(subject => {
-        // The check must be against the existing tasks in the state.
-        const taskExists = tasks.some(task => 
-            task.subjectId === subject.id && 
-            !task.isManual && // Make sure we are not clashing with a manually added task
-            startOfDay(new Date(task.dueDate)).getTime() === nextSchoolDayDate.getTime()
-        );
+    subjectsForDay.forEach(subject => {
+        const predictableId = `${subject.id}-${relevantDate.toISOString()}`;
+        
+        // This check is now against the full task list to prevent duplicates across sessions
+        const taskExists = tasks.some(task => task.id === predictableId);
 
         if (!taskExists) {
             const newScheduledTask: HomeworkTask = {
-                id: `${subject.id}-${nextSchoolDayDate.toISOString()}`, // Use a predictable ID
+                id: predictableId,
                 subjectId: subject.id,
                 subjectName: subject.name,
                 description: '',
-                dueDate: nextSchoolDayDate.toISOString(),
+                dueDate: relevantDate.toISOString(),
                 isCompleted: false,
                 isManual: false,
+                estimatedTime: undefined, // Ensure it's optional
             };
             generatedTasks.push(newScheduledTask);
         }
@@ -53,33 +51,23 @@ export default function HomeworkList({ displayDate }: HomeworkListProps) {
 
     if (generatedTasks.length > 0) {
       setTasks(prevTasks => {
-        const newTasksToAdd = generatedTasks.filter(
-          genTask => !prevTasks.some(prevTask => prevTask.id === genTask.id)
-        );
-        return [...prevTasks, ...newTasksToAdd];
+        const currentTaskIds = new Set(prevTasks.map(t => t.id));
+        const newTasksToAdd = generatedTasks.filter(genTask => !currentTaskIds.has(genTask.id));
+        if (newTasksToAdd.length > 0) {
+            return [...prevTasks, ...newTasksToAdd];
+        }
+        return prevTasks;
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userData.setupComplete, userData.subjects, userData.schedule, displayDate]);
+  }, [userData.setupComplete, userData.subjects, userData.schedule, displayDate, setTasks]);
 
 
   const sortedTasks = useMemo(() => {
     const tasksForDisplayDate = tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === startOfDay(displayDate).getTime());
     
-    // Deduplicate tasks just in case, before rendering
-    const uniqueTasks = tasksForDisplayDate.reduce((acc, current) => {
-        if (!current.isManual) {
-            if (!acc.find(item => item.subjectId === current.subjectId && !item.isManual)) {
-                acc.push(current);
-            }
-        } else {
-            acc.push(current);
-        }
-        return acc;
-    }, [] as HomeworkTask[]);
-
     // Sort tasks: incomplete first, then completed
-    return uniqueTasks.sort((a, b) => {
+    return tasksForDisplayDate.sort((a, b) => {
         if (a.isCompleted === b.isCompleted) return 0;
         return a.isCompleted ? 1 : -1;
     });
