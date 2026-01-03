@@ -89,16 +89,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUser = useCallback((data: Partial<UserData>) => {
     if (userDocRef) {
-        // Create the payload with only the data that was passed in.
         const updateData: Partial<UserData> = { ...data };
 
-        // If the user document doesn't exist yet (userData is null),
-        // we merge the new data with the initial template to ensure no undefined fields.
         if (!userData) {
             const payloadForCreation = { ...initialUserData, ...updateData };
             setDocumentNonBlocking(userDocRef, payloadForCreation, { merge: true });
         } else {
-            // If the document exists, just send the partial update.
             setDocumentNonBlocking(userDocRef, updateData, { merge: true });
         }
     }
@@ -107,7 +103,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
       if (!tasksCollectionRef) return;
-      // In Firestore, we can let it generate the ID.
       addDocumentNonBlocking(tasksCollectionRef, task);
   }, [tasksCollectionRef]);
 
@@ -133,9 +128,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const resetData = useCallback(async () => {
     if (userDocRef) {
-        // This is a simplified reset. A more robust solution
-        // would use a Cloud Function to delete all subcollections.
-        // For now, we delete the user doc and sign out.
         await deleteDoc(userDocRef);
     }
     await logout();
@@ -157,7 +149,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           if (dayIndex >= 1 && dayIndex <= 5) { // Only school days
               userData.subjects.forEach(subject => {
                   if (userData.schedule[subject.id]?.includes(dayIndex)) {
-                      const taskId = `${subject.id}-${startOfDay(dateToCheck).toISOString()}`;
+                      const sanitizedSubjectId = subject.id.replace(/[^a-zA-Z0-9]/g, '');
+                      const dateString = format(dateToCheck, 'yyyy-MM-dd');
+                      const taskId = `${sanitizedSubjectId}-${dateString}`;
                       const taskExists = tasks?.some(t => t.id === taskId);
                       
                       if (!taskExists && tasksCollectionRef) {
