@@ -23,13 +23,6 @@ function AppContainer() {
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    // If setup is not complete, we don't want a splash screen, just the wizard.
-    if (isDataLoaded && userData && !userData.setupComplete) {
-      setSplashScreenDone(true);
-    }
-  }, [isDataLoaded, userData]);
-
   if (isUserLoading || !isDataLoaded || !context) {
     return (
       <div className="flex h-screen w-screen items-center justify-center p-4">
@@ -43,9 +36,9 @@ function AppContainer() {
     );
   }
   
-  const showWizard = userData ? !userData.setupComplete : true;
+  const showWizard = !userData?.setupComplete;
 
-  if (userData?.setupComplete && !splashScreenDone) {
+  if (!showWizard && !splashScreenDone) {
       return <SplashScreen onNext={() => setSplashScreenDone(true)} />;
   }
 
