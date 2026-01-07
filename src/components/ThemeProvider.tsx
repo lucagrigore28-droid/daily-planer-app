@@ -16,14 +16,26 @@ const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undef
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
-  const [appTheme, setAppTheme] = useState('purple');
+  const [appTheme, setAppTheme] = useState('red');
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem("daily-planner-pro-theme") as Theme | null;
-    const storedAppTheme = localStorage.getItem("daily-planner-pro-app-theme") as string | null;
-    setTheme(storedTheme || "dark");
-    setAppTheme(storedAppTheme || 'purple');
+    const handleStorageChange = () => {
+      const storedTheme = localStorage.getItem("daily-planner-pro-theme") as Theme | null;
+      const storedAppTheme = localStorage.getItem("daily-planner-pro-app-theme") as string | null;
+      setTheme(storedTheme || "dark");
+      setAppTheme(storedAppTheme || 'red');
+    };
+    
+    handleStorageChange(); // Initial load
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('theme-updated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('theme-updated', handleStorageChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -47,7 +59,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme]);
   
   useEffect(() => {
-    const themeClass = themes.find(t => t.name === appTheme)?.className || 'theme-purple';
+    const themeClass = themes.find(t => t.name === appTheme)?.className || 'theme-red';
     const root = window.document.documentElement;
     
     themes.forEach(t => root.classList.remove(t.className));
