@@ -74,15 +74,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
 
   useEffect(() => {
-    if (isDataLoaded && userData) {
-      const themeName = userData.theme || 'purple';
-      const themeClass = themes.find(t => t.name === themeName)?.className || 'theme-purple';
-      const root = window.document.documentElement;
-      
-      themes.forEach(t => root.classList.remove(t.className));
-      root.classList.add(themeClass);
+    if (isDataLoaded && userData?.theme) {
+        localStorage.setItem("daily-planner-pro-app-theme", userData.theme);
+        // Force a re-render in ThemeProvider by dispatching a custom event
+        window.dispatchEvent(new CustomEvent('theme-updated'));
     }
-  }, [userData, isDataLoaded]);
+  }, [userData?.theme, isDataLoaded]);
 
   // TODO: Add back notifications logic
   // ...
@@ -90,6 +87,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = useCallback((data: Partial<UserData>) => {
     if (userDocRef) {
         const updateData: Partial<UserData> = { ...data };
+
+        if ('theme' in data && data.theme) {
+            localStorage.setItem("daily-planner-pro-app-theme", data.theme);
+             window.dispatchEvent(new CustomEvent('theme-updated'));
+        }
 
         if (!userData) {
             const payloadForCreation = { ...initialUserData, ...updateData };
