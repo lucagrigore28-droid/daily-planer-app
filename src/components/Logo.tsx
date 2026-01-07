@@ -15,19 +15,12 @@ export default function Logo({ className }: { className?: string }) {
       <rect x="0" y="0" width="100" height="100" rx="22" ry="22" fill="black" />
       <defs>
         <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style={{stopColor:"hsl(var(--primary))", stopOpacity:1}} />
-          <stop offset="100%" style={{stopColor:"hsl(var(--accent))", stopOpacity:1}} />
+          <stop offset="0%" style={{stopColor:"#8B5CF6", stopOpacity:1}} />
+          <stop offset="100%" style={{stopColor:"#C084FC", stopOpacity:1}} />
         </linearGradient>
       </defs>
       <g fill="none" stroke="url(#logoGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
         
-        {/* Outer rounded square */}
-        <rect x="5" y="5" width="90" height="90" rx="22" ry="22" fill="none"/>
-
-        {/* Calendar rings */}
-        <line x1="38" y1="5" x2="38" y2="15" />
-        <line x1="62" y1="5" x2="62" y2="15" />
-
         {/* Inner shape with checkmark cutout */}
         <path d="
           M 31 30 
