@@ -39,5 +39,3 @@ export type UserData = {
   notifications: UserNotifications;
   theme: string;
 };
-
-    
