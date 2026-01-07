@@ -8,6 +8,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { themes } from '@/lib/themes';
 import { cn } from '@/lib/utils';
 import Logo from '../Logo';
+import { ThemeToggle } from '../ThemeToggle';
 
 
 type StepProps = {
@@ -33,7 +34,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
         </div>
         <CardTitle className="font-headline text-2xl">Alege-ți stilul</CardTitle>
         <CardDescription>
-          Selectează o paletă de culori care ți se potrivește.
+          Selectează o paletă de culori și o temă vizuală care ți se potrivesc.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -57,6 +58,10 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
                     <p className="text-center text-sm font-medium">{theme.label}</p>
                 </div>
             ))}
+        </div>
+        <div className="mt-8 pt-6 border-t flex items-center justify-between">
+            <p className="font-medium">Mod vizual</p>
+            <ThemeToggle />
         </div>
       </CardContent>
       {showNavButtons && (
