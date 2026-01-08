@@ -29,6 +29,7 @@ function AppContainer() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
   const [showWelcomeBack, setShowWelcomeBack] = useState(true);
+  const [isNewSetup, setIsNewSetup] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -51,12 +52,12 @@ function AppContainer() {
   if (showWizard) {
       return (
         <div className="bg-gradient-primary-accent min-h-screen">
-            <SetupWizard />
+            <SetupWizard onFinish={() => setIsNewSetup(true)} />
         </div>
       );
   }
 
-  if (showWelcomeBack) {
+  if (showWelcomeBack && !isNewSetup) {
     return <WelcomeBackScreen onNext={() => setShowWelcomeBack(false)} />
   }
 

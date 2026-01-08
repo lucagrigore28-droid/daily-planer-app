@@ -13,12 +13,17 @@ import { AppContext } from '@/contexts/AppContext';
 
 const TOTAL_STEPS = 5;
 
-export default function SetupWizard() {
+type SetupWizardProps = {
+  onFinish: () => void;
+};
+
+export default function SetupWizard({ onFinish }: SetupWizardProps) {
   const [step, setStep] = useState(0); // 0 is splash screen
   const context = useContext(AppContext);
 
   const handleFinishSetup = () => {
     context?.updateUser({ setupComplete: true });
+    onFinish();
   };
   
   const nextStep = () => setStep(prev => prev + 1);
