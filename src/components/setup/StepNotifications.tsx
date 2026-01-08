@@ -71,7 +71,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       const messaging = getMessaging(firebaseApp);
       try {
         // IMPORTANT: Replace with your actual VAPID key from Firebase Console > Project Settings > Cloud Messaging
-        const currentToken = await getToken(messaging, { vapidKey: 'BPEOo_jI3aRpbL5wB_1nLqA9so7-H3g3Ua54dJm1tS2E_mP1d6a3fO0d8E1G6w3J8c4Z2f4X2v4N5m8i7H6j5k4' });
+        const currentToken = await getToken(messaging, { vapidKey: 'rR1rTBFdebQJyvcVDvD-6uwBJZC8yioau2TaNrga3pA' });
         if (currentToken) {
           context?.addFcmToken(currentToken);
         } else {
