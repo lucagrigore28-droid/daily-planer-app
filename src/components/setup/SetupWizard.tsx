@@ -17,7 +17,7 @@ type SetupWizardProps = {
 };
 
 export default function SetupWizard({ onFinish }: SetupWizardProps) {
-  const [step, setStep] = useState(1); // Start directly at StepName
+  const [step, setStep] = useState(1);
   const context = useContext(AppContext);
 
   const handleFinishSetup = () => {
