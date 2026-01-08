@@ -20,19 +20,30 @@ type StepProps = {
 
 export default function StepSubjects({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
+  // This state now correctly represents ONLY the subjects selected by the user, as saved in Firestore.
   const [selectedSubjects, setSelectedSubjects] = useState<Subject[]>([]);
   const [customSubject, setCustomSubject] = useState('');
 
+  // Effect to synchronize component state with context from Firestore, runs only when context data changes.
   useEffect(() => {
     if (context?.userData?.subjects) {
       setSelectedSubjects(context.userData.subjects);
     }
   }, [context?.userData?.subjects]);
 
-  const handleToggleSubject = (subjectName: string, isCurrentlyCustom: boolean) => {
-    const isPredefined = PREDEFINED_SUBJECTS.includes(subjectName);
-    const existingSubject = selectedSubjects.find(s => s.name === subjectName);
+  // Memoized list for display purposes ONLY. It combines predefined and custom subjects and ensures uniqueness.
+  const allSubjectsToDisplay = useMemo(() => {
+    // Create a Set to hold unique subject names
+    const subjectNames = new Set(PREDEFINED_SUBJECTS);
+    // Add names from the user's selected subjects
+    selectedSubjects.forEach(s => subjectNames.add(s.name));
+    // Convert the Set to an array and sort it
+    return Array.from(subjectNames).sort((a, b) => a.localeCompare(b));
+  }, [selectedSubjects]);
 
+
+  const handleToggleSubject = (subjectName: string) => {
+    const existingSubject = selectedSubjects.find(s => s.name === subjectName);
     let updatedSubjects;
 
     if (existingSubject) {
@@ -40,28 +51,28 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       updatedSubjects = selectedSubjects.filter(s => s.name !== subjectName);
     } else {
       // If it doesn't exist, add it
+      const isPredefined = PREDEFINED_SUBJECTS.includes(subjectName);
       updatedSubjects = [...selectedSubjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
     }
     
+    // Update the local state AND save to Firestore via context
     setSelectedSubjects(updatedSubjects);
     context?.updateUser({ subjects: updatedSubjects });
   };
 
   const handleAddCustomSubject = () => {
-    if (customSubject.trim() && !selectedSubjects.find(s => s.name.toLowerCase() === customSubject.trim().toLowerCase())) {
-      handleToggleSubject(customSubject.trim(), true);
+    const trimmedName = customSubject.trim();
+    if (trimmedName && !selectedSubjects.find(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
+      handleToggleSubject(trimmedName);
       setCustomSubject('');
     }
   };
   
+  const handleRemoveCustomSubject = (subjectName: string) => {
+      handleToggleSubject(subjectName);
+  }
+  
   const showNavButtons = !!onNext;
-
-  const allSubjectsToDisplay = useMemo(() => {
-    const subjectSet = new Set(PREDEFINED_SUBJECTS);
-    selectedSubjects.forEach(s => subjectSet.add(s.name));
-    return Array.from(subjectSet).sort((a, b) => a.localeCompare(b));
-  }, [selectedSubjects]);
-
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -76,20 +87,22 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
           <div className="grid grid-cols-2 gap-4">
             {allSubjectsToDisplay.map(subjectName => {
               const isChecked = !!selectedSubjects.find(s => s.name === subjectName);
-              const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
+              const subjectInPredefinedList = PREDEFINED_SUBJECTS.includes(subjectName);
+              const isTrulyCustom = !subjectInPredefinedList;
+              
               return (
                 <div key={subjectName} className="flex items-center space-x-3 p-2 rounded-md transition-colors hover:bg-muted">
                   <Checkbox
                     id={subjectName}
                     checked={isChecked}
-                    onCheckedChange={() => handleToggleSubject(subjectName, subjectIsCustom)}
+                    onCheckedChange={() => handleToggleSubject(subjectName)}
                     className="h-5 w-5"
                   />
                   <Label htmlFor={subjectName} className="flex-1 cursor-pointer text-base">
                     {subjectName}
                   </Label>
-                   {subjectIsCustom && isChecked && (
-                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggleSubject(subjectName, true)}>
+                   {isTrulyCustom && isChecked && (
+                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRemoveCustomSubject(subjectName)}>
                        <X className="h-4 w-4" />
                      </Button>
                    )}
