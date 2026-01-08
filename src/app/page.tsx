@@ -13,7 +13,7 @@ import SplashScreen from '@/components/SplashScreen';
 function AppContainer() {
   const context = useContext(AppContext);
   const router = useRouter();
-  const [splashScreenDone, setSplashScreenDone] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   const { user, isUserLoading, userData, isDataLoaded } = context || {};
 
@@ -38,8 +38,8 @@ function AppContainer() {
   
   const showWizard = !userData?.setupComplete;
 
-  if (!showWizard && !splashScreenDone) {
-      return <SplashScreen onNext={() => setSplashScreenDone(true)} />;
+  if (showWizard && !isReady) {
+      return <SplashScreen onNext={() => setIsReady(true)} />;
   }
 
   return (

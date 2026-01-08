@@ -16,10 +16,10 @@ export default function StepWelcome({ onNext }: StepProps) {
         <Logo />
         <div className="space-y-3 mt-4">
           <h1 className="text-5xl font-extrabold font-headline tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Homework Planner
+            Bun venit!
           </h1>
           <p className="text-xl text-muted-foreground max-w-md mx-auto">
-            Organizează-ți temele și nu mai uita niciodată ce ai de făcut.
+            Să începem prin a configura câteva lucruri de bază.
           </p>
         </div>
       </div>

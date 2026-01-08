@@ -25,8 +25,9 @@ export default function SplashScreen({ onNext }: SplashScreenProps) {
       </div>
       <div className="w-full max-w-md pb-8 pt-12">
         <Button onClick={onNext} size="lg" variant="default" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-bold h-14 rounded-full shadow-lg">
-          Vezi temele
+          Începe Configurarea
         </Button>
+         <p className="text-xs text-muted-foreground mt-4">Durează mai puțin de un minut.</p>
       </div>
     </div>
   );
