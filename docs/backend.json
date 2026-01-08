@@ -1,101 +1,83 @@
-
 {
   "entities": {
-    "User": {
-      "title": "User",
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
       "type": "object",
       "description": "Represents a user of the Daily Planner Pro application.",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
         "name": {
           "type": "string",
           "description": "The user's name."
         },
-        "subjects": {
+        "subjectIds": {
           "type": "array",
-          "description": "List of subjects the user is enrolled in.",
+          "description": "References to Subjects the user has selected. (Relationship: UserProfile 1:N Subject)",
           "items": {
-            "$ref": "#/entities/Subject"
+            "type": "string"
           }
         },
-        "schedule": {
-          "type": "object",
-          "description": "The user's weekly schedule. Maps Subject ID to an array of days (1-7).",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          }
-        },
-        "notifications": {
-          "type": "object",
-          "description": "User's notification preferences.",
-          "properties": {
-            "enabled": { "type": "boolean" },
-            "afterSchoolTime": { "type": "string" },
-            "eveningTime": { "type": "string" },
-            "weekendEnabled": { "type": "boolean" },
-            "saturdayMorningTime": { "type": "string" },
-            "saturdayEveningTime": { "type": "string" },
-            "sundayMorningTime": { "type": "string" },
-            "sundayEveningTime": { "type": "string" }
-          }
-        },
-        "theme": {
+        "notificationTime": {
           "type": "string",
-          "description": "The selected color theme for the app."
+          "description": "The time the user wants to be notified about upcoming tasks. Stored as a string in HH:MM format.",
+          "format": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Subject": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Subject",
+      "type": "object",
+      "description": "Represents a subject that a user can select.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Subject entity."
         },
-        "setupComplete": {
-          "type": "boolean",
-          "description": "Flag indicating if the user has completed the initial setup."
+        "name": {
+          "type": "string",
+          "description": "The name of the subject (e.g., Mathematics, Biology)."
         },
-        "fcmTokens": {
+        "daysOfWeek": {
           "type": "array",
-          "description": "List of Firebase Cloud Messaging tokens for push notifications.",
+          "description": "An array of strings representing the days of the week the subject is taught (e.g., ['Monday', 'Wednesday', 'Friday']).",
           "items": {
             "type": "string"
           }
         }
       },
-      "required": ["name", "setupComplete"]
+      "required": [
+        "id",
+        "name",
+        "daysOfWeek"
+      ]
     },
-    "Subject": {
-      "title": "Subject",
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
       "type": "object",
-      "description": "Represents a school subject.",
+      "description": "Represents a task or homework assignment for a specific subject.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the subject."
+          "description": "Unique identifier for the Task entity."
         },
-        "name": {
-          "type": "string",
-          "description": "The name of the subject."
-        },
-        "isCustom": {
-          "type": "boolean",
-          "description": "Flag indicating if the subject was added by the user."
-        }
-      },
-      "required": ["id", "name", "isCustom"]
-    },
-    "Task": {
-      "title": "Task",
-      "type": "object",
-      "description": "Represents a specific task or homework assignment.",
-      "properties": {
         "subjectId": {
           "type": "string",
-          "description": "Reference to Subject."
-        },
-        "subjectName": {
-          "type": "string",
-          "description": "Denormalized name of the subject for easy display."
+          "description": "Reference to the Subject the task belongs to. (Relationship: Subject 1:N Task)"
         },
         "dueDate": {
           "type": "string",
-          "format": "date-time",
-          "description": "The due date for the task."
+          "description": "The date and time the task is due.",
+          "format": "date-time"
         },
         "description": {
           "type": "string",
@@ -104,53 +86,82 @@
         "isCompleted": {
           "type": "boolean",
           "description": "Indicates whether the task has been completed."
-        },
-        "isManual": {
-          "type": "boolean",
-          "description": "True if the task was added manually by the user."
-        },
-        "plannedDate": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Specific date a user plans to do a weekend task."
-        },
-        "estimatedTime": {
-          "type": "number",
-          "description": "Estimated time in minutes to complete the task."
         }
       },
       "required": [
+        "id",
         "subjectId",
-        "subjectName",
         "dueDate",
-        "isCompleted",
-        "isManual"
+        "description",
+        "isCompleted"
       ]
     }
   },
   "auth": {
-    "providers": ["anonymous", "google.com", "password"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
     "structure": [
       {
         "path": "/users/{userId}",
         "definition": {
+          "entityName": "UserProfile",
           "schema": {
-            "$ref": "#/entities/User"
+            "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores user profiles. The document ID is the Firebase Auth UID."
+          "description": "Collection of user profiles. Uses path-based ownership for security.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/subjects/{subjectId}",
+        "definition": {
+          "entityName": "Subject",
+          "schema": {
+            "$ref": "#/backend/entities/Subject"
+          },
+          "description": "Subcollection of subjects for each user. Uses path-based ownership for security.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "subjectId",
+              "description": "The unique identifier of the subject."
+            }
+          ]
         }
       },
       {
         "path": "/users/{userId}/tasks/{taskId}",
         "definition": {
+          "entityName": "Task",
           "schema": {
-            "$ref": "#/entities/Task"
+            "$ref": "#/backend/entities/Task"
           },
-          "description": "A flat collection of all tasks for a user, simplifying queries."
+          "description": "Subcollection of tasks for each user. Uses path-based ownership for security.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier of the task."
+            }
+          ]
         }
       }
-    ]
+    ],
+    "reasoning": "The Firestore structure is designed to provide a simple, scalable, and secure way to manage user profiles, subjects, and tasks in the Daily Planner Pro application. It prioritizes authorization independence and clarity for easy debugging and maintenance. The structure uses path-based ownership for user-specific data and avoids hierarchical authorization dependencies by storing all authorization data directly in the documents.\n\n**Authorization Independence:** Authorization independence is achieved by leveraging path-based ownership for `UserProfile`, `Subject`, and `Task` collections. Each user has their own dedicated space under `/users/{userId}`, ensuring that access control can be determined directly from the path without needing to `get()` data from parent documents.\n\n**Structural Segregation (Homogeneous Security Posture):** All documents in the collections are segregated by the user's ID, thus sharing the same security requirements. Only the user should be able to read/write data in their path.\n\n**QAPs Support:** The design supports secure `list` operations. Since each user's data is segregated under their respective `/users/{userId}` path, listing operations can be performed securely within that scope without exposing data from other users. Path-based ownership ensures that rules can easily filter based on the requesting user's ID.\n\n**Invariants:** The structure supports invariants such as ownership by using path-based ownership and timestamps, which can be added to the entities."
   }
 }

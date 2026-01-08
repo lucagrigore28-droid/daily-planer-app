@@ -1,28 +1,157 @@
-
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model where all data
+ * is segregated into user-specific paths. A user has full control over their own
+ * data tree (`/users/{userId}` and all subcollections) but has no access to any
+ * other user's data. This provides strong privacy and isolation by default.
+ *
+ * Data Structure: All application data is nested under the `/users/{userId}` path.
+ * This top-level collection contains UserProfile documents. Each user document then
+ * contains private subcollections for `subjects` and `tasks`. This hierarchical
+ * structure makes ownership checks simple and performant, as authorization can be
+ * determined directly from the document path.
+ *
+ * Key Security Decisions:
+ * - User data is strictly private. All access is gated by matching the authenticated
+ *   user's UID with the `userId` in the document path.
+ * - Listing of the top-level `/users` collection is explicitly disallowed to prevent
+ *   users from discovering the identities of other users on the platform.
+ * - The default security posture is denial. Access is only granted through explicit
+ *   `allow` statements based on user ownership.
+ *
+ * Denormalization for Authorization: This ruleset relies on path-based security,
+ * which is a form of structural denormalization. By placing a user's `subjects` and
+ * `tasks` in subcollections under their own `/users/{userId}` document, we avoid
+ * the need for slow and costly `get()` calls to parent documents to verify ownership.
+ * Authorization is determined instantly from the request path.
+ *
+ * Structural Segregation: The entire data model is built on structural segregation.
+ * Each user's data is stored in a completely separate document tree, ensuring that
+ * queries and rules for one user can never accidentally leak or access data from
+ * another.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // -------------------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
+    /**
+     * Checks if the authenticated user's UID matches the provided userId from the path.
+     * This is the foundation of the user-ownership security model.
+     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    match /users/{userId} {
-      // Users can only read and write to their own document.
-      allow read, update, delete: if isOwner(userId);
-      // A new user can create their own profile document.
-      allow create: if isOwner(userId);
-      // Nobody can list all users.
-      allow list: if false;
+    /**
+     * A robust check for update and delete operations. It ensures the user is the
+     * owner AND the document they are trying to modify actually exists.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
 
-      // Tasks are stored in a subcollection under the user's document.
+    /**
+     * Validates required relational fields on UserProfile creation.
+     * Ensures the document's internal ID matches its path ID.
+     */
+    function isValidUserProfileCreate(userId) {
+      return request.resource.data.id == userId;
+    }
+
+    /**
+     * Enforces immutability of the UserProfile's ID on update.
+     * Prevents re-assigning ownership of the document.
+     */
+    function isUserProfileUpdateValid() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates required relational fields on Subject creation.
+     * Ensures the document's internal ID matches its path ID.
+     */
+    function isValidSubjectCreate(subjectId) {
+      return request.resource.data.id == subjectId;
+    }
+
+    /**
+     * Enforces immutability of the Subject's ID on update.
+     */
+    function isSubjectUpdateValid() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    /**
+     * Validates required relational fields on Task creation.
+     * Ensures the document's internal ID matches its path ID.
+     */
+    function isValidTaskCreate(taskId) {
+      return request.resource.data.id == taskId;
+    }
+
+    /**
+     * Enforces immutability of the Task's ID on update.
+     */
+    function isTaskUpdateValid() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    /**
+     * @description Controls access to a user's own profile document.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user creating their own profile document.
+     * @deny (list) Any user, authenticated or not, attempting to list all user profiles.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidUserProfileCreate(userId);
+      allow update: if isExistingOwner(userId) && isUserProfileUpdateValid();
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Controls access to a user's private collection of subjects.
+       * @path /users/{userId}/subjects/{subjectId}
+       * @allow (create) An authenticated user creating a subject in their own subcollection.
+       * @deny (get) A user trying to read a subject from another user's subcollection.
+       * @principle Enforces document ownership within a user-specific subcollection.
+       */
+      match /subjects/{subjectId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidSubjectCreate(subjectId);
+        allow update: if isExistingOwner(userId) && isSubjectUpdateValid();
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Controls access to a user's private collection of tasks.
+       * @path /users/{userId}/tasks/{taskId}
+       * @allow (list) An authenticated user listing all tasks in their own subcollection.
+       * @deny (update) A user trying to modify a task belonging to another user.
+       * @principle Enforces document ownership within a user-specific subcollection.
+       */
       match /tasks/{taskId} {
-        // Users can perform all operations on their own tasks.
-        allow read, write: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTaskCreate(taskId);
+        allow update: if isExistingOwner(userId) && isTaskUpdateValid();
+        allow delete: if isExistingOwner(userId);
       }
     }
   }
