@@ -19,7 +19,6 @@ export default function StepName({ onNext, onBack }: StepProps) {
   const [name, setName] = useState(context?.userData?.name || '');
 
   useEffect(() => {
-    // Sync local state if context changes
     if (context?.userData?.name) {
       setName(context.userData.name);
     }
@@ -32,8 +31,7 @@ export default function StepName({ onNext, onBack }: StepProps) {
     }
   };
   
-  const showNavButtons = !!onNext;
-  const showBackButton = !onBack; // Show back to login button only on the first step of the wizard
+  const isWizardStep = !!onNext;
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -52,15 +50,18 @@ export default function StepName({ onNext, onBack }: StepProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && showNavButtons && name.trim() && handleContinue()}
-            onBlur={() => context?.updateUser({ name: name.trim() })}
+            onKeyDown={(e) => e.key === 'Enter' && isWizardStep && name.trim() && handleContinue()}
+            onBlur={() => !isWizardStep && context?.updateUser({ name: name.trim() })}
           />
         </div>
       </CardContent>
-       {showNavButtons && (
+       {isWizardStep && (
           <CardFooter className="flex justify-between">
-             {showBackButton && <Button variant="ghost" onClick={() => router.push('/login')}>Înapoi</Button>}
-             {onBack && <Button variant="ghost" onClick={onBack}>Înapoi</Button>}
+            {onBack ? (
+                <Button variant="ghost" onClick={onBack}>Înapoi</Button>
+            ) : (
+                <Button variant="ghost" onClick={() => router.push('/login')}>Înapoi la Login</Button>
+            )}
             <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
           </CardFooter>
        )}

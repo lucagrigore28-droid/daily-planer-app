@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext } from 'react';
@@ -32,12 +31,20 @@ export default function SetupWizard({ onFinish }: SetupWizardProps) {
 
   const renderStep = () => {
     switch (step) {
-      case 1: return <StepName onNext={nextStep} />;
-      case 2: return <StepTheme onNext={nextStep} onBack={prevStep} />;
-      case 3: return <StepSubjects onNext={nextStep} onBack={prevStep} />;
-      case 4: return <StepSchedule onNext={nextStep} onBack={prevStep} />;
-      case 5: return <StepNotifications onNext={handleFinishSetup} onBack={prevStep} />;
-      default: return null; // Should not happen
+      case 1: 
+        // StepName is special, it doesn't get an `onBack` that goes to a previous wizard step.
+        // Its back button should always lead to the login page.
+        return <StepName onNext={nextStep} />;
+      case 2: 
+        return <StepTheme onNext={nextStep} onBack={prevStep} />;
+      case 3: 
+        return <StepSubjects onNext={nextStep} onBack={prevStep} />;
+      case 4: 
+        return <StepSchedule onNext={nextStep} onBack={prevStep} />;
+      case 5: 
+        return <StepNotifications onNext={handleFinishSetup} onBack={prevStep} />;
+      default: 
+        return null;
     }
   };
 
