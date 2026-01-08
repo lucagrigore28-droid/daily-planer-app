@@ -16,10 +16,11 @@ import {
 import { ro } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import { Card, CardContent } from '../ui/card';
 import { ScrollArea } from '../ui/scroll-area';
+import type { HomeworkTask } from '@/lib/types';
 
 export default function ExpandableCalendarView() {
   const context = useContext(AppContext);
@@ -35,19 +36,34 @@ export default function ExpandableCalendarView() {
 
   const daysOfWeek = ['LU', 'MA', 'MI', 'JO', 'VI', 'SÂ', 'DU'];
 
-  const tasksByDay = useMemo(() => {
-    const tasksMap = new Map<string, number>();
+  const progressByDay = useMemo(() => {
+    const tasksByDayMap = new Map<string, HomeworkTask[]>();
     context?.tasks.forEach(task => {
-        if (!task.isCompleted) {
-            const dateStr = format(new Date(task.dueDate), 'yyyy-MM-dd');
-            tasksMap.set(dateStr, (tasksMap.get(dateStr) || 0) + 1);
+        const dateStr = format(new Date(task.dueDate), 'yyyy-MM-dd');
+        if (!tasksByDayMap.has(dateStr)) {
+            tasksByDayMap.set(dateStr, []);
         }
+        tasksByDayMap.get(dateStr)!.push(task);
     });
-    return tasksMap;
+
+    const progressMap = new Map<string, { completed: number; total: number; percentage: number }>();
+    for (const [dateStr, tasks] of tasksByDayMap.entries()) {
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.isCompleted).length;
+        const percentage = total > 0 ? (completed / total) * 100 : 0;
+        progressMap.set(dateStr, { completed, total, percentage });
+    }
+    return progressMap;
   }, [context?.tasks]);
 
   const handleDayClick = (day: Date) => {
     setSelectedDate(day);
+  };
+  
+  const getProgressColorClass = (percentage: number): string => {
+      if (percentage < 40) return 'bg-red-500';
+      if (percentage <= 75) return 'bg-orange-500';
+      return 'bg-green-400';
   };
 
   return (
@@ -89,7 +105,7 @@ export default function ExpandableCalendarView() {
                         const dayKey = format(day, 'yyyy-MM-dd');
                         const dayOfWeek = getDay(day);
                         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                        const hasTasks = tasksByDay.has(dayKey);
+                        const progress = progressByDay.get(dayKey);
 
                         return (
                         <div
@@ -107,10 +123,23 @@ export default function ExpandableCalendarView() {
                             )}
                         >
                             <span>{format(day, 'd')}</span>
-                            {hasTasks && !isSameDay(day, selectedDate) && (
-                                <span className="absolute bottom-1.5 right-1.5 h-2.5 w-2.5 bg-destructive rounded-full" />
+                             {progress && progress.total > 0 && !isSameDay(day, selectedDate) && (
+                                <>
+                                  {progress.percentage === 100 ? (
+                                    <div className="absolute bottom-1.5 right-1.5 h-4 w-4 bg-green-600 text-white rounded-full flex items-center justify-center">
+                                        <Check className="h-3 w-3" />
+                                    </div>
+                                  ) : (
+                                    <span
+                                      className={cn(
+                                        'absolute bottom-1.5 right-1.5 h-2.5 w-2.5 rounded-full',
+                                        getProgressColorClass(progress.percentage)
+                                      )}
+                                    />
+                                  )}
+                                </>
                             )}
-                             {hasTasks && isSameDay(day, selectedDate) && (
+                             {progress && progress.total > 0 && isSameDay(day, selectedDate) && (
                                 <span className="absolute bottom-1.5 right-1.5 h-2.5 w-2.5 bg-destructive-foreground rounded-full" />
                             )}
                         </div>
