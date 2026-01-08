@@ -24,6 +24,7 @@ import {
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
+import { ThemeToggle } from '../ThemeToggle';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -152,7 +153,17 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                        <DangerZone />
                     </div>
                 </TabsContent>
-                {TABS.filter(t => t.value !== 'profile').map(tab => {
+                <TabsContent value='appearance' className="mt-0">
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-background/50 mb-6">
+                        <div className="space-y-1">
+                            <h4 className="font-semibold">Mod de afișare</h4>
+                            <p className="text-sm text-muted-foreground">Alege între o temă luminoasă sau întunecată.</p>
+                        </div>
+                        <ThemeToggle />
+                    </div>
+                    <StepTheme />
+                </TabsContent>
+                {TABS.filter(t => t.value !== 'profile' && t.value !== 'appearance').map(tab => {
                     const Component = tab.component;
                     return (
                         <TabsContent key={tab.value} value={tab.value} className="mt-0">
@@ -168,5 +179,3 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     </Dialog>
   );
 }
-
-    

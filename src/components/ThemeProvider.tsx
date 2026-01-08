@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -14,20 +15,24 @@ type ThemeProviderState = {
 const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [appTheme, setAppTheme] = useState('purple');
+  const [theme, setTheme] = useState<Theme>(
+    () => (typeof window !== 'undefined' ? localStorage.getItem("daily-planner-pro-theme") as Theme : null) || "dark"
+  );
+  const [appTheme, setAppTheme] = useState(
+     () => (typeof window !== 'undefined' ? localStorage.getItem("daily-planner-pro-app-theme") : null) || 'purple'
+  );
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
-    const handleStorageChange = () => {
-      const storedTheme = localStorage.getItem("daily-planner-pro-theme") as Theme | null;
-      const storedAppTheme = localStorage.getItem("daily-planner-pro-app-theme") as string | null;
-      setTheme(storedTheme || "dark");
-      setAppTheme(storedAppTheme || 'purple');
+    const handleStorageChange = (event: StorageEvent | CustomEvent) => {
+      if (event instanceof StorageEvent && event.key === 'daily-planner-pro-theme') {
+        setTheme(event.newValue as Theme || 'dark');
+      }
+      if ((event instanceof StorageEvent && event.key === 'daily-planner-pro-app-theme') || (event instanceof CustomEvent && event.type === 'theme-updated')) {
+        setAppTheme(localStorage.getItem('daily-planner-pro-app-theme') || 'purple');
+      }
     };
     
-    handleStorageChange(); // Initial load
-
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('theme-updated', handleStorageChange);
 
@@ -41,10 +46,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     let currentTheme: "light" | "dark";
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-      currentTheme = systemTheme;
+      currentTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     } else {
       currentTheme = theme;
     }
@@ -61,15 +63,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const themeClass = themes.find(t => t.name === appTheme)?.className || 'theme-purple';
     const root = window.document.documentElement;
     
+    // Remove all possible theme classes before adding the new one
     themes.forEach(t => root.classList.remove(t.className));
     root.classList.add(themeClass);
-    localStorage.setItem("daily-planner-pro-app-theme", appTheme);
+    
+    // This is set by AppContext, so we don't need to set it here
+    // localStorage.setItem("daily-planner-pro-app-theme", appTheme);
   }, [appTheme]);
 
 
   const value = {
     theme,
-    setTheme,
+    setTheme: (newTheme: Theme) => {
+        localStorage.setItem("daily-planner-pro-theme", newTheme);
+        setTheme(newTheme);
+    },
     resolvedTheme,
   };
 

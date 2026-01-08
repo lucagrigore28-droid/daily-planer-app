@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 
 export const metadata: Metadata = {
@@ -49,14 +50,14 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <FirebaseClientProvider>
+          <ThemeProvider>
             <AppProvider>
               {children}
               <Toaster />
             </AppProvider>
+          </ThemeProvider>
         </FirebaseClientProvider>
       </body>
     </html>
   );
 }
-
-    
