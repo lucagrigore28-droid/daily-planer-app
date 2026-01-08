@@ -8,7 +8,7 @@ import StepSubjects from '../setup/StepSubjects';
 import StepSchedule from '../setup/StepSchedule';
 import StepNotifications from '../setup/StepNotifications';
 import StepTheme from '../setup/StepTheme';
-import { User, Palette, Calendar, Bell } from 'lucide-react';
+import { User, Palette, Calendar, Bell, BookOpen } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
 import { useTheme } from 'next-themes';
 import { ScrollArea } from '../ui/scroll-area';
@@ -19,11 +19,11 @@ type SettingsDialogProps = {
 };
 
 const TABS = [
-    { value: 'profile', label: 'Profil', icon: User, component: <StepName /> },
-    { value: 'appearance', label: 'Aspect', icon: Palette, component: <StepTheme /> },
-    { value: 'subjects', label: 'Materii', icon: User, component: <StepSubjects /> },
-    { value: 'schedule', label: 'Orar', icon: Calendar, component: <StepSchedule /> },
-    { value: 'notifications', label: 'Notificări', icon: Bell, component: <StepNotifications /> },
+    { value: 'profile', label: 'Profil', icon: User },
+    { value: 'subjects', label: 'Materii', icon: BookOpen },
+    { value: 'schedule', label: 'Orar', icon: Calendar },
+    { value: 'notifications', label: 'Notificări', icon: Bell },
+    { value: 'appearance', label: 'Aspect', icon: Palette },
 ];
 
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
@@ -47,8 +47,8 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                        ))}
                     </TabsList>
                     
-                    <div className="flex-1 mt-4 md:mt-0 min-h-0 min-w-0">
-                         <TabsContent value="profile" className="h-full flex flex-col">
+                    <div className="flex-1 mt-4 md:mt-0 min-h-0">
+                         <TabsContent value="profile" className="flex-1 min-w-0 h-full">
                             <StepName />
                         </TabsContent>
                          <TabsContent value="appearance" className="flex flex-col">
@@ -60,10 +60,10 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                                 <StepTheme />
                             </ScrollArea>
                         </TabsContent>
-                        <TabsContent value="subjects" className="h-full">
+                        <TabsContent value="subjects" className="flex-1 min-w-0 h-full">
                            <StepSubjects />
                         </TabsContent>
-                         <TabsContent value="schedule" className="h-full">
+                         <TabsContent value="schedule" className="flex-1 min-w-0 h-full">
                             <StepSchedule />
                         </TabsContent>
                          <TabsContent value="notifications" className="h-full">
