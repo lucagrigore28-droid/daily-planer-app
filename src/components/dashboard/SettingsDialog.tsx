@@ -158,7 +158,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                          <h3 className="font-semibold">Mod Întunecat</h3>
                          <ThemeToggle />
                     </div>
-                     <ScrollArea className="h-full pr-4 flex-1">
+                     <ScrollArea className="flex-1 pr-4">
                         <StepTheme />
                     </ScrollArea>
                 </TabsContent>
