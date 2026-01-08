@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
+import { useRouter } from 'next/navigation';
 
 type StepProps = {
   onNext?: () => void;
@@ -14,6 +15,7 @@ type StepProps = {
 
 export default function StepName({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
+  const router = useRouter();
   const [name, setName] = useState(context?.userData?.name || '');
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function StepName({ onNext, onBack }: StepProps) {
   };
   
   const showNavButtons = !!onNext;
-
+  const showBackButton = !onBack; // Show back to login button only on the first step of the wizard
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -57,6 +59,7 @@ export default function StepName({ onNext, onBack }: StepProps) {
       </CardContent>
        {showNavButtons && (
           <CardFooter className="flex justify-between">
+             {showBackButton && <Button variant="ghost" onClick={() => router.push('/login')}>Înapoi</Button>}
              {onBack && <Button variant="ghost" onClick={onBack}>Înapoi</Button>}
             <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
           </CardFooter>

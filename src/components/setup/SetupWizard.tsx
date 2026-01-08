@@ -8,7 +8,6 @@ import StepSubjects from './StepSubjects';
 import StepSchedule from './StepSchedule';
 import StepNotifications from './StepNotifications';
 import { Progress } from '@/components/ui/progress';
-import SplashScreen from '../SplashScreen';
 import { AppContext } from '@/contexts/AppContext';
 
 const TOTAL_STEPS = 5;
@@ -18,7 +17,7 @@ type SetupWizardProps = {
 };
 
 export default function SetupWizard({ onFinish }: SetupWizardProps) {
-  const [step, setStep] = useState(0); // 0 is splash screen
+  const [step, setStep] = useState(1); // Start directly at StepName
   const context = useContext(AppContext);
 
   const handleFinishSetup = () => {
@@ -28,10 +27,6 @@ export default function SetupWizard({ onFinish }: SetupWizardProps) {
   
   const nextStep = () => setStep(prev => prev + 1);
   const prevStep = () => setStep(prev => prev - 1);
-
-  if (step === 0) {
-    return <SplashScreen onNext={nextStep} />;
-  }
 
   const progressValue = (step / TOTAL_STEPS) * 100;
 
