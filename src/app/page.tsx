@@ -47,6 +47,7 @@ function AppContainer() {
     return <LoadingScreen />;
   }
   
+  // This is the core logic: show wizard if setup is not complete.
   const showWizard = !userData?.setupComplete;
 
   return (
