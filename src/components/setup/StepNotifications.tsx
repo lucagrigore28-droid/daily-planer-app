@@ -71,9 +71,14 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       
       const messaging = getMessaging(firebaseApp);
       try {
-        // VAPID key is your public server key from Firebase console
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
+        if (!vapidKey) {
+            console.error('VAPID key is not configured.');
+            return;
+        }
         const currentToken = await getToken(messaging, { 
-            vapidKey: 'BOS_2U7z12K15s253o4dZ-sLwA6u75m6kYpOfqIuFqGqP5lM6u_5n4X3rQ0hZ5y8J8v3c1d9f8A6g7h5E4D'
+            vapidKey,
+            serviceWorkerRegistration: await navigator.serviceWorker.ready,
         });
         if (currentToken) {
           console.log('FCM Token:', currentToken);
