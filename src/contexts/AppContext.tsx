@@ -140,75 +140,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const resetData = useCallback(async () => {
     if (!user || !userDocRef) return;
 
-    if (user.isAnonymous) {
-      await deleteAllTasks();
-      await deleteDoc(userDocRef); // Delete the guest user document
-      await user.delete(); // This will trigger onAuthStateChanged, which should redirect to login
-      return;
-    }
-    
-    // For authenticated users
+    // This will delete all tasks for the user.
     await deleteAllTasks();
-    await setDoc(userDocRef, {
-        ...initialUserData,
-        name: userData?.name || '', // Keep the name if it exists
-        theme: userData?.theme || initialUserData.theme, // Keep the theme
-    }, { merge: false });
-    // The app will reactively show the setup wizard because setupComplete is now false
-  }, [user, userDocRef, userData, deleteAllTasks, auth, router]);
 
-  useEffect(() => {
-    if (!isDataLoaded || !userData || !userData.setupComplete || userData.subjects.length === 0 || !tasksCollectionRef) {
-      return;
+    if (user.isAnonymous) {
+        // For anonymous users, delete their document and the user account itself.
+        // This will trigger onAuthStateChanged, leading to a redirect to /login.
+        await deleteDoc(userDocRef);
+        await user.delete();
+    } else {
+        // For authenticated users, reset their data to initial state but keep their name/theme.
+        // This will effectively re-trigger the setup wizard.
+        await setDoc(userDocRef, {
+            ...initialUserData,
+            name: userData?.name || '', 
+            theme: userData?.theme || initialUserData.theme,
+        }, { merge: false });
     }
-
-    const checkAndCreateTasks = async () => {
-      const today = startOfDay(new Date());
-      const batch = writeBatch(firestore);
-      let writes = 0;
-
-      for (let i = -7; i < 14; i++) {
-        const dateToCheck = addDays(today, i);
-        const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
-
-        if (dayIndex >= 1 && dayIndex <= 5) {
-          for (const subject of userData.subjects) {
-            if (userData.schedule[subject.id]?.includes(dayIndex)) {
-              
-              const taskExists = tasks.some(t => 
-                !t.isManual &&
-                t.subjectId === subject.id && 
-                startOfDay(new Date(t.dueDate)).getTime() === dateToCheck.getTime()
-              );
-
-              if (!taskExists) {
-                const newTaskRef = doc(tasksCollectionRef);
-                batch.set(newTaskRef, {
-                  subjectId: subject.id,
-                  subjectName: subject.name,
-                  description: '',
-                  dueDate: dateToCheck.toISOString(),
-                  isCompleted: false,
-                  isManual: false
-                });
-                writes++;
-              }
-            }
-          }
-        }
-      }
-
-      if (writes > 0) {
-        try {
-          await batch.commit();
-        } catch (err) {
-          console.error("Silently failed to create tasks in batch", err);
-        }
-      }
-    };
-
-    checkAndCreateTasks();
-  }, [isDataLoaded, userData, tasks, tasksCollectionRef, firestore]);
+  }, [user, userDocRef, userData, deleteAllTasks, auth, router]);
   
   const getNextSchoolDayWithTasks = useCallback(() => {
     if (!tasks || !userData) return null;
@@ -273,5 +222,3 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -57,12 +58,8 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
 
 
   const requestPermissionAndToken = async () => {
-    if (!("Notification" in window) || !firebaseApp) {
-      alert("Acest browser nu suportă notificări.");
-      return;
-    }
-     if (!('serviceWorker' in navigator)) {
-      alert("Acest browser nu suportă Service Worker, necesar pentru notificări.");
+    if (!("Notification" in window) || !firebaseApp || !('serviceWorker' in navigator)) {
+      alert("Acest browser nu suportă notificări în fundal.");
       return;
     }
 
@@ -74,12 +71,12 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       
       const messaging = getMessaging(firebaseApp);
       try {
-        const registration = await navigator.serviceWorker.ready;
+        // VAPID key is your public server key from Firebase console
         const currentToken = await getToken(messaging, { 
-            vapidKey: 'rR1rTBFdebQJyvcVDvD-6uwBJZC8yioau2TaNrga3pA',
-            serviceWorkerRegistration: registration,
+            vapidKey: 'BOS_2U7z12K15s253o4dZ-sLwA6u75m6kYpOfqIuFqGqP5lM6u_5n4X3rQ0hZ5y8J8v3c1d9f8A6g7h5E4D'
         });
         if (currentToken) {
+          console.log('FCM Token:', currentToken);
           context?.addFcmToken(currentToken);
         } else {
           console.log('No registration token available. Request permission to generate one.');
