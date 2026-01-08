@@ -84,6 +84,10 @@ function useTasksForSubjects(subjects: Subject[] | undefined) {
             }, {} as Record<string, boolean>);
             setLoadingStates(initialLoadingStates);
             setOverallLoading(true);
+        } else if(subjects === undefined) { // Still loading
+            setOverallLoading(true);
+        } else { // Empty array of subjects
+            setOverallLoading(false);
         }
     }, [subjects]);
 
@@ -92,7 +96,7 @@ function useTasksForSubjects(subjects: Subject[] | undefined) {
     useEffect(() => {
         if (subjectQueries.length === 0) {
             setAllTasks([]);
-            setOverallLoading(false);
+            // Don't set overall loading to false here immediately, wait for the other effect
             return;
         }
 
@@ -120,7 +124,11 @@ function useTasksForSubjects(subjects: Subject[] | undefined) {
 
     // This effect calculates the overall loading state
     useEffect(() => {
-        if(Object.keys(loadingStates).length === 0 && (!subjects || subjects.length === 0)) {
+        if (!subjects) { // e.g. userData is still loading
+            setOverallLoading(true);
+            return;
+        }
+        if (subjects.length === 0) {
             setOverallLoading(false);
             return;
         }
@@ -149,7 +157,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (isDataLoaded && userData?.theme) {
-        // Theme logic is now in ThemeProvider
+        // Theme logic is now in ThemeProvider, this ensures it's set on initial load
+        if (localStorage.getItem("daily-planner-pro-app-theme") !== userData.theme) {
+            localStorage.setItem("daily-planner-pro-app-theme", userData.theme);
+            window.dispatchEvent(new CustomEvent('theme-updated'));
+        }
     }
   }, [userData?.theme, isDataLoaded]);
 
@@ -365,3 +377,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
