@@ -61,6 +61,10 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       alert("Acest browser nu suportă notificări.");
       return;
     }
+     if (!('serviceWorker' in navigator)) {
+      alert("Acest browser nu suportă Service Worker, necesar pentru notificări.");
+      return;
+    }
 
     const status = await Notification.requestPermission();
     setPermission(status);
@@ -70,8 +74,11 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       
       const messaging = getMessaging(firebaseApp);
       try {
-        // IMPORTANT: Replace with your actual VAPID key from Firebase Console > Project Settings > Cloud Messaging
-        const currentToken = await getToken(messaging, { vapidKey: 'rR1rTBFdebQJyvcVDvD-6uwBJZC8yioau2TaNrga3pA' });
+        const registration = await navigator.serviceWorker.ready;
+        const currentToken = await getToken(messaging, { 
+            vapidKey: 'rR1rTBFdebQJyvcVDvD-6uwBJZC8yioau2TaNrga3pA',
+            serviceWorkerRegistration: registration,
+        });
         if (currentToken) {
           context?.addFcmToken(currentToken);
         } else {
