@@ -16,14 +16,20 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/firebase-messaging-sw.js')
-        .then((registration) => {
-          console.log('Service Worker registration successful, scope is:', registration.scope);
-        })
-        .catch((err) => {
-          console.error('Service Worker registration failed:', err);
-        });
+      navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js').then((registration) => {
+        if (!registration) {
+          navigator.serviceWorker
+            .register('/firebase-messaging-sw.js')
+            .then((registration) => {
+              console.log('Service Worker registration successful, scope is:', registration.scope);
+            })
+            .catch((err) => {
+              console.error('Service Worker registration failed:', err);
+            });
+        } else {
+            console.log('Service Worker already registered, scope is:', registration.scope);
+        }
+      });
     }
   }, []);
 
