@@ -9,6 +9,7 @@ import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs,
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 const initialUserData: UserData = {
   name: '',
@@ -67,6 +68,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
+  const router = useRouter();
 
   const userDocRef = useMemo(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
@@ -139,16 +141,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = useCallback(async () => {
     await signOut(auth);
-    window.location.href = '/login';
-  }, [auth]);
+    router.push('/login');
+  }, [auth, router]);
 
   const resetData = useCallback(async () => {
-    if (userDocRef && userData) {
-        await deleteAllTasks();
-        await setDoc(userDocRef, initialUserData, { merge: false });
-        window.location.reload();
+    if (!user || !userDocRef) return;
+
+    if (user.isAnonymous) {
+      await deleteAllTasks();
+      await deleteDoc(userDocRef); // Delete the guest user document
+      await user.delete(); // Delete the anonymous user account
+      router.push('/login'); // Redirect to login
+      return;
     }
-  }, [userDocRef, userData, deleteAllTasks]);
+    
+    // For authenticated users
+    await deleteAllTasks();
+    await setDoc(userDocRef, {
+        ...initialUserData,
+        name: userData?.name || '', // Keep the name if it exists
+        theme: userData?.theme || initialUserData.theme, // Keep the theme
+    }, { merge: false });
+    // No reload, the app will reactively show the setup wizard
+  }, [user, userDocRef, userData, deleteAllTasks, router]);
 
   useEffect(() => {
     if (!isDataLoaded || !userData || !userData.setupComplete || userData.subjects.length === 0 || !tasksCollectionRef) {
@@ -265,5 +280,3 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    
