@@ -23,91 +23,102 @@ const db = getFirestore();
 
 // This function will run every 30 minutes.
 export const sendHomeworkNotifications = onSchedule(
-  "every 30 minutes",
+  {
+    schedule: "every 30 minutes",
+    timeZone: "Europe/Bucharest",
+  },
   async (event) => {
     logger.info("Starting to check for homework notifications.", {
       structuredData: true,
     });
 
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentTime = `${String(currentHour).padStart(2, "0")}:${String(
-      currentMinute,
-    ).padStart(2, "0")}`;
-
-    // Get all users who have notifications enabled and have tokens
-    const usersSnapshot = await db
+    // Get current time in HH:MM format, adjusted for Bucharest timezone.
+    const currentTime = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' });
+    
+    // Create two separate queries for each notification time field
+    const afterSchoolQuery = db
       .collection("users")
       .where("notifications.enabled", "==", true)
-      .get();
+      .where("notifications.afterSchoolTime", "==", currentTime);
 
-    if (usersSnapshot.empty) {
-      logger.info("No users with notifications enabled.");
+    const eveningQuery = db
+      .collection("users")
+      .where("notifications.enabled", "==", true)
+      .where("notifications.eveningTime", "==", currentTime);
+
+    const [afterSchoolSnapshot, eveningSnapshot] = await Promise.all([
+        afterSchoolQuery.get(),
+        eveningQuery.get(),
+    ]);
+
+    const usersToNotify = new Map<string, UserData>();
+    
+    afterSchoolSnapshot.forEach(doc => {
+        if (!usersToNotify.has(doc.id)) {
+            usersToNotify.set(doc.id, doc.data() as UserData);
+        }
+    });
+
+    eveningSnapshot.forEach(doc => {
+        if (!usersToNotify.has(doc.id)) {
+            usersToNotify.set(doc.id, doc.data() as UserData);
+        }
+    });
+
+
+    if (usersToNotify.size === 0) {
+      logger.info("No users to notify at this time.", { time: currentTime });
       return;
     }
 
     const notificationPromises: Promise<any>[] = [];
 
-    for (const userDoc of usersSnapshot.docs) {
-      const userData = userDoc.data() as UserData;
-      const userId = userDoc.id;
-
+    for (const [userId, userData] of usersToNotify.entries()) {
       if (!userData.fcmTokens || userData.fcmTokens.length === 0) {
         continue; // Skip user if no tokens
       }
 
-      const { notifications } = userData;
+      // Get tasks due today or tomorrow
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dayAfterTomorrow = new Date(today);
+      dayAfterTomorrow.setDate(today.getDate() + 2);
 
-      // Check if it's time for a notification
-      const isTimeForNotification =
-        notifications.afterSchoolTime.startsWith(String(currentHour).padStart(2, '0')) ||
-        notifications.eveningTime.startsWith(String(currentHour).padStart(2, '0'));
+      const tasksSnapshot = await db
+        .collection(`users/${userId}/tasks`)
+        .where("isCompleted", "==", false)
+        .where("dueDate", ">=", today.toISOString())
+        .where("dueDate", "<", dayAfterTomorrow.toISOString())
+        .get();
 
-      if (isTimeForNotification) {
-        // Get tasks due today or tomorrow
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(today.getDate() + 1);
-        const dayAfterTomorrow = new Date(today);
-        dayAfterTomorrow.setDate(today.getDate() + 2);
+      const upcomingTasks = tasksSnapshot.docs.map(
+        (doc) => doc.data() as HomeworkTask,
+      );
 
-        const tasksSnapshot = await db
-          .collection(`users/${userId}/tasks`)
-          .where("isCompleted", "==", false)
-          .where("dueDate", ">=", today.toISOString())
-          .where("dueDate", "<", dayAfterTomorrow.toISOString())
-          .get();
+      if (upcomingTasks.length > 0) {
+        const body = `Salut ${
+          userData.name
+        }! Mai ai ${
+          upcomingTasks.length
+        } ${
+          upcomingTasks.length === 1 ? "temă" : "teme"
+        } pentru mâine. Nu uita de ${upcomingTasks[0].subjectName}!`;
 
-        const upcomingTasks = tasksSnapshot.docs.map(
-          (doc) => doc.data() as HomeworkTask,
-        );
+        const message = {
+          notification: {
+            title: "Memento teme",
+            body: body,
+          },
+          tokens: userData.fcmTokens,
+        };
 
-        if (upcomingTasks.length > 0) {
-          const body = `Salut ${
-            userData.name
-          }! Mai ai ${
-            upcomingTasks.length
-          } ${
-            upcomingTasks.length === 1 ? "temă" : "teme"
-          } pentru mâine. Nu uita de ${upcomingTasks[0].subjectName}!`;
+        logger.info(`Sending notification to ${userData.name}`, {
+          userId: userId,
+          tasksCount: upcomingTasks.length,
+        });
 
-          const message = {
-            notification: {
-              title: "Memento teme",
-              body: body,
-            },
-            tokens: userData.fcmTokens,
-          };
-
-          logger.info(`Sending notification to ${userData.name}`, {
-            userId: userId,
-            tasksCount: upcomingTasks.length,
-          });
-
-          notificationPromises.push(getMessaging().sendEachForMulticast(message));
-        }
+        notificationPromises.push(getMessaging().sendEachForMulticast(message));
       }
     }
 
