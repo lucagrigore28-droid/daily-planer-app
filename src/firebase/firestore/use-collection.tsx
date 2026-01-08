@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Query,
   onSnapshot,
@@ -61,6 +61,8 @@ export function useCollection<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Default to true
   const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const prevPathRef = useRef<string | null>(null);
+
 
   useEffect(() => {
     // If the query is null or undefined, we're not ready to fetch.
@@ -72,6 +74,17 @@ export function useCollection<T = any>(
       setError(null);
       return;
     }
+    
+    const path: string =
+          memoizedTargetRefOrQuery.type === 'collection'
+            ? (memoizedTargetRefOrQuery as CollectionReference).path
+            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+            
+    // Prevent re-subscribing if the path is identical
+    if (prevPathRef.current === path && !isLoading && data) {
+      return;
+    }
+    prevPathRef.current = path;
 
     setIsLoading(true);
     setError(null);
@@ -88,12 +101,6 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
-
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path,

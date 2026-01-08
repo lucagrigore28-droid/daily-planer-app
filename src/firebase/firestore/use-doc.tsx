@@ -1,6 +1,7 @@
+
 'use client';
     
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   DocumentReference,
   onSnapshot,
@@ -44,16 +45,25 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const prevPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!memoizedDocRef) {
       setData(null);
-      setIsLoading(false);
+      setIsLoading(true); // Set to true as we are waiting for a valid ref
       setError(null);
+      prevPathRef.current = null;
       return;
     }
+    
+    // Prevent re-subscribing if the path is identical
+    if (prevPathRef.current === memoizedDocRef.path && !isLoading && data) {
+      return;
+    }
+    prevPathRef.current = memoizedDocRef.path;
+
 
     setIsLoading(true);
     setError(null);
