@@ -102,7 +102,6 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   };
 
   const handleFinishSetup = () => {
-    context?.updateUser({ setupComplete: true });
     if(onNext) {
       onNext();
     }
