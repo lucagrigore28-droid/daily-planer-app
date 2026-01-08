@@ -24,8 +24,6 @@ import {
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
-import type { Subject } from '@/lib/types';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -87,63 +85,22 @@ const DangerZone = () => {
 
 const UserAccount = () => {
     const context = useContext(AppContext);
-    const { toast } = useToast();
-    const [isCleaning, setIsCleaning] = useState(false);
     
     const handleLogout = () => {
         context?.logout();
     };
 
-    const handleCleanDuplicates = async () => {
-      if (!context || !context.userData) return;
-      setIsCleaning(true);
-
-      try {
-        const currentSubjects = context.userData.subjects;
-        const uniqueSubjects: Subject[] = [];
-        const seenNames = new Set<string>();
-
-        currentSubjects.forEach(subject => {
-          if (!seenNames.has(subject.name)) {
-            seenNames.add(subject.name);
-            uniqueSubjects.push(subject);
-          }
-        });
-
-        await context.updateUser({ subjects: uniqueSubjects });
-
-        toast({
-          title: "Succes!",
-          description: "Materiile duplicate au fost eliminate.",
-        });
-
-      } catch (error) {
-        console.error("Error cleaning duplicates:", error);
-        toast({
-          title: "Eroare",
-          description: "Nu am putut elimina duplicatele. Te rog încearcă din nou.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsCleaning(false);
-      }
-    };
-
-
     if (!context || !context.user) return null;
 
-    const { user, userData } = context;
+    const { user } = context;
     const isAnonymous = user.isAnonymous;
     const email = isAnonymous ? "Cont de oaspete" : user.email;
     const initial = email ? email.charAt(0).toUpperCase() : '?';
 
-    const hasDuplicates = userData ? new Set(userData.subjects.map(s => s.name)).size !== userData.subjects.length : false;
-
-
     return (
         <div className="p-4 rounded-lg border bg-background/50 mb-6">
             <h3 className="text-lg font-semibold mb-4">Contul Meu</h3>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Avatar>
                          <AvatarFallback>{initial}</AvatarFallback>
@@ -155,15 +112,6 @@ const UserAccount = () => {
                     Deconectare
                 </Button>
             </div>
-            {hasDuplicates && (
-              <div className="mt-4 p-3 rounded-md border border-primary/50 bg-primary/10 space-y-2">
-                  <p className="text-sm font-medium">Am detectat materii duplicate. Apasă aici pentru a face curățenie.</p>
-                  <Button size="sm" onClick={handleCleanDuplicates} disabled={isCleaning}>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      {isCleaning ? 'Se curăță...' : 'Curăță Materiile Duplicate'}
-                  </Button>
-              </div>
-            )}
         </div>
     )
 }
