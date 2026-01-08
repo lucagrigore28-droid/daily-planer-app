@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
-import { useRouter } from 'next/navigation';
 
 type StepProps = {
   onNext?: () => void;
@@ -15,7 +14,6 @@ type StepProps = {
 
 export default function StepName({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const router = useRouter();
   const [name, setName] = useState(context?.userData?.name || '');
 
   useEffect(() => {
@@ -56,13 +54,8 @@ export default function StepName({ onNext, onBack }: StepProps) {
         </div>
       </CardContent>
        {isWizardStep && (
-          <CardFooter className="flex justify-between">
-            {onBack ? (
-                <Button variant="ghost" type="button" onClick={onBack}>Înapoi</Button>
-            ) : (
-                <Button variant="ghost" type="button" onClick={() => router.push('/login')}>Înapoi la Login</Button>
-            )}
-            <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
+          <CardFooter className="flex justify-end">
+            <Button onClick={handleContinue} disabled={!name.trim()}>Continuă</Button>
           </CardFooter>
        )}
     </Card>

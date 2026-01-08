@@ -32,8 +32,6 @@ export default function SetupWizard({ onFinish }: SetupWizardProps) {
   const renderStep = () => {
     switch (step) {
       case 1:
-        // StepName is special, it doesn't get an `onBack` that goes to a previous wizard step.
-        // Its back button should always lead to the login page.
         return <StepName onNext={nextStep} />;
       case 2:
         return <StepTheme onNext={nextStep} onBack={prevStep} />;
