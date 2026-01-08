@@ -5,7 +5,7 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback, useM
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, format, isSaturday, isSunday } from 'date-fns';
 import { useUser, useFirestore } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut, Auth } from 'firebase/auth';
@@ -136,8 +136,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (isDataLoaded && userData?.theme) {
         const root = window.document.documentElement;
         
-        const themeClasses = ['theme-purple', 'theme-orange', 'theme-blue', 'theme-green', 'theme-red'];
-        root.classList.remove(...themeClasses);
+        root.classList.remove(...Array.from(root.classList).filter(c => c.startsWith('theme-')));
         root.classList.add(`theme-${userData.theme}`);
     }
   }, [userData?.theme, isDataLoaded]);
@@ -175,23 +174,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [firestore, user, tasks]);
 
   const deleteAllTasks = useCallback(async () => {
-    if (user && userData?.subjects) {
-      console.log("Starting to delete all tasks for user:", user.uid);
-      const deletePromises: Promise<void>[] = [];
-      for (const subject of userData.subjects) {
-        const tasksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'tasks');
-        const tasksSnapshot = await getDocs(tasksCollectionRef);
-        tasksSnapshot.forEach((taskDoc) => {
-          console.log(`Queueing deletion for task: ${taskDoc.id} in subject: ${subject.name}`);
-          deletePromises.push(deleteDoc(taskDoc.ref));
-        });
-      }
-      await Promise.all(deletePromises);
-      console.log("All tasks deleted successfully.");
-    } else {
-        console.log("Cannot delete tasks: user or subjects not available");
+    if (!user || !userData?.subjects) {
+      console.log("Cannot delete tasks: user or subjects not available");
+      return;
     }
-  }, [firestore, user, userData?.subjects]);
+
+    console.log("Starting to delete all tasks for user:", user.uid);
+    const batch = writeBatch(firestore);
+    
+    for (const subject of userData.subjects) {
+        const tasksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'tasks');
+        try {
+            const tasksSnapshot = await getDocs(tasksCollectionRef);
+            tasksSnapshot.forEach((taskDoc) => {
+                console.log(`Queueing deletion for task: ${taskDoc.id} in subject: ${subject.name}`);
+                batch.delete(taskDoc.ref);
+            });
+        } catch (error) {
+            console.error(`Failed to get tasks for subject ${subject.id}`, error);
+        }
+    }
+    
+    try {
+        await batch.commit();
+        console.log("All tasks deleted successfully via batch commit.");
+    } catch (error) {
+        console.error("Batch commit failed:", error);
+    }
+}, [firestore, user, userData?.subjects]);
+
 
   const logout = useCallback(async () => {
     await signOut(auth);
