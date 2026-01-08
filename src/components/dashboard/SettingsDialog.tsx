@@ -10,7 +10,7 @@ import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
 import StepNotifications from '@/components/setup/StepNotifications';
 import StepTheme from '@/components/setup/StepTheme';
-import { User, Book, Calendar, Bell, Palette, LogOut, Trash2, Sparkles } from 'lucide-react';
+import { User, Book, Calendar, Bell, Palette, LogOut, Trash2, Sparkles, AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +24,8 @@ import {
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -37,6 +39,77 @@ const TABS = [
     { value: 'notifications', label: 'Notificări', icon: Bell, component: StepNotifications },
     { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
 ];
+
+const EmergencyZone = () => {
+    const context = useContext(AppContext);
+    const { toast } = useToast();
+    const [isAlertOpen, setIsAlertOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDeleteAllTasks = async () => {
+        setIsDeleting(true);
+        try {
+            await context?.deleteAllTasks();
+            toast({
+                title: "Curățare finalizată",
+                description: "Toate temele au fost șterse. Lista se va reîmprospăta.",
+            });
+        } catch (error) {
+            console.error("Failed to delete all tasks", error);
+            toast({
+                title: "Eroare la curățare",
+                description: "Nu am putut șterge temele. Te rog încearcă din nou.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsDeleting(false);
+            setIsAlertOpen(false);
+        }
+    };
+
+    return (
+        <>
+            <Card className="mt-6 border-destructive/50">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <AlertTriangle className="h-6 w-6 text-destructive" />
+                        <CardTitle className="text-destructive">Zonă de urgență</CardTitle>
+                    </div>
+                    <CardDescription>
+                        Folosește această opțiune doar dacă întâmpini probleme cu duplicatele.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <p className="text-sm text-muted-foreground mb-4">
+                        Această acțiune va șterge permanent **toate** temele (manuale și automate) pentru a curăța orice duplicate. Temele automate vor fi regenerate, dar cele manuale se vor pierde.
+                    </p>
+                    <Button variant="destructive" onClick={() => setIsAlertOpen(true)} disabled={isDeleting}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {isDeleting ? "Se șterge..." : "Șterge Toate Temele Duplicate"}
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Ești absolut sigur?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Această acțiune nu poate fi anulată. Toate temele tale, inclusiv cele manuale și cele completate, vor fi șterse definitiv. Este recomandat doar pentru a rezolva problemele cu duplicatele.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Anulează</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAllTasks} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Da, șterge toate temele
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
+};
+
 
 const DangerZone = () => {
     const context = useContext(AppContext);
@@ -147,6 +220,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                     <div className="flex flex-col justify-between flex-1 h-full">
                         <div>
                             <UserAccount />
+                            <EmergencyZone />
                             <StepName />
                         </div>
                        <DangerZone />
@@ -168,3 +242,5 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     </Dialog>
   );
 }
+
+    

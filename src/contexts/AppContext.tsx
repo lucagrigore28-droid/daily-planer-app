@@ -36,6 +36,7 @@ type AppContextType = {
   addTask: (task: Omit<HomeworkTask, 'id'>) => void;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
   deleteTask: (taskId: string) => void;
+  deleteAllTasks: () => Promise<void>;
   resetData: () => Promise<void>;
   logout: () => Promise<void>;
   isDataLoaded: boolean;
@@ -173,6 +174,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [firestore, user, tasks]);
 
+  const deleteAllTasks = useCallback(async () => {
+    if (user && userData?.subjects) {
+      console.log("Starting to delete all tasks for user:", user.uid);
+      const deletePromises: Promise<void>[] = [];
+      for (const subject of userData.subjects) {
+        const tasksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'tasks');
+        const tasksSnapshot = await getDocs(tasksCollectionRef);
+        tasksSnapshot.forEach((taskDoc) => {
+          console.log(`Queueing deletion for task: ${taskDoc.id} in subject: ${subject.name}`);
+          deletePromises.push(deleteDoc(taskDoc.ref));
+        });
+      }
+      await Promise.all(deletePromises);
+      console.log("All tasks deleted successfully.");
+    } else {
+        console.log("Cannot delete tasks: user or subjects not available");
+    }
+  }, [firestore, user, userData?.subjects]);
+
   const logout = useCallback(async () => {
     await signOut(auth);
     window.location.href = '/login';
@@ -180,20 +200,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const resetData = useCallback(async () => {
     if (userDocRef && userData) {
-        // This is a destructive operation. We first delete all tasks in all subcollections.
-        for (const subject of userData.subjects) {
-             const subjectTasksQuery = query(collection(firestore, 'users', user!.uid, 'subjects', subject.id, 'tasks'));
-             const tasksSnapshot = await getDocs(subjectTasksQuery);
-             for (const taskDoc of tasksSnapshot.docs) {
-                await deleteDoc(taskDoc.ref);
-             }
-        }
-        
+        await deleteAllTasks();
         await setDoc(userDocRef, initialUserData, { merge: false });
-        
         window.location.reload(); // Reload to reflect changes
     }
-  }, [userDocRef, userData, firestore, user]);
+  }, [userDocRef, userData, deleteAllTasks]);
 
 
   // Effect to auto-generate scheduled tasks
@@ -326,6 +337,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addTask,
     updateTask,
     deleteTask,
+    deleteAllTasks,
     resetData,
     logout,
     isDataLoaded,
@@ -339,3 +351,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
