@@ -10,7 +10,6 @@ import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
-import { useRouter } from 'next/navigation';
 
 type StepProps = {
   onNext?: () => void;
@@ -19,7 +18,6 @@ type StepProps = {
 
 export default function StepNotifications({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const router = useRouter();
   const [permission, setPermission] = useState<'default' | 'granted' | 'denied'>('default');
   
   const notifications = context?.userData?.notifications;
@@ -107,8 +105,6 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     context?.updateUser({ setupComplete: true });
     if(onNext) {
       onNext();
-    } else {
-        router.push('/');
     }
   };
 

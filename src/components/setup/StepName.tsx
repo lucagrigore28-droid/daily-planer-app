@@ -57,7 +57,7 @@ export default function StepName({ onNext, onBack }: StepProps) {
       </CardContent>
        {showNavButtons && (
           <CardFooter className="flex justify-between">
-             <Button variant="ghost" onClick={onBack}>Înapoi</Button>
+             {onBack && <Button variant="ghost" onClick={onBack}>Înapoi</Button>}
             <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
           </CardFooter>
        )}
