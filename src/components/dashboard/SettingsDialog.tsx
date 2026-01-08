@@ -145,38 +145,38 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               ))}
             </TabsList>
 
-            <TabsContent value='profile' className="mt-0 h-full flex-1 min-w-0">
-                 <ScrollArea className="h-full pr-4 -mr-4">
-                    <div className="flex flex-col justify-between h-full">
-                        <div>
-                            <UserAccount />
-                            <StepName />
+            <div className="flex-1 min-h-0">
+                <TabsContent value='profile' className="flex-1 min-w-0">
+                     <ScrollArea className="h-full pr-4 -mr-4">
+                        <div className="flex flex-col justify-between h-full">
+                            <div>
+                                <UserAccount />
+                                <StepName />
+                            </div>
+                           <DangerZone />
                         </div>
-                       <DangerZone />
+                    </ScrollArea>
+                </TabsContent>
+                
+                <TabsContent value='appearance' className="mt-0 flex flex-col">
+                    <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50 mb-6 shrink-0">
+                         <h3 className="font-semibold">{theme === 'light' ? 'Mod Luminos' : 'Mod Întunecat'}</h3>
+                         <ThemeToggle />
                     </div>
-                </ScrollArea>
-            </TabsContent>
-            
-            <TabsContent value='appearance' className="mt-0 h-full flex flex-col flex-1 min-w-0">
-                <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50 mb-6 shrink-0">
-                     <h3 className="font-semibold">{theme === 'light' ? 'Mod Luminos' : 'Mod Întunecat'}</h3>
-                     <ThemeToggle />
-                </div>
-                <ScrollArea className="flex-1 pr-4 -mr-4">
-                    <StepTheme />
-                </ScrollArea>
-            </TabsContent>
-            
-            {TABS.filter(t => !['profile', 'appearance'].includes(t.value)).map(tab => {
-                const Component = tab.component;
-                return (
-                    <TabsContent key={tab.value} value={tab.value} className="mt-0 h-full flex-1 min-w-0">
-                         <ScrollArea className="h-full pr-4 -mr-4">
+                    <ScrollArea className="flex-1 pr-4 -mr-4">
+                        <StepTheme />
+                    </ScrollArea>
+                </TabsContent>
+                
+                {TABS.filter(t => !['profile', 'appearance'].includes(t.value)).map(tab => {
+                    const Component = tab.component;
+                    return (
+                        <TabsContent key={tab.value} value={tab.value} className="mt-0 flex-1 min-w-0">
                             <Component />
-                        </ScrollArea>
-                    </TabsContent>
-                )
-            })}
+                        </TabsContent>
+                    )
+                })}
+            </div>
           </Tabs>
         </div>
       </DialogContent>
