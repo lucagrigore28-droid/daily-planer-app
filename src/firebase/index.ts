@@ -1,9 +1,10 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore } from 'firebase/firestore';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -35,6 +36,13 @@ export function initializeFirebase() {
 export function getSdks(firebaseApp: FirebaseApp) {
   const firestore = getFirestore(firebaseApp);
   const auth = getAuth(firebaseApp);
+
+  if (process.env.NODE_ENV !== 'production') {
+    // connectAuthEmulator(auth, 'http://127.0.0.1:9099', {
+    //   disableWarnings: true,
+    // });
+    // connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
+  }
   return {
     firebaseApp,
     auth,
@@ -49,3 +57,5 @@ export * from './firestore/use-doc';
 export * from './auth/use-user';
 export * from './errors';
 export * from './error-emitter';
+
+    

@@ -1,3 +1,4 @@
+
 /**
  * This ruleset enforces a strict user-ownership model for the Daily Planner Pro application.
  *
@@ -101,3 +102,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

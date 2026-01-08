@@ -8,7 +8,6 @@ import { AppContext } from '@/contexts/AppContext';
 import { themes } from '@/lib/themes';
 import { cn } from '@/lib/utils';
 import Logo from '../Logo';
-import { ThemeToggle } from '../ThemeToggle';
 
 
 type StepProps = {
@@ -59,10 +58,6 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
                 </div>
             ))}
         </div>
-        <div className="mt-8 pt-6 border-t flex items-center justify-between">
-            <p className="font-medium">Mod vizual</p>
-            <ThemeToggle />
-        </div>
       </CardContent>
       {showNavButtons && (
         <CardFooter className="flex justify-between mt-4">
@@ -73,3 +68,5 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
+
+    
