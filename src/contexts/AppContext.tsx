@@ -150,8 +150,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (user.isAnonymous) {
       await deleteAllTasks();
       await deleteDoc(userDocRef); // Delete the guest user document
-      await user.delete(); // Delete the anonymous user account
-      router.push('/login'); // Redirect to login
+      await user.delete(); // This will trigger onAuthStateChanged, which should redirect to login
       return;
     }
     
@@ -162,8 +161,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         name: userData?.name || '', // Keep the name if it exists
         theme: userData?.theme || initialUserData.theme, // Keep the theme
     }, { merge: false });
-    // No reload, the app will reactively show the setup wizard
-  }, [user, userDocRef, userData, deleteAllTasks, router]);
+    // The app will reactively show the setup wizard because setupComplete is now false
+  }, [user, userDocRef, userData, deleteAllTasks, initialUserData]);
 
   useEffect(() => {
     if (!isDataLoaded || !userData || !userData.setupComplete || userData.subjects.length === 0 || !tasksCollectionRef) {
