@@ -79,11 +79,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
 
   useEffect(() => {
-    if (isDataLoaded && userData?.theme) {
+    const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : initialUserData.theme;
+    if (themeToApply) {
         const root = window.document.documentElement;
         
         root.classList.remove(...Array.from(root.classList).filter(c => c.startsWith('theme-')));
-        root.classList.add(`theme-${userData.theme}`);
+        root.classList.add(`theme-${themeToApply}`);
     }
   }, [userData?.theme, isDataLoaded]);
 
@@ -123,9 +124,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const deleteAllTasks = useCallback(async () => {
     if (!tasksCollectionRef) return;
     try {
-        const batch = writeBatch(firestore);
         const q = query(tasksCollectionRef);
         const snapshot = await getDocs(q);
+        const batch = writeBatch(firestore);
         snapshot.forEach(doc => {
             batch.delete(doc.ref);
         });
@@ -264,3 +265,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
