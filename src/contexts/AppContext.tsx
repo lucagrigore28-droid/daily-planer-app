@@ -10,6 +10,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const initialUserData: UserData = {
   name: '',
@@ -52,20 +53,6 @@ type AppContextType = {
 
 export const AppContext = createContext<AppContextType | null>(null);
 
-function useTasksForUser() {
-    const firestore = useFirestore();
-    const { user } = useUser();
-    
-    const tasksQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'users', user.uid, 'tasks'));
-    }, [firestore, user]);
-
-    const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksQuery);
-    
-    return { tasks: tasks || [], areTasksLoading };
-}
-
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -92,60 +79,57 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [userData?.theme, isDataLoaded]);
 
-  const updateUser = useCallback(async (data: Partial<UserData>) => {
+  const updateUser = useCallback((data: Partial<UserData>) => {
     if (userDocRef) {
-      await setDoc(userDocRef, data, { merge: true });
+      setDocumentNonBlocking(userDocRef, data, { merge: true });
     }
   }, [userDocRef]);
 
-   const updateSubjects = useCallback(async (subjects: Subject[]) => {
+   const updateSubjects = useCallback((subjects: Subject[]) => {
     if (userDocRef) {
-        await setDoc(userDocRef, { subjects }, { merge: true });
+        setDocumentNonBlocking(userDocRef, { subjects }, { merge: true });
     }
    }, [userDocRef]);
 
-  const addTask = useCallback(async (task: Omit<HomeworkTask, 'id'>) => {
+  const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
       if (tasksCollectionRef) {
-        await addDoc(tasksCollectionRef, task);
+        addDocumentNonBlocking(tasksCollectionRef, task);
       }
   }, [tasksCollectionRef]);
 
-  const updateTask = useCallback(async (taskId: string, updates: Partial<HomeworkTask>) => {
+  const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
     if (user) {
       const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-      await setDoc(taskDocRef, updates, { merge: true });
+      setDocumentNonBlocking(taskDocRef, updates, { merge: true });
     }
   }, [firestore, user]);
 
 
-  const deleteTask = useCallback(async (taskId: string) => {
+  const deleteTask = useCallback((taskId: string) => {
     if (user) {
         const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-        await deleteDoc(taskDocRef);
+        deleteDocumentNonBlocking(taskDocRef);
     }
   }, [firestore, user]);
 
   const deleteAllTasks = useCallback(async () => {
     if (!tasksCollectionRef) return;
-    try {
-        const q = query(tasksCollectionRef);
-        const snapshot = await getDocs(q);
-        const batch = writeBatch(firestore);
-        snapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        await batch.commit();
-    } catch (error) {
-        console.error("Error deleting all tasks:", error);
-        throw error;
-    }
+
+    const q = query(tasksCollectionRef);
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(firestore);
+    snapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+
   }, [firestore, tasksCollectionRef]);
 
   const addFcmToken = useCallback(async (token: string) => {
     if (!userDocRef || !userData) return;
     if (userData.fcmTokens && userData.fcmTokens.includes(token)) return;
 
-    await updateUser({ fcmTokens: arrayUnion(token) });
+    updateUser({ fcmTokens: arrayUnion(token) });
   }, [userDocRef, userData, updateUser]);
 
   const logout = useCallback(async () => {
@@ -171,7 +155,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         theme: userData?.theme || initialUserData.theme, // Keep the theme
     }, { merge: false });
     // The app will reactively show the setup wizard because setupComplete is now false
-  }, [user, userDocRef, userData, deleteAllTasks]);
+  }, [user, userDocRef, userData, deleteAllTasks, auth, router]);
 
   useEffect(() => {
     if (!isDataLoaded || !userData || !userData.setupComplete || userData.subjects.length === 0 || !tasksCollectionRef) {
