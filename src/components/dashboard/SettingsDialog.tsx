@@ -145,8 +145,8 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
               ))}
             </TabsList>
 
-            <TabsContent value='profile' className="h-full flex flex-col mt-0 flex-1 min-w-0">
-                 <ScrollArea className="flex-1 pr-4 -mr-4">
+            <TabsContent value='profile' className="mt-0 h-full flex-1 min-w-0">
+                 <ScrollArea className="h-full pr-4 -mr-4">
                     <div className="flex flex-col justify-between h-full">
                         <div>
                             <UserAccount />
@@ -157,12 +157,12 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                 </ScrollArea>
             </TabsContent>
             
-             <TabsContent value='appearance' className="mt-0 h-full flex flex-col flex-1 min-w-0">
+            <TabsContent value='appearance' className="mt-0 h-full flex flex-col flex-1 min-w-0">
                 <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50 mb-6 shrink-0">
                      <h3 className="font-semibold">{theme === 'light' ? 'Mod Luminos' : 'Mod Întunecat'}</h3>
                      <ThemeToggle />
                 </div>
-                 <ScrollArea className="flex-1 pr-4 -mr-4">
+                <ScrollArea className="flex-1 pr-4 -mr-4">
                     <StepTheme />
                 </ScrollArea>
             </TabsContent>
