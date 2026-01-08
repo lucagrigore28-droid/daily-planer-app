@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Logo from '@/components/Logo';
-import { useAuth } from '@/firebase';
-import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { useUser } from '@/firebase';
+import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, getAuth } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,7 +25,8 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 
 export default function LoginPage() {
-  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+  const auth = getAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,6 +36,12 @@ export default function LoginPage() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/');
+    }
+  }, [user, isUserLoading, router]);
 
   const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -113,7 +120,7 @@ export default function LoginPage() {
     setShowPassword(!showPassword);
   };
 
-  if (!isClient) {
+  if (!isClient || isUserLoading || user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-primary-accent p-4">
         <Card className="w-full max-w-sm">
