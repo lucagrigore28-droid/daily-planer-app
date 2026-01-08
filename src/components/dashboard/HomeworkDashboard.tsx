@@ -6,7 +6,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { format, getDay, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import AddTaskDialog from './AddTaskDialog';
 import { CalendarIcon } from 'lucide-react';
@@ -14,13 +14,11 @@ import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
-import SettingsDialog from './SettingsDialog';
 import { Progress } from '../ui/progress';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
   const nextDayWithTasks = useMemo(() => {
@@ -78,10 +76,6 @@ export default function HomeworkDashboard() {
               Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
             </p>
           </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                <Settings className="h-6 w-6" />
-                <span className="sr-only">Setări</span>
-            </Button>
         </div>
         <Button onClick={() => setAddTaskOpen(true)} size="default" className="sm:w-auto">
             <Plus className="mr-2 h-4 w-4" /> <span className="sm:inline">Adaugă temă</span>
@@ -154,7 +148,6 @@ export default function HomeworkDashboard() {
       </Tabs>
       
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
-      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </main>
   );
 }
