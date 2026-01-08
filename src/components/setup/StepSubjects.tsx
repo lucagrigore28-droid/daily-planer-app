@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -74,15 +73,16 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   const isWizardStep = !!onNext;
 
   return (
-    <div className={`flex flex-col h-full ${!isWizardStep ? 'bg-card/80 backdrop-blur-sm sm:border sm:rounded-lg sm:shadow-lg' : 'border-0 shadow-none'}`}>
+    <div className={`flex flex-col h-full ${!isWizardStep ? 'bg-card/80 backdrop-blur-sm sm:border sm:rounded-lg sm:shadow-lg' : ''}`}>
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Ce materii ai?</CardTitle>
         <CardDescription>
           Bifează materiile din orarul tău. Poți adăuga și materii personalizate.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 min-h-0">
-        <ScrollArea className="h-full pr-4">
+      
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-6 pt-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {allSubjectNames.map(subjectName => {
               const isChecked = localSubjects.some(s => s.name === subjectName);
@@ -107,9 +107,10 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
               );
             })}
           </div>
-        </ScrollArea>
-      </CardContent>
-      <div className="p-6 pt-2">
+        </div>
+      </ScrollArea>
+      
+      <div className="p-6 pt-2 shrink-0">
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Altă materie..."
@@ -122,8 +123,9 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
           </Button>
         </div>
       </div>
+      
       {isWizardStep && (
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-between shrink-0">
           <Button variant="ghost" onClick={handleBack}>Înapoi</Button>
           <Button onClick={handleNext} disabled={localSubjects.length === 0}>Continuă</Button>
         </CardFooter>
@@ -131,4 +133,3 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     </div>
   );
 }
-
