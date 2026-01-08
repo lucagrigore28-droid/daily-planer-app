@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,10 +29,19 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     }
   }, [context?.userData?.subjects]);
 
-  const handleToggleSubject = (subjectName: string, isCustom: boolean) => {
-    const updatedSubjects = selectedSubjects.find(s => s.name === subjectName)
-      ? selectedSubjects.filter(s => s.name !== subjectName)
-      : [...selectedSubjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom }];
+  const handleToggleSubject = (subjectName: string, isCurrentlyCustom: boolean) => {
+    const isPredefined = PREDEFINED_SUBJECTS.includes(subjectName);
+    const existingSubject = selectedSubjects.find(s => s.name === subjectName);
+
+    let updatedSubjects;
+
+    if (existingSubject) {
+      // If it exists, remove it
+      updatedSubjects = selectedSubjects.filter(s => s.name !== subjectName);
+    } else {
+      // If it doesn't exist, add it
+      updatedSubjects = [...selectedSubjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
+    }
     
     setSelectedSubjects(updatedSubjects);
     context?.updateUser({ subjects: updatedSubjects });
@@ -47,12 +56,11 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   
   const showNavButtons = !!onNext;
 
-  const predefinedWithCustom = [...PREDEFINED_SUBJECTS];
-  selectedSubjects.forEach(s => {
-    if (s.isCustom && !predefinedWithCustom.includes(s.name)) {
-      predefinedWithCustom.push(s.name);
-    }
-  });
+  const allSubjectsToDisplay = useMemo(() => {
+    const subjectSet = new Set(PREDEFINED_SUBJECTS);
+    selectedSubjects.forEach(s => subjectSet.add(s.name));
+    return Array.from(subjectSet).sort((a, b) => a.localeCompare(b));
+  }, [selectedSubjects]);
 
 
   return (
@@ -66,9 +74,9 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       <CardContent>
         <ScrollArea className="h-[300px] md:h-[400px] pr-4">
           <div className="grid grid-cols-2 gap-4">
-            {predefinedWithCustom.map(subjectName => {
-              const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
+            {allSubjectsToDisplay.map(subjectName => {
               const isChecked = !!selectedSubjects.find(s => s.name === subjectName);
+              const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
               return (
                 <div key={subjectName} className="flex items-center space-x-3 p-2 rounded-md transition-colors hover:bg-muted">
                   <Checkbox
