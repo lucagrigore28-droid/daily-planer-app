@@ -24,6 +24,7 @@ import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import ThemeToggle from '../ThemeToggle';
+import { useTheme } from 'next-themes';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -120,6 +121,7 @@ const UserAccount = () => {
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const context = useContext(AppContext);
   const [activeTab, setActiveTab] = useState(TABS[0].value);
+  const { theme } = useTheme();
   
   if (!context) return null;
 
@@ -153,9 +155,9 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                         </div>
                     </ScrollArea>
                 </TabsContent>
-                <TabsContent value='appearance' className="mt-0 h-full flex flex-col">
+                 <TabsContent value='appearance' className="mt-0 h-full flex flex-col">
                     <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50 mb-6 shrink-0">
-                         <h3 className="font-semibold">Mod Întunecat</h3>
+                         <h3 className="font-semibold">{theme === 'light' ? 'Mod Luminos' : 'Mod Întunecat'}</h3>
                          <ThemeToggle />
                     </div>
                      <ScrollArea className="flex-1 pr-4">
