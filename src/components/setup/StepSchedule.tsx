@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useContext, useMemo, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
@@ -47,15 +47,16 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
   const scheduleDays = DAYS_OF_WEEK_SCHEDULE.filter(d => d.id <= 5); // Only Mon-Fri
 
   return (
-    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
-      <CardHeader>
+    <div className="flex flex-col h-full">
+      <CardHeader className="shrink-0">
         <CardTitle className="font-headline text-2xl">Setează-ți orarul săptămânal</CardTitle>
         <CardDescription>
           Pentru fiecare materie, selectează zilele în care o ai. Acest lucru ne ajută să-ți afișăm temele corect.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[300px] md:h-[400px] pr-4">
+      
+      <ScrollArea className="flex-1 min-h-0">
+        <CardContent className="pr-6">
           <div className="space-y-6">
             {subjects.map(subject => (
               <div key={subject.id}>
@@ -76,16 +77,18 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
               </div>
             ))}
           </div>
-        </ScrollArea>
-      </CardContent>
+        </CardContent>
+      </ScrollArea>
+      
       {showNavButtons ? (
-        <CardFooter className="flex justify-between">
+        <CardFooter className="flex justify-between shrink-0">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
           <Button onClick={handleNext}>Continuă</Button>
         </CardFooter>
       ) : null}
-    </Card>
+    </div>
   );
 }
+
 
 
