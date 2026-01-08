@@ -28,8 +28,6 @@ function AppContainer() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  const { userData, isDataLoaded } = context || {};
-
   useEffect(() => {
     // Redirect to login only when loading is complete and there's no user.
     if (!isUserLoading && !user) {
@@ -37,21 +35,22 @@ function AppContainer() {
     }
   }, [user, isUserLoading, router]);
 
-
   // Show loading screen while user state is resolving or if we are about to redirect.
   if (isUserLoading || !user) {
     return <LoadingScreen />;
   }
 
+  const { userData, isDataLoaded } = context || {};
+
   // After user is confirmed, wait for their specific data to load.
-  if (!isDataLoaded || !context) {
+  if (!isDataLoaded || !context || userData === undefined) {
     return <LoadingScreen />;
   }
   
   const showWizard = !userData?.setupComplete;
 
   return (
-    <div className={showWizard ? "bg-background" : "dashboard-background min-h-screen"}>
+    <div className={showWizard ? "bg-gradient-primary-accent" : "dashboard-background min-h-screen"}>
         {showWizard ? <SetupWizard /> : <HomeworkDashboard />}
     </div>
   );
