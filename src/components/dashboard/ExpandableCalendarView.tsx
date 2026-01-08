@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, useMemo } from 'react';
@@ -58,12 +59,6 @@ export default function ExpandableCalendarView() {
 
   const handleDayClick = (day: Date) => {
     setSelectedDate(day);
-  };
-  
-  const getProgressColorClass = (percentage: number): string => {
-      if (percentage < 40) return 'bg-red-500';
-      if (percentage <= 75) return 'bg-orange-500';
-      return 'bg-green-400';
   };
 
   return (
@@ -131,10 +126,7 @@ export default function ExpandableCalendarView() {
                                     </div>
                                   ) : (
                                     <span
-                                      className={cn(
-                                        'absolute bottom-1.5 right-1.5 h-2.5 w-2.5 rounded-full',
-                                        getProgressColorClass(progress.percentage)
-                                      )}
+                                      className='absolute bottom-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-red-500'
                                     />
                                   )}
                                 </>
