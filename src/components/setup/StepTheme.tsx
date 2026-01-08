@@ -33,7 +33,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
         </div>
         <CardTitle className="font-headline text-2xl">Alege-ți stilul</CardTitle>
         <CardDescription>
-          Selectează o paletă de culori și o temă vizuală care ți se potrivesc.
+          Selectează o paletă de culori. Poți alege modul Întunecat/Luminos mai târziu.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -68,5 +68,3 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
-
-    

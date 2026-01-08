@@ -6,12 +6,17 @@ import { Toaster } from '@/components/ui/toaster';
 import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 
 export const metadata: Metadata = {
   title: 'Homework Planner',
   description: 'Planificatorul tău inteligent pentru teme.',
   manifest: '/manifest.webmanifest',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/apple-icon.png',
+  }
 };
 
 export const viewport: Viewport = {
@@ -42,10 +47,16 @@ export default function RootLayout({
     <html lang="ro" suppressHydrationWarning>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <FirebaseClientProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+          >
             <AppProvider>
               {children}
               <Toaster />
             </AppProvider>
+          </ThemeProvider>
         </FirebaseClientProvider>
       </body>
     </html>

@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
+import ThemeToggle from '../ThemeToggle';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -85,7 +86,7 @@ const EmergencyZone = () => {
                     </p>
                     <Button variant="destructive" onClick={() => setIsAlertOpen(true)} disabled={isDeleting}>
                         <Trash2 className="mr-2 h-4 w-4" />
-                        {isDeleting ? "Se șterge..." : "Șterge Toate Temele Duplicate"}
+                        {isDeleting ? "Se șterge..." : "Șterge Toate Temele"}
                     </Button>
                 </CardContent>
             </Card>
@@ -226,7 +227,15 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                        <DangerZone />
                     </div>
                 </TabsContent>
-                {TABS.filter(t => t.value !== 'profile').map(tab => {
+                <TabsContent value='appearance' className="mt-0">
+                    <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50 mb-6">
+                         <h3 className="font-semibold">Mod Întunecat</h3>
+                         <ThemeToggle />
+                    </div>
+                    <StepTheme />
+                </TabsContent>
+
+                {TABS.filter(t => t.value !== 'profile' && t.value !== 'appearance').map(tab => {
                     const Component = tab.component;
                     return (
                         <TabsContent key={tab.value} value={tab.value} className="mt-0">
@@ -242,5 +251,3 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
     </Dialog>
   );
 }
-
-    

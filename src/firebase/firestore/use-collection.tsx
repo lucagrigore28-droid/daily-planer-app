@@ -59,19 +59,16 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Default to true
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   const prevPathRef = useRef<string | null>(null);
 
-
   useEffect(() => {
-    // If the query is null or undefined, we're not ready to fetch.
-    // We set loading to true because the consuming component is likely waiting for other data (like a user object).
-    // The parent component should ultimately decide the overall loading state.
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(true);
       setError(null);
+      prevPathRef.current = null;
       return;
     }
     
@@ -80,12 +77,11 @@ export function useCollection<T = any>(
             ? (memoizedTargetRefOrQuery as CollectionReference).path
             : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
             
-    // Prevent re-subscribing if the path is identical
-    if (prevPathRef.current === path && !isLoading && data) {
+    if (prevPathRef.current === path) {
       return;
     }
-    prevPathRef.current = path;
 
+    prevPathRef.current = path;
     setIsLoading(true);
     setError(null);
 
@@ -110,13 +106,12 @@ export function useCollection<T = any>(
         setData(null)
         setIsLoading(false)
 
-        // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+  }, [memoizedTargetRefOrQuery]);
   
   return { data, isLoading, error };
 }

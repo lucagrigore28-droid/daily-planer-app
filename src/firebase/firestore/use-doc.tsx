@@ -52,22 +52,19 @@ export function useDoc<T = any>(
   useEffect(() => {
     if (!memoizedDocRef) {
       setData(null);
-      setIsLoading(true); // Set to true as we are waiting for a valid ref
+      setIsLoading(true); 
       setError(null);
       prevPathRef.current = null;
       return;
     }
     
-    // Prevent re-subscribing if the path is identical
-    if (prevPathRef.current === memoizedDocRef.path && !isLoading && data) {
+    if (prevPathRef.current === memoizedDocRef.path) {
       return;
     }
     prevPathRef.current = memoizedDocRef.path;
 
-
     setIsLoading(true);
     setError(null);
-    // Optional: setData(null); // Clear previous data instantly
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,
@@ -75,10 +72,9 @@ export function useDoc<T = any>(
         if (snapshot.exists()) {
           setData({ ...(snapshot.data() as T), id: snapshot.id });
         } else {
-          // Document does not exist
           setData(null);
         }
-        setError(null); // Clear any previous error on successful snapshot (even if doc doesn't exist)
+        setError(null); 
         setIsLoading(false);
       },
       (error: FirestoreError) => {
@@ -91,13 +87,12 @@ export function useDoc<T = any>(
         setData(null)
         setIsLoading(false)
 
-        // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedDocRef]); // Re-run if the memoizedDocRef changes.
+  }, [memoizedDocRef]);
 
   return { data, isLoading, error };
 }

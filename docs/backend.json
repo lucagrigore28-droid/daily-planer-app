@@ -1,210 +1,149 @@
+
 {
   "entities": {
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
       "description": "Represents a user of the Daily Planner Pro application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
         "name": {
           "type": "string",
           "description": "The user's name."
         },
-        "timezone": {
+        "subjects": {
+          "type": "array",
+          "description": "List of subjects the user is enrolled in.",
+          "items": {
+            "$ref": "#/entities/Subject"
+          }
+        },
+        "schedule": {
+          "type": "object",
+          "description": "The user's weekly schedule. Maps Subject ID to an array of days (1-7).",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "notifications": {
+          "type": "object",
+          "description": "User's notification preferences.",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "afterSchoolTime": { "type": "string" },
+            "eveningTime": { "type": "string" },
+            "weekendEnabled": { "type": "boolean" },
+            "saturdayMorningTime": { "type": "string" },
+            "saturdayEveningTime": { "type": "string" },
+            "sundayMorningTime": { "type": "string" },
+            "sundayEveningTime": { "type": "string" }
+          }
+        },
+        "theme": {
           "type": "string",
-          "description": "The user's timezone, determined by GPS or manual input."
+          "description": "The selected color theme for the app."
+        },
+        "setupComplete": {
+          "type": "boolean",
+          "description": "Flag indicating if the user has completed the initial setup."
         }
       },
-      "required": [
-        "id",
-        "name"
-      ]
+      "required": ["name", "setupComplete"]
     },
     "Subject": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Subject",
       "type": "object",
       "description": "Represents a school subject.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Subject entity."
+          "description": "Unique identifier for the subject."
         },
         "name": {
           "type": "string",
-          "description": "The name of the subject (e.g., Mathematics, English)."
+          "description": "The name of the subject."
         },
-        "userId": {
-          "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Subject)"
+        "isCustom": {
+          "type": "boolean",
+          "description": "Flag indicating if the subject was added by the user."
         }
       },
-      "required": [
-        "id",
-        "name",
-        "userId"
-      ]
-    },
-    "Schedule": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Schedule",
-      "type": "object",
-      "description": "Represents the schedule for a specific subject on a specific day.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Schedule entity."
-        },
-        "subjectId": {
-          "type": "string",
-          "description": "Reference to Subject. (Relationship: Subject 1:N Schedule)"
-        },
-        "dayOfWeek": {
-          "type": "string",
-          "description": "The day of the week for this schedule entry (e.g., Monday, Tuesday)."
-        }
-      },
-      "required": [
-        "id",
-        "subjectId",
-        "dayOfWeek"
-      ]
+      "required": ["id", "name", "isCustom"]
     },
     "Task": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Task",
       "type": "object",
       "description": "Represents a specific task or homework assignment.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Task entity."
-        },
         "subjectId": {
           "type": "string",
-          "description": "Reference to Subject. (Relationship: Subject 1:N Task)"
+          "description": "Reference to Subject."
+        },
+        "subjectName": {
+          "type": "string",
+          "description": "Denormalized name of the subject for easy display."
         },
         "dueDate": {
           "type": "string",
-          "description": "The due date for the task (date/time format).",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "The due date for the task."
         },
         "description": {
           "type": "string",
           "description": "A description of the task."
         },
-        "completed": {
+        "isCompleted": {
           "type": "boolean",
           "description": "Indicates whether the task has been completed."
+        },
+        "isManual": {
+          "type": "boolean",
+          "description": "True if the task was added manually by the user."
+        },
+        "plannedDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Specific date a user plans to do a weekend task."
+        },
+        "estimatedTime": {
+          "type": "number",
+          "description": "Estimated time in minutes to complete the task."
         }
       },
       "required": [
-        "id",
         "subjectId",
+        "subjectName",
         "dueDate",
-        "description",
-        "completed"
+        "isCompleted",
+        "isManual"
       ]
     }
   },
   "auth": {
-    "providers": [
-      "anonymous",
-      "google.com",
-      "password"
-    ]
+    "providers": ["anonymous", "google.com", "password"]
   },
   "firestore": {
     "structure": [
       {
         "path": "/users/{userId}",
         "definition": {
-          "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/entities/User"
           },
-          "description": "Stores user profiles. Uses the Firebase Auth UID as the document ID.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user, derived from Firebase Authentication."
-            }
-          ]
+          "description": "Stores user profiles. The document ID is the Firebase Auth UID."
         }
       },
       {
-        "path": "/users/{userId}/subjects/{subjectId}",
+        "path": "/users/{userId}/tasks/{taskId}",
         "definition": {
-          "entityName": "Subject",
           "schema": {
-            "$ref": "#/backend/entities/Subject"
+            "$ref": "#/entities/Task"
           },
-          "description": "Stores subjects owned by a specific user. Includes the denormalized 'userId' field for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "subjectId",
-              "description": "The unique identifier for the subject."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/subjects/{subjectId}/schedules/{scheduleId}",
-        "definition": {
-          "entityName": "Schedule",
-          "schema": {
-            "$ref": "#/backend/entities/Schedule"
-          },
-          "description": "Stores schedules associated with a specific subject. Includes denormalized 'subjectId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "subjectId",
-              "description": "The unique identifier for the subject."
-            },
-            {
-              "name": "scheduleId",
-              "description": "The unique identifier for the schedule."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/subjects/{subjectId}/tasks/{taskId}",
-        "definition": {
-          "entityName": "Task",
-          "schema": {
-            "$ref": "#/backend/entities/Task"
-          },
-          "description": "Stores tasks associated with a specific subject. Includes denormalized 'subjectId' for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "subjectId",
-              "description": "The unique identifier for the subject."
-            },
-            {
-              "name": "taskId",
-              "description": "The unique identifier for the task."
-            }
-          ]
+          "description": "A flat collection of all tasks for a user, simplifying queries."
         }
       }
-    ],
-    "reasoning": "The Firestore data structure is designed to support the Daily Planner Pro application's requirements for managing user schedules, subjects, and tasks. The structure prioritizes authorization independence and efficient data retrieval.\n\n*   **Users Collection:** Stores user profiles. Each user has a unique document ID (UID from Firebase Auth).\n*   **Subjects Collection:** Subcollection under each user document, containing subjects owned by that user. Includes the `userId` for explicit ownership, enabling secure list operations.\n*   **Schedules Collection:** Subcollection under each subject document, representing the schedule for the particular subject. Includes the `subjectId` for explicit ownership.\n*   **Tasks Collection:** Subcollection under each subject document, storing tasks associated with that subject. Includes the `subjectId` for explicit ownership.\n\n**Authorization Independence:** The `userId` field within the `subjects` documents, the `subjectId` field in `schedules` and `tasks` ensures that security rules can validate ownership without needing to perform expensive `get()` operations to check parent documents. This design enables atomic operations and simplifies security rule maintenance.\n\n**QAPs (Rules are not Filters):**  The hierarchical structure with explicit `userId` and `subjectId` fields facilitates secure list operations. Security rules can efficiently filter data based on user ID and subject ID without relying on client-side filtering, preventing unauthorized access to data. By placing subjects, schedules, and tasks in subcollections of users, we ensure that listing subjects only returns those owned by the current user, and listing tasks/schedules are tied to their respective subject which tied to a user."
+    ]
   }
 }

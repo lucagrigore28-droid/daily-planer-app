@@ -20,50 +20,56 @@ type StepProps = {
 
 export default function StepSubjects({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const [selectedSubjects, setSelectedSubjects] = useState<Subject[]>([]);
+  const [localSubjects, setLocalSubjects] = useState<Subject[]>([]);
   const [customSubject, setCustomSubject] = useState('');
 
   useEffect(() => {
     if (context?.userData?.subjects) {
-      setSelectedSubjects(context.userData.subjects);
+      setLocalSubjects(context.userData.subjects);
     }
   }, [context?.userData?.subjects]);
 
-  const allSubjects = useMemo(() => {
-    const customSubjects = selectedSubjects.filter(s => s.isCustom).map(s => s.name);
-    return [...new Set([...PREDEFINED_SUBJECTS, ...customSubjects])].sort((a,b) => a.localeCompare(b));
-  }, [selectedSubjects]);
+  const allSubjectNames = useMemo(() => {
+    const customNames = localSubjects.filter(s => s.isCustom).map(s => s.name);
+    return [...new Set([...PREDEFINED_SUBJECTS, ...customNames])].sort((a,b) => a.localeCompare(b));
+  }, [localSubjects]);
 
   const handleToggleSubject = (subjectName: string) => {
-    const existingSubject = selectedSubjects.find(s => s.name === subjectName);
+    const isAlreadySelected = localSubjects.some(s => s.name === subjectName);
     let updatedSubjects;
 
-    if (existingSubject) {
-      updatedSubjects = selectedSubjects.filter(s => s.name !== subjectName);
+    if (isAlreadySelected) {
+      updatedSubjects = localSubjects.filter(s => s.name !== subjectName);
     } else {
       const isPredefined = PREDEFINED_SUBJECTS.includes(subjectName);
-      updatedSubjects = [...selectedSubjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
+      updatedSubjects = [...localSubjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
     }
     
-    setSelectedSubjects(updatedSubjects);
-    context?.updateUser({ subjects: updatedSubjects });
+    setLocalSubjects(updatedSubjects);
   };
 
   const handleAddCustomSubject = () => {
     const trimmedName = customSubject.trim();
-    if (trimmedName && !selectedSubjects.find(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
-      const newSubjects = [...selectedSubjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
-      setSelectedSubjects(newSubjects);
-      context?.updateUser({ subjects: newSubjects });
+    if (trimmedName && !localSubjects.some(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
+      const newSubjects = [...localSubjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
+      setLocalSubjects(newSubjects);
       setCustomSubject('');
     }
   };
   
   const handleRemoveCustomSubject = (subjectName: string) => {
-      const updatedSubjects = selectedSubjects.filter(s => s.name !== subjectName);
-      setSelectedSubjects(updatedSubjects);
-      context?.updateUser({ subjects: updatedSubjects });
-  }
+      const updatedSubjects = localSubjects.filter(s => s.name !== subjectName);
+      setLocalSubjects(updatedSubjects);
+  };
+
+  const handleNext = () => {
+    context?.updateSubjects(localSubjects);
+    if (onNext) onNext();
+  };
+
+  const handleBack = () => {
+    if(onBack) onBack();
+  };
   
   const showNavButtons = !!onNext;
 
@@ -78,8 +84,8 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       <CardContent>
         <ScrollArea className="h-[300px] md:h-[400px] pr-4">
           <div className="grid grid-cols-2 gap-4">
-            {allSubjects.map(subjectName => {
-              const isChecked = !!selectedSubjects.find(s => s.name === subjectName);
+            {allSubjectNames.map(subjectName => {
+              const isChecked = localSubjects.some(s => s.name === subjectName);
               const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
               return (
                 <div key={subjectName} className="flex items-center space-x-3 p-2 rounded-md transition-colors hover:bg-muted">
@@ -116,8 +122,8 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       </CardContent>
       {showNavButtons && (
         <CardFooter className="flex justify-between">
-          <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={onNext} disabled={selectedSubjects.length === 0}>Continuă</Button>
+          <Button variant="ghost" onClick={handleBack}>Înapoi</Button>
+          <Button onClick={handleNext} disabled={localSubjects.length === 0}>Continuă</Button>
         </CardFooter>
       )}
     </Card>
