@@ -70,10 +70,10 @@ service cloud.firestore {
 
     /**
      * Enforces immutability of the UserProfile's ID on update.
-     * Prevents re-assigning ownership of the document.
+     * Prevents re-assigning ownership of the document, but allows adding new fields.
      */
     function isUserProfileUpdateValid() {
-      return request.resource.data.id == resource.data.id;
+      return !('id' in resource.data) || request.resource.data.id == resource.data.id;
     }
 
     /**
