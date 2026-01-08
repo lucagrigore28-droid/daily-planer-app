@@ -10,6 +10,7 @@ import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
+import { ScrollArea } from '../ui/scroll-area';
 
 type StepProps = {
   onNext?: () => void;
@@ -108,6 +109,8 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   };
 
   const showNavButtons = !!onNext;
+  const isSettingsDialog = !onNext;
+
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -117,123 +120,127 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
           Primește un sumar zilnic cu temele rămase pentru a fi mereu la zi. Nu vom trimite spam.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-8">
-        <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50">
-            <div className="flex items-center space-x-3">
-                {permission === 'granted' && notificationsEnabled ? <BellRing className="h-6 w-6 text-primary" /> : <BellOff className="h-6 w-6 text-muted-foreground" />}
-                <div>
-                    <h3 className="font-semibold">Activează Notificările</h3>
-                    <p className="text-sm text-muted-foreground">
-                        {permission === 'default' && 'Trebuie să permiți notificările în browser.'}
-                        {permission === 'denied' && 'Notificările sunt blocate în setările browser-ului.'}
-                        {permission === 'granted' && (notificationsEnabled ? 'Notificările sunt active.' : 'Poți activa notificările.')}
-                    </p>
+      <CardContent>
+        <ScrollArea className={isSettingsDialog ? "h-[450px]" : "h-auto"}>
+          <div className="space-y-8 pr-4">
+            <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50">
+                <div className="flex items-center space-x-3">
+                    {permission === 'granted' && notificationsEnabled ? <BellRing className="h-6 w-6 text-primary" /> : <BellOff className="h-6 w-6 text-muted-foreground" />}
+                    <div>
+                        <h3 className="font-semibold">Activează Notificările</h3>
+                        <p className="text-sm text-muted-foreground">
+                            {permission === 'default' && 'Trebuie să permiți notificările în browser.'}
+                            {permission === 'denied' && 'Notificările sunt blocate în setările browser-ului.'}
+                            {permission === 'granted' && (notificationsEnabled ? 'Notificările sunt active.' : 'Poți activa notificările.')}
+                        </p>
+                    </div>
                 </div>
+                <Switch
+                    checked={notificationsEnabled}
+                    onCheckedChange={handleMasterToggle}
+                    disabled={permission === 'denied'}
+                />
             </div>
-            <Switch
-                checked={notificationsEnabled}
-                onCheckedChange={handleMasterToggle}
-                disabled={permission === 'denied'}
-            />
-        </div>
-        
-        {notificationsEnabled && permission === 'granted' && (
-            <div className="space-y-8 fade-in-up">
-                 <div>
-                    <h4 className="font-semibold text-lg mb-4">Notificări în timpul săptămânii</h4>
-                    <div className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="after-school-time">Prima notificare (după școală)</Label>
-                            <Input
-                                id="after-school-time"
-                                type="time"
-                                value={afterSchoolTime}
-                                onChange={(e) => setAfterSchoolTime(e.target.value)}
-                                onBlur={(e) => handleUpdateNotificationSettings('afterSchoolTime', e.target.value)}
-                                className="w-48"
-                            />
-                            <p className="text-sm text-muted-foreground">O alertă când ajungi acasă, ca să știi ce ai de făcut.</p>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="evening-time">A doua notificare (seara)</Label>
-                            <Input
-                                id="evening-time"
-                                type="time"
-                                value={eveningTime}
-                                onChange={(e) => setEveningTime(e.target.value)}
-                                onBlur={(e) => handleUpdateNotificationSettings('eveningTime', e.target.value)}
-                                className="w-48"
-                            />
-                            <p className="text-sm text-muted-foreground">Un ultim memento, în caz că ai uitat ceva.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-semibold text-lg">Notificări de Weekend</h4>
-                         <Switch
-                            checked={weekendEnabled}
-                            onCheckedChange={(checked) => {
-                                setWeekendEnabled(checked);
-                                handleUpdateNotificationSettings('weekendEnabled', checked);
-                            }}
-                        />
-                    </div>
-                    {weekendEnabled && (
-                        <div className="space-y-6 pl-4 border-l-2 border-primary/50 fade-in-up">
-                             <div className="grid gap-2">
-                                <Label htmlFor="saturday-morning-time">Sâmbătă dimineața</Label>
-                                <Input
-                                    id="saturday-morning-time"
-                                    type="time"
-                                    value={saturdayMorningTime}
-                                    onChange={(e) => setSaturdayMorningTime(e.target.value)}
-                                    onBlur={(e) => handleUpdateNotificationSettings('saturdayMorningTime', e.target.value)}
-                                    className="w-48"
-                                />
-                            </div>
-                             <div className="grid gap-2">
-                                <Label htmlFor="saturday-evening-time">Sâmbătă seara</Label>
-                                <Input
-                                    id="saturday-evening-time"
-                                    type="time"
-                                    value={saturdayEveningTime}
-                                    onChange={(e) => setSaturdayEveningTime(e.target.value)}
-                                     onBlur={(e) => handleUpdateNotificationSettings('saturdayEveningTime', e.target.value)}
-                                    className="w-48"
-                                />
-                            </div>
-                             <div className="grid gap-2">
-                                <Label htmlFor="sunday-morning-time">Duminică dimineața</Label>
-                                <Input
-                                    id="sunday-morning-time"
-                                    type="time"
-                                    value={sundayMorningTime}
-                                    onChange={(e) => setSundayMorningTime(e.target.value)}
-                                     onBlur={(e) => handleUpdateNotificationSettings('sundayMorningTime', e.target.value)}
-                                    className="w-48"
-                                />
-                            </div>
+            
+            {notificationsEnabled && permission === 'granted' && (
+                <div className="space-y-8 fade-in-up">
+                     <div>
+                        <h4 className="font-semibold text-lg mb-4">Notificări în timpul săptămânii</h4>
+                        <div className="space-y-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="sunday-evening-time">Duminică seara</Label>
+                                <Label htmlFor="after-school-time">Prima notificare (după școală)</Label>
                                 <Input
-                                    id="sunday-evening-time"
+                                    id="after-school-time"
                                     type="time"
-                                    value={sundayEveningTime}
-                                    onChange={(e) => setSundayEveningTime(e.target.value)}
-                                    onBlur={(e) => handleUpdateNotificationSettings('sundayEveningTime', e.target.value)}
+                                    value={afterSchoolTime}
+                                    onChange={(e) => setAfterSchoolTime(e.target.value)}
+                                    onBlur={(e) => handleUpdateNotificationSettings('afterSchoolTime', e.target.value)}
                                     className="w-48"
                                 />
+                                <p className="text-sm text-muted-foreground">O alertă când ajungi acasă, ca să știi ce ai de făcut.</p>
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="evening-time">A doua notificare (seara)</Label>
+                                <Input
+                                    id="evening-time"
+                                    type="time"
+                                    value={eveningTime}
+                                    onChange={(e) => setEveningTime(e.target.value)}
+                                    onBlur={(e) => handleUpdateNotificationSettings('eveningTime', e.target.value)}
+                                    className="w-48"
+                                />
+                                <p className="text-sm text-muted-foreground">Un ultim memento, în caz că ai uitat ceva.</p>
                             </div>
                         </div>
-                    )}
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-semibold text-lg">Notificări de Weekend</h4>
+                             <Switch
+                                checked={weekendEnabled}
+                                onCheckedChange={(checked) => {
+                                    setWeekendEnabled(checked);
+                                    handleUpdateNotificationSettings('weekendEnabled', checked);
+                                }}
+                            />
+                        </div>
+                        {weekendEnabled && (
+                            <div className="space-y-6 pl-4 border-l-2 border-primary/50 fade-in-up">
+                                 <div className="grid gap-2">
+                                    <Label htmlFor="saturday-morning-time">Sâmbătă dimineața</Label>
+                                    <Input
+                                        id="saturday-morning-time"
+                                        type="time"
+                                        value={saturdayMorningTime}
+                                        onChange={(e) => setSaturdayMorningTime(e.target.value)}
+                                        onBlur={(e) => handleUpdateNotificationSettings('saturdayMorningTime', e.target.value)}
+                                        className="w-48"
+                                    />
+                                </div>
+                                 <div className="grid gap-2">
+                                    <Label htmlFor="saturday-evening-time">Sâmbătă seara</Label>
+                                    <Input
+                                        id="saturday-evening-time"
+                                        type="time"
+                                        value={saturdayEveningTime}
+                                        onChange={(e) => setSaturdayEveningTime(e.target.value)}
+                                         onBlur={(e) => handleUpdateNotificationSettings('saturdayEveningTime', e.target.value)}
+                                        className="w-48"
+                                    />
+                                </div>
+                                 <div className="grid gap-2">
+                                    <Label htmlFor="sunday-morning-time">Duminică dimineața</Label>
+                                    <Input
+                                        id="sunday-morning-time"
+                                        type="time"
+                                        value={sundayMorningTime}
+                                        onChange={(e) => setSundayMorningTime(e.target.value)}
+                                         onBlur={(e) => handleUpdateNotificationSettings('sundayMorningTime', e.target.value)}
+                                        className="w-48"
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="sunday-evening-time">Duminică seara</Label>
+                                    <Input
+                                        id="sunday-evening-time"
+                                        type="time"
+                                        value={sundayEveningTime}
+                                        onChange={(e) => setSundayEveningTime(e.target.value)}
+                                        onBlur={(e) => handleUpdateNotificationSettings('sundayEveningTime', e.target.value)}
+                                        className="w-48"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
-        )}
+            )}
+          </div>
+        </ScrollArea>
       </CardContent>
        {showNavButtons && (
          <CardFooter className="flex justify-between">
