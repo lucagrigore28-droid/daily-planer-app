@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
@@ -109,20 +109,19 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   };
 
   const showNavButtons = !!onNext;
-  const isSettingsDialog = !onNext;
 
 
   return (
-    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
+    <div className="flex flex-col h-full">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Notificări Inteligente</CardTitle>
         <CardDescription>
           Primește un sumar zilnic cu temele rămase pentru a fi mereu la zi. Nu vom trimite spam.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className={isSettingsDialog ? "h-[450px]" : "h-auto"}>
-          <div className="space-y-8 pr-4">
+      <CardContent className="flex-1 min-h-0">
+        <ScrollArea className="h-full pr-4">
+          <div className="space-y-8">
             <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50">
                 <div className="flex items-center space-x-3">
                     {permission === 'granted' && notificationsEnabled ? <BellRing className="h-6 w-6 text-primary" /> : <BellOff className="h-6 w-6 text-muted-foreground" />}
@@ -248,6 +247,8 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
            <Button onClick={handleFinishSetup}>Finalizează Configurarea</Button>
          </CardFooter>
        )}
-    </Card>
+    </div>
   );
 }
+
+    
