@@ -5,10 +5,9 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback, useM
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, format, isSaturday, isSunday } from 'date-fns';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { signOut, Auth } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 
@@ -87,6 +86,7 @@ function useTasksForSubjects(subjects: Subject[] | undefined) {
         } else if(subjects === undefined) { // Still loading
             setOverallLoading(true);
         } else { // Empty array of subjects
+            setAllTasks([]);
             setOverallLoading(false);
         }
     }, [subjects]);
@@ -95,8 +95,10 @@ function useTasksForSubjects(subjects: Subject[] | undefined) {
     // This effect subscribes to snapshots for each subject's tasks
     useEffect(() => {
         if (subjectQueries.length === 0) {
-            setAllTasks([]);
-            // Don't set overall loading to false here immediately, wait for the other effect
+             if (subjects && subjects.length === 0) {
+                setAllTasks([]);
+                setOverallLoading(false);
+            }
             return;
         }
 
@@ -156,19 +158,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
 
   useEffect(() => {
-    if (isDataLoaded && userData?.theme) {
-        // Theme logic is now in ThemeProvider, this ensures it's set on initial load
-        if (localStorage.getItem("daily-planner-pro-app-theme") !== userData.theme) {
-            localStorage.setItem("daily-planner-pro-app-theme", userData.theme);
-            window.dispatchEvent(new CustomEvent('theme-updated'));
-        }
+    const storedTheme = localStorage.getItem("daily-planner-pro-app-theme");
+    if (isDataLoaded && userData?.theme && userData.theme !== storedTheme) {
+        localStorage.setItem("daily-planner-pro-app-theme", userData.theme);
+        window.dispatchEvent(new CustomEvent('theme-updated'));
     }
   }, [userData?.theme, isDataLoaded]);
 
   // TODO: Add back notifications logic
   // ...
 
-  const updateUser = useCallback((data: Partial<UserData>) => {
+  const updateUser = useCallback(async (data: Partial<UserData>) => {
     if (userDocRef) {
         const updateData: Partial<UserData> = { ...data };
 
@@ -177,36 +177,47 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
              window.dispatchEvent(new CustomEvent('theme-updated'));
         }
 
-        if (!userData) {
-            const payloadForCreation = { ...initialUserData, ...updateData };
-            setDocumentNonBlocking(userDocRef, payloadForCreation, { merge: true });
-        } else {
-            setDocumentNonBlocking(userDocRef, updateData, { merge: true });
+        try {
+            await setDoc(userDocRef, updateData, { merge: true });
+        } catch (error) {
+            console.error("Error updating user data:", error);
         }
     }
-  }, [userDocRef, userData]);
+  }, [userDocRef]);
 
 
-  const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
+  const addTask = useCallback(async (task: Omit<HomeworkTask, 'id'>) => {
       if (!user || !task.subjectId) return;
       const tasksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', task.subjectId, 'tasks');
-      addDocumentNonBlocking(tasksCollectionRef, task);
+      try {
+        await addDoc(tasksCollectionRef, task);
+      } catch(error) {
+        console.error("Error adding task:", error);
+      }
   }, [firestore, user]);
 
-  const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
+  const updateTask = useCallback(async (taskId: string, updates: Partial<HomeworkTask>) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (user && taskToUpdate) {
       const taskDocRef = doc(firestore, 'users', user.uid, 'subjects', taskToUpdate.subjectId, 'tasks', taskId);
-      setDocumentNonBlocking(taskDocRef, updates, { merge: true });
+      try {
+        await setDoc(taskDocRef, updates, { merge: true });
+      } catch (error) {
+        console.error("Error updating task:", error);
+      }
     }
   }, [firestore, user, tasks]);
 
 
-  const deleteTask = useCallback((taskId: string) => {
+  const deleteTask = useCallback(async (taskId: string) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
     if (user && taskToDelete) {
         const taskDocRef = doc(firestore, 'users', user.uid, 'subjects', taskToDelete.subjectId, 'tasks', taskId);
-        deleteDocumentNonBlocking(taskDocRef);
+        try {
+            await deleteDoc(taskDocRef);
+        } catch (error) {
+            console.error("Error deleting task:", error);
+        }
     }
   }, [firestore, user, tasks]);
 
@@ -256,15 +267,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                       const taskId = `${sanitizedSubjectId}-${dateString}`;
                       const taskExists = tasks?.some(t => t.id === taskId);
                       
-                      if (!taskExists && tasksCollectionRef) {
-                           setDocumentNonBlocking(doc(tasksCollectionRef, taskId), {
+                      if (!taskExists) {
+                           setDoc(doc(tasksCollectionRef, taskId), {
                               subjectId: subject.id,
                               subjectName: subject.name,
                               description: '',
                               dueDate: dateToCheck.toISOString(),
                               isCompleted: false,
                               isManual: false
-                          }, { merge: true });
+                          }, { merge: true }).catch(err => console.log("Silently failed to create task", err));
                       }
                   }
               });
@@ -352,10 +363,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [tasks, currentDate]);
 
   const memoizedUserData = useMemo(() => {
-    if (userData === undefined) return null; // Still loading, but we need to return a consistent shape.
+    if (isUserDataLoading || userData === undefined) return null; // Still loading, but we need to return a consistent shape.
     if (userData === null) return initialUserData; // No data in Firestore, use initial
     return { ...initialUserData, ...userData }; // Merge fetched data with initial
-  }, [userData]);
+  }, [userData, isUserDataLoading]);
   
   const value = {
     userData: memoizedUserData,
