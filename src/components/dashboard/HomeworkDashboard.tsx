@@ -68,20 +68,18 @@ export default function HomeworkDashboard() {
 
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
-      <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div className="flex items-center gap-4 rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
-           <div>
-            <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Salut, {userData.name}!
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
-            </p>
-          </div>
+      <header className="mb-6 flex justify-between items-center gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Salut, {userData.name}!
+          </h1>
+          <p className="text-md sm:text-lg text-muted-foreground">
+            Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
+          </p>
         </div>
         <div className="flex items-center gap-2">
             <Button onClick={() => setAddTaskOpen(true)} size="default" className="sm:w-auto">
-                <Plus className="mr-2 h-4 w-4" /> <span className="sm:inline">Adaugă temă</span>
+                <Plus className="mr-0 sm:mr-2 h-4 w-4" /> <span className="hidden sm:inline">Adaugă temă</span>
             </Button>
              <Button onClick={() => setSettingsOpen(true)} variant="outline" size="icon">
                 <Settings className="h-5 w-5" />
@@ -90,7 +88,7 @@ export default function HomeworkDashboard() {
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className="flex flex-col sm:flex-row h-auto sm:h-10 w-full max-w-lg mx-auto mb-6">
+        <TabsList className="h-auto w-full max-w-lg mx-auto mb-6 overflow-x-auto">
           {tabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className="flex-1 w-full sm:w-auto">{tab.label}</TabsTrigger>
           ))}
