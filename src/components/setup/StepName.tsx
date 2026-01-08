@@ -9,47 +9,6 @@ import { AppContext } from '@/contexts/AppContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Trash2, LogOut } from 'lucide-react';
 
-
-function DangerZone() {
-    const context = useContext(AppContext);
-
-    return (
-        <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20 mt-6">
-            <h3 className="text-lg font-bold text-destructive">Zonă de Pericol</h3>
-            <p className="text-destructive/80 text-sm mb-4">Aceste acțiuni sunt ireversibile. Te rugăm să fii atent.</p>
-            <div className="flex flex-col sm:flex-row gap-2">
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive" className="flex-1">
-                            <Trash2 className="mr-2 h-4 w-4" /> Resetează Toate Datele
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Ești absolut sigur?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Această acțiune nu poate fi anulată. Toate temele, materiile și setările tale vor fi șterse definitiv. 
-                                Contul tău va fi păstrat, dar va trebui să reiei procesul de configurare.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Anulează</AlertDialogCancel>
-                            <AlertDialogAction onClick={context?.resetData} className="bg-destructive hover:bg-destructive/90">
-                                Da, resetează
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-
-                <Button variant="outline" onClick={context?.logout} className="flex-1 bg-transparent border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
-                     <LogOut className="mr-2 h-4 w-4" /> Deconectare
-                </Button>
-            </div>
-        </div>
-    );
-}
-
-
 type StepProps = {
   onNext?: () => void;
   onBack?: () => void;
@@ -116,7 +75,37 @@ export default function StepName({ onNext, onBack }: StepProps) {
             </CardFooter>
         )}
       </Card>
-      {!isWizardStep && <DangerZone />}
+      
+      {!isWizardStep && (
+        <div className="mt-6 space-y-4">
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full">
+                        <Trash2 className="mr-2 h-4 w-4" /> Resetează Toate Datele
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Ești absolut sigur?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Această acțiune nu poate fi anulată. Toate temele, materiile și setările tale vor fi șterse definitiv. 
+                            Contul tău va fi păstrat, dar va trebui să reiei procesul de configurare.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Anulează</AlertDialogCancel>
+                        <AlertDialogAction onClick={context?.resetData} className="bg-destructive hover:bg-destructive/90">
+                            Da, resetează
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <Button variant="outline" onClick={context?.logout} className="w-full">
+                 <LogOut className="mr-2 h-4 w-4" /> Deconectare
+            </Button>
+        </div>
+      )}
     </>
   );
 }
