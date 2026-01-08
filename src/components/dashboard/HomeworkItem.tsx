@@ -33,12 +33,10 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
   const [description, setDescription] = useState(task.description);
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
-  const [isCompleted, setIsCompleted] = useState(task.isCompleted);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const handleCompletionChange = (checked: boolean) => {
-    setIsCompleted(checked);
     context?.updateTask(task.id, { isCompleted: checked });
   };
   
@@ -58,7 +56,6 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   
   useEffect(() => {
     setDescription(task.description);
-    setIsCompleted(task.isCompleted);
     setEstimatedTime(task.estimatedTime || 0);
   }, [task]);
 
@@ -73,15 +70,15 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
       >
         <Card className={cn(
           "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 relative",
-           isCompleted ? 'border-gradient bg-card' : 'bg-card'
+           task.isCompleted ? 'border-gradient bg-card' : 'bg-card'
         )}>
           <CardContent className="p-3">
-            <Accordion type="single" collapsible disabled={isCompleted}>
+            <Accordion type="single" collapsible disabled={task.isCompleted}>
               <AccordionItem value="item-1" className="border-b-0">
                 <div className="flex items-center gap-4">
                   <Checkbox
                     id={`task-${task.id}`}
-                    checked={isCompleted}
+                    checked={task.isCompleted}
                     onCheckedChange={handleCompletionChange}
                     className={cn(
                         "h-6 w-6 rounded-full"
@@ -92,19 +89,19 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                         htmlFor={`task-${task.id}`} 
                         className={cn(
                             "text-lg font-medium cursor-pointer transition-colors",
-                            isCompleted && "text-muted-foreground"
+                            task.isCompleted && "text-muted-foreground"
                         )}
                     >
                       {task.subjectName}
                     </Label>
                     {task.estimatedTime && task.estimatedTime > 0 && (
-                        <div className={cn("flex items-center gap-1.5 text-xs", isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
+                        <div className={cn("flex items-center gap-1.5 text-xs", task.isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
                             <Clock className="h-3 w-3" />
                             <span>{task.estimatedTime} minute</span>
                         </div>
                     )}
                   </div>
-                  {!isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-primary" />}
+                  {!task.isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-primary" />}
                 </div>
                 <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
                   <div className="space-y-4">
