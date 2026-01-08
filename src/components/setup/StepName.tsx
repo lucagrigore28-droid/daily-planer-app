@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { Trash2, LogOut } from 'lucide-react';
+import { Trash2, LogOut, User as UserIcon } from 'lucide-react';
+import { Separator } from '../ui/separator';
 
 type StepProps = {
   onNext?: () => void;
@@ -77,33 +78,54 @@ export default function StepName({ onNext, onBack }: StepProps) {
       </Card>
       
       {!isWizardStep && (
-        <div className="mt-6 space-y-4">
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="w-full">
-                        <Trash2 className="mr-2 h-4 w-4" /> Resetează Toate Datele
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Ești absolut sigur?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Această acțiune nu poate fi anulată. Toate temele, materiile și setările tale vor fi șterse definitiv. 
-                            Contul tău va fi păstrat, dar va trebui să reiei procesul de configurare.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Anulează</AlertDialogCancel>
-                        <AlertDialogAction onClick={context?.resetData} className="bg-destructive hover:bg-destructive/90">
-                            Da, resetează
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+        <div className="mt-6 space-y-6">
+            {context?.user && !context.user.isAnonymous && (
+              <>
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <UserIcon className="h-4 w-4" />
+                      <span>Cont conectat</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground pl-6">
+                      Ești autentificat cu adresa: <strong>{context.user.email}</strong>.
+                    </p>
+                </div>
+                <Separator />
+              </>
+            )}
 
-            <Button variant="outline" onClick={context?.logout} className="w-full">
-                 <LogOut className="mr-2 h-4 w-4" /> Deconectare
-            </Button>
+            <div className="space-y-2">
+                <Button variant="outline" onClick={context?.logout} className="w-full">
+                    <LogOut className="mr-2 h-4 w-4" /> Deconectare
+                </Button>
+                <p className="text-sm text-muted-foreground px-1">Te vei deconecta din aplicație. Datele tale vor rămâne salvate în cont.</p>
+            </div>
+
+            <div className="space-y-2">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full">
+                            <Trash2 className="mr-2 h-4 w-4" /> Resetează Toate Datele
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Ești absolut sigur?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Această acțiune nu poate fi anulată. Toate temele, materiile și setările tale vor fi șterse definitiv. 
+                                Contul tău va fi păstrat, dar va trebui să reiei procesul de configurare.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Anulează</AlertDialogCancel>
+                            <AlertDialogAction onClick={context?.resetData} className="bg-destructive hover:bg-destructive/90">
+                                Da, resetează
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                <p className="text-sm text-muted-foreground px-1">Această acțiune va șterge toate datele aplicației, dar contul tău va rămâne.</p>
+            </div>
         </div>
       )}
     </>
