@@ -5,7 +5,7 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback, useM
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, arrayUnion } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
@@ -27,6 +27,7 @@ const initialUserData: UserData = {
     sundayEveningTime: '20:00',
   },
   theme: 'purple',
+  fcmTokens: [],
 };
 
 type AppContextType = {
@@ -40,6 +41,7 @@ type AppContextType = {
   deleteAllTasks: () => Promise<void>;
   resetData: () => Promise<void>;
   logout: () => Promise<void>;
+  addFcmToken: (token: string) => void;
   isDataLoaded: boolean;
   currentDate: Date;
   getNextSchoolDayWithTasks: () => Date | null;
@@ -139,6 +141,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [firestore, tasksCollectionRef]);
 
+  const addFcmToken = useCallback(async (token: string) => {
+    if (!userDocRef || !userData) return;
+    if (userData.fcmTokens && userData.fcmTokens.includes(token)) return;
+
+    await updateUser({ fcmTokens: arrayUnion(token) });
+  }, [userDocRef, userData, updateUser]);
+
   const logout = useCallback(async () => {
     await signOut(auth);
     router.push('/login');
@@ -162,7 +171,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         theme: userData?.theme || initialUserData.theme, // Keep the theme
     }, { merge: false });
     // The app will reactively show the setup wizard because setupComplete is now false
-  }, [user, userDocRef, userData, deleteAllTasks, initialUserData]);
+  }, [user, userDocRef, userData, deleteAllTasks]);
 
   useEffect(() => {
     if (!isDataLoaded || !userData || !userData.setupComplete || userData.subjects.length === 0 || !tasksCollectionRef) {
@@ -269,6 +278,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     deleteAllTasks,
     resetData,
     logout,
+    addFcmToken,
     isDataLoaded,
     currentDate,
     getNextSchoolDayWithTasks,

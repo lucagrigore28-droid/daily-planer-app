@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -11,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
+import { getMessaging, getToken } from "firebase/messaging";
+import { useFirebaseApp } from '@/firebase';
 
 type StepProps = {
   onNext?: () => void;
@@ -19,6 +20,7 @@ type StepProps = {
 
 export default function StepNotifications({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
+  const firebaseApp = useFirebaseApp();
   const [permission, setPermission] = useState<'default' | 'granted' | 'denied'>('default');
   
   const notifications = context?.userData?.notifications;
@@ -54,16 +56,30 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   }, [context?.userData?.notifications]);
 
 
-  const requestPermission = async () => {
-    if (!("Notification" in window)) {
+  const requestPermissionAndToken = async () => {
+    if (!("Notification" in window) || !firebaseApp) {
       alert("Acest browser nu suportă notificări.");
       return;
     }
+
     const status = await Notification.requestPermission();
     setPermission(status);
-    
+
     if (status === 'granted') {
       setNotificationsEnabled(true);
+      
+      const messaging = getMessaging(firebaseApp);
+      try {
+        const currentToken = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_HERE' }); // IMPORTANT: Replace with your actual VAPID key
+        if (currentToken) {
+          context?.addFcmToken(currentToken);
+        } else {
+          console.log('No registration token available. Request permission to generate one.');
+        }
+      } catch (err) {
+        console.error('An error occurred while retrieving token. ', err);
+      }
+      
       if (context?.userData) {
         context?.updateUser({
           notifications: {
@@ -77,10 +93,12 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   
   const handleMasterToggle = (enabled: boolean) => {
     if (enabled && permission !== 'granted') {
-        requestPermission();
+        requestPermissionAndToken();
         return;
     }
+
     setNotificationsEnabled(enabled);
+    
     if (context?.userData) {
       context?.updateUser({
         notifications: {
@@ -88,6 +106,10 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
           enabled,
         }
       });
+    }
+
+    if (enabled && permission === 'granted' && !context.userData?.fcmTokens?.length) {
+        requestPermissionAndToken();
     }
   }
 
@@ -250,5 +272,3 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     </div>
   );
 }
-
-    

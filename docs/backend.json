@@ -48,6 +48,13 @@
         "setupComplete": {
           "type": "boolean",
           "description": "Flag indicating if the user has completed the initial setup."
+        },
+        "fcmTokens": {
+          "type": "array",
+          "description": "List of Firebase Cloud Messaging tokens for push notifications.",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["name", "setupComplete"]

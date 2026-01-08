@@ -37,4 +37,5 @@ export type UserData = {
   setupComplete: boolean;
   notifications: UserNotifications;
   theme: string;
+  fcmTokens?: string[];
 };
