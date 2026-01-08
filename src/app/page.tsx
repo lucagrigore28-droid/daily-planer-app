@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppContext } from '@/contexts/AppContext';
 import SetupWizard from '@/components/setup/SetupWizard';
@@ -30,15 +30,20 @@ function AppContainer() {
 
   const { userData, isDataLoaded } = context || {};
 
-  if (isUserLoading) {
-    return <LoadingScreen />;
-  }
-  
-  if (!user) {
-    router.push('/login');
+  useEffect(() => {
+    // Redirect to login only when loading is complete and there's no user.
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+
+  // Show loading screen while user state is resolving or if we are about to redirect.
+  if (isUserLoading || !user) {
     return <LoadingScreen />;
   }
 
+  // After user is confirmed, wait for their specific data to load.
   if (!isDataLoaded || !context) {
     return <LoadingScreen />;
   }
