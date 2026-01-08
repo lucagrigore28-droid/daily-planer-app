@@ -14,6 +14,9 @@ import { useTheme } from 'next-themes';
 import { ScrollArea } from '../ui/scroll-area';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '../ui/button';
+import { AppContext } from '@/contexts/AppContext';
+import { themes } from '@/lib/themes';
+import { cn } from '@/lib/utils';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -45,8 +48,40 @@ function AppearanceSettings() {
 
 function MobileSettingsView({ onBack }: { onBack: () => void }) {
     const [activeTab, setActiveTab] = useState<string | null>(null);
+    const appContext = useContext(AppContext);
+    const { theme, systemTheme } = useTheme();
 
     const selectedTab = TABS.find(tab => tab.value === activeTab);
+
+    const getSubtitle = (tabValue: string) => {
+        if (!appContext || !appContext.userData) return null;
+        
+        const { userData } = appContext;
+        const currentTheme = theme === 'system' ? systemTheme : theme;
+
+        switch(tabValue) {
+            case 'profile':
+                return appContext.user?.email;
+            case 'subjects':
+                const count = userData.subjects.length;
+                return `${count} ${count === 1 ? 'materie selectată' : 'materii selectate'}`;
+            case 'schedule':
+                const scheduledCount = Object.values(userData.schedule || {}).filter(days => days.length > 0).length;
+                return `Orar setat pentru ${scheduledCount} ${scheduledCount === 1 ? 'materie' : 'materii'}`;
+            case 'notifications':
+                 return (
+                    <span className={cn(userData.notifications.enabled ? "text-green-500" : "text-muted-foreground")}>
+                        {userData.notifications.enabled ? "Active" : "Inactive"}
+                    </span>
+                );
+            case 'appearance':
+                const themeLabel = themes.find(t => t.name === userData.theme)?.label || userData.theme;
+                const modeLabel = currentTheme === 'dark' ? 'Întunecat' : 'Luminos';
+                return `Temă ${themeLabel}, Mod ${modeLabel}`;
+            default:
+                return null;
+        }
+    }
 
     if (selectedTab) {
         return (
@@ -72,15 +107,18 @@ function MobileSettingsView({ onBack }: { onBack: () => void }) {
                     Personalizează-ți experiența în aplicație.
                 </DialogDescription>
             </DialogHeader>
-            <div className="space-y-2">
+            <div className="space-y-1">
                 {TABS.map(tab => (
                     <button
                         key={tab.value}
                         onClick={() => setActiveTab(tab.value)}
-                        className="w-full flex items-center gap-3 p-4 rounded-lg text-left text-lg font-medium hover:bg-muted transition-colors"
+                        className="w-full flex items-center gap-3 p-4 rounded-lg text-left hover:bg-muted transition-colors"
                     >
                         <tab.icon className="h-6 w-6 text-primary" />
-                        <span>{tab.label}</span>
+                        <div className="flex-1">
+                            <p className="text-lg font-medium">{tab.label}</p>
+                            <small className="text-muted-foreground font-normal">{getSubtitle(tab.value)}</small>
+                        </div>
                     </button>
                 ))}
             </div>
@@ -108,7 +146,7 @@ function DesktopSettingsView() {
                 
                 <div className="flex-1 mt-4 md:mt-0 min-h-0">
                     {TABS.map(tab => (
-                        <TabsContent key={tab.value} value={tab.value} className="h-full flex-1 min-w-0">
+                        <TabsContent key={tab.value} value={tab.value} className="h-full flex-1 min-w-0 data-[state=inactive]:hidden">
                            {tab.component}
                         </TabsContent>
                     ))}
