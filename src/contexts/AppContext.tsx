@@ -261,9 +261,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                       const tasksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'tasks');
                       
                       const existingTaskForDay = tasks.find(t => 
+                        !t.isManual &&
                         t.subjectId === subject.id && 
-                        startOfDay(new Date(t.dueDate)).getTime() === dateToCheck.getTime() &&
-                        !t.isManual
+                        startOfDay(new Date(t.dueDate)).getTime() === dateToCheck.getTime()
                       );
 
                       if (!existingTaskForDay) {
@@ -388,3 +388,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
