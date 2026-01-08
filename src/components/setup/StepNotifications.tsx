@@ -259,6 +259,9 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
                             </div>
                         )}
                     </div>
+                     <div className="p-3 rounded-lg border bg-secondary/50 text-secondary-foreground text-sm">
+                        <p>Toate orele de notificare sunt bazate pe fusul orar al României (EET/EEST).</p>
+                    </div>
                 </div>
             )}
           </div>
