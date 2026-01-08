@@ -174,33 +174,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [firestore, user, tasks]);
 
   const deleteAllTasks = useCallback(async () => {
-    if (!user || !userData?.subjects) {
-      console.log("Cannot delete tasks: user or subjects not available");
-      return;
-    }
+    if (!user || !userData?.subjects) return;
 
-    console.log("Starting to delete all tasks for user:", user.uid);
     const batch = writeBatch(firestore);
     
-    for (const subject of userData.subjects) {
+    userData.subjects.forEach(async (subject) => {
         const tasksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'tasks');
-        try {
-            const tasksSnapshot = await getDocs(tasksCollectionRef);
-            tasksSnapshot.forEach((taskDoc) => {
-                console.log(`Queueing deletion for task: ${taskDoc.id} in subject: ${subject.name}`);
-                batch.delete(taskDoc.ref);
-            });
-        } catch (error) {
-            console.error(`Failed to get tasks for subject ${subject.id}`, error);
-        }
-    }
+        const tasksSnapshot = await getDocs(tasksCollectionRef);
+        tasksSnapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+    });
     
-    try {
-        await batch.commit();
-        console.log("All tasks deleted successfully via batch commit.");
-    } catch (error) {
-        console.error("Batch commit failed:", error);
-    }
+    await batch.commit();
 }, [firestore, user, userData?.subjects]);
 
 
