@@ -6,7 +6,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { format, getDay, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import AddTaskDialog from './AddTaskDialog';
 import { CalendarIcon } from 'lucide-react';
@@ -15,10 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
 import { Progress } from '../ui/progress';
+import SettingsDialog from './SettingsDialog';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
   const nextDayWithTasks = useMemo(() => {
@@ -77,9 +79,14 @@ export default function HomeworkDashboard() {
             </p>
           </div>
         </div>
-        <Button onClick={() => setAddTaskOpen(true)} size="default" className="sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" /> <span className="sm:inline">Adaugă temă</span>
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button onClick={() => setAddTaskOpen(true)} size="default" className="sm:w-auto">
+                <Plus className="mr-2 h-4 w-4" /> <span className="sm:inline">Adaugă temă</span>
+            </Button>
+             <Button onClick={() => setSettingsOpen(true)} variant="outline" size="icon">
+                <Settings className="h-5 w-5" />
+             </Button>
+        </div>
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
@@ -148,6 +155,7 @@ export default function HomeworkDashboard() {
       </Tabs>
       
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
+      <SettingsDialog open={isSettingsOpen} onOpenChange={setSettingsOpen} />
     </main>
   );
 }
