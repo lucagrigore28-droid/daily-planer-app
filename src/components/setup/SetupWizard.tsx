@@ -8,29 +8,24 @@ import StepSubjects from './StepSubjects';
 import StepSchedule from './StepSchedule';
 import StepNotifications from './StepNotifications';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 import SplashScreen from '../SplashScreen';
 import { AppContext } from '@/contexts/AppContext';
 
-const TOTAL_STEPS = 5; // The number of actual steps after the splash screen
+const TOTAL_STEPS = 5;
 
 export default function SetupWizard() {
-  const [step, setStep] = useState(0); // Start at 0 for splash screen
+  const [step, setStep] = useState(0); // 0 is splash screen
   const context = useContext(AppContext);
 
-  const nextStep = () => {
-    // If we are on the last step, finalize setup
-    if (step === TOTAL_STEPS) {
-      context?.updateUser({ setupComplete: true });
-    } else if (step < TOTAL_STEPS) {
-      setStep(prev => prev + 1);
-    }
+  const handleFinishSetup = () => {
+    context?.updateUser({ setupComplete: true });
   };
   
-  const prevStep = () => setStep(prev => (prev > 1 ? prev - 1 : prev));
+  const nextStep = () => setStep(prev => prev + 1);
+  const prevStep = () => setStep(prev => prev - 1);
 
   if (step === 0) {
-    return <SplashScreen onNext={() => setStep(1)} />;
+    return <SplashScreen onNext={nextStep} />;
   }
 
   const progressValue = (step / TOTAL_STEPS) * 100;
@@ -41,10 +36,10 @@ export default function SetupWizard() {
       case 2: return <StepTheme onNext={nextStep} onBack={prevStep} />;
       case 3: return <StepSubjects onNext={nextStep} onBack={prevStep} />;
       case 4: return <StepSchedule onNext={nextStep} onBack={prevStep} />;
-      case 5: return <StepNotifications onNext={nextStep} onBack={prevStep} />;
-      default: return <SplashScreen onNext={() => setStep(1)} />; // Fallback
+      case 5: return <StepNotifications onNext={handleFinishSetup} onBack={prevStep} />;
+      default: return null; // Should not happen
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-primary-accent p-4">

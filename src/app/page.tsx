@@ -7,7 +7,7 @@ import { AppContext } from '@/contexts/AppContext';
 import SetupWizard from '@/components/setup/SetupWizard';
 import HomeworkDashboard from '@/components/dashboard/HomeworkDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 
 function LoadingScreen() {
     return (
@@ -25,7 +25,7 @@ function LoadingScreen() {
 
 function AppContainer() {
   const context = useContext(AppContext);
-  const { user, isUserLoading } = useAuth();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   const { userData, isDataLoaded } = context || {};

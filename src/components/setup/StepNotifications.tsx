@@ -102,7 +102,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   };
 
   const handleFinishSetup = () => {
-    if(onNext) {
+    if (onNext) {
       onNext();
     }
   };
