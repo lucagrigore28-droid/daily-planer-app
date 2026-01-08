@@ -58,9 +58,9 @@ export default function StepName({ onNext, onBack }: StepProps) {
        {isWizardStep && (
           <CardFooter className="flex justify-between">
             {onBack ? (
-                <Button variant="ghost" onClick={onBack}>Înapoi</Button>
+                <Button variant="ghost" type="button" onClick={onBack}>Înapoi</Button>
             ) : (
-                <Button variant="ghost" onClick={() => router.push('/login')}>Înapoi la Login</Button>
+                <Button variant="ghost" type="button" onClick={() => router.push('/login')}>Înapoi la Login</Button>
             )}
             <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
           </CardFooter>
