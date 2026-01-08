@@ -4,7 +4,7 @@
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, format, isSaturday, isSunday } from 'date-fns';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
@@ -65,68 +65,43 @@ function useTasksForSubjects(subjects: Subject[] | undefined) {
     const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
     const [overallLoading, setOverallLoading] = useState(true);
 
-    const subjectQueries = useMemo(() => {
-        if (!user || !subjects || subjects.length === 0) {
-            return [];
-        }
-        return subjects.map(subject => {
-            return query(collection(firestore, 'users', user.uid, 'subjects', subject.id, 'tasks'));
-        });
-    }, [user, subjects, firestore]);
-
-    // This effect initializes loading states when subjects change
     useEffect(() => {
-        if (subjects) {
-            const initialLoadingStates = subjects.reduce((acc, subject) => {
-                acc[subject.id] = true;
-                return acc;
-            }, {} as Record<string, boolean>);
-            setLoadingStates(initialLoadingStates);
-            setOverallLoading(true);
-        } else if(subjects === undefined) { // Still loading
-            setOverallLoading(true);
-        } else { // Empty array of subjects
-            setAllTasks([]);
-            setOverallLoading(false);
-        }
-    }, [subjects]);
-
-
-    // This effect subscribes to snapshots for each subject's tasks
-    useEffect(() => {
-        if (subjectQueries.length === 0) {
-             if (subjects && subjects.length === 0) {
-                setAllTasks([]);
-                setOverallLoading(false);
-            }
+        if (!user || !subjects) {
+            setOverallLoading(subjects === undefined);
+            if (subjects?.length === 0) setAllTasks([]);
             return;
         }
 
-        const unsubscribes = subjectQueries.map((q, index) => {
-            const subjectId = subjects![index].id;
+        const initialLoadingStates = subjects.reduce((acc, subject) => {
+            acc[subject.id] = true;
+            return acc;
+        }, {} as Record<string, boolean>);
+        setLoadingStates(initialLoadingStates);
+        
+        const unsubscribes = subjects.map(subject => {
+            const q = query(collection(firestore, 'users', user.uid, 'subjects', subject.id, 'tasks'));
             return onSnapshot(q, (snapshot) => {
                 const tasksForSubject = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as HomeworkTask));
                 
                 setAllTasks(prevTasks => {
-                    const otherTasks = prevTasks.filter(t => t.subjectId !== subjectId);
+                    const otherTasks = prevTasks.filter(t => t.subjectId !== subject.id);
                     return [...otherTasks, ...tasksForSubject];
                 });
 
-                setLoadingStates(prev => ({ ...prev, [subjectId]: false }));
+                setLoadingStates(prev => ({ ...prev, [subject.id]: false }));
 
             }, (error) => {
-                console.error(`Error fetching tasks for subject ${subjectId}:`, error);
-                setLoadingStates(prev => ({ ...prev, [subjectId]: false }));
+                console.error(`Error fetching tasks for subject ${subject.id}:`, error);
+                setLoadingStates(prev => ({ ...prev, [subject.id]: false }));
             });
         });
 
         return () => unsubscribes.forEach(unsub => unsub());
 
-    }, [subjectQueries, subjects]);
+    }, [user, subjects, firestore]);
 
-    // This effect calculates the overall loading state
     useEffect(() => {
-        if (!subjects) { // e.g. userData is still loading
+        if (!subjects) {
             setOverallLoading(true);
             return;
         }
@@ -148,8 +123,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
   const auth = useAuth();
 
-  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-
+  const userDocRef = user ? doc(firestore, 'users', user.uid) : null;
   const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
   const { tasks, areTasksLoading } = useTasksForSubjects(userData?.subjects);
 
@@ -159,8 +133,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (isDataLoaded && userData?.theme) {
-        localStorage.setItem("daily-planner-pro-app-theme", userData.theme);
-        window.dispatchEvent(new CustomEvent('theme-updated'));
+        const root = window.document.documentElement;
+        
+        const themeClasses = ['theme-purple', 'theme-orange', 'theme-blue', 'theme-green', 'theme-red'];
+        root.classList.remove(...themeClasses);
+        root.classList.add(`theme-${userData.theme}`);
     }
   }, [userData?.theme, isDataLoaded]);
 
@@ -169,41 +146,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUser = useCallback(async (data: Partial<UserData>) => {
     if (userDocRef) {
-        const updateData: Partial<UserData> = { ...data };
-
-        if ('theme' in data && data.theme) {
-            localStorage.setItem("daily-planner-pro-app-theme", data.theme);
-            window.dispatchEvent(new CustomEvent('theme-updated'));
-        }
-
-        try {
-            await setDoc(userDocRef, updateData, { merge: true });
-        } catch (error) {
-            console.error("Error updating user data:", error);
-        }
+      await setDoc(userDocRef, data, { merge: true });
     }
   }, [userDocRef]);
-
 
   const addTask = useCallback(async (task: Omit<HomeworkTask, 'id'>) => {
       if (!user || !task.subjectId) return;
       const tasksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', task.subjectId, 'tasks');
-      try {
-        await addDoc(tasksCollectionRef, task);
-      } catch(error) {
-        console.error("Error adding task:", error);
-      }
+      await addDoc(tasksCollectionRef, task);
   }, [firestore, user]);
 
   const updateTask = useCallback(async (taskId: string, updates: Partial<HomeworkTask>) => {
     const taskToUpdate = tasks.find(t => t.id === taskId);
     if (user && taskToUpdate) {
       const taskDocRef = doc(firestore, 'users', user.uid, 'subjects', taskToUpdate.subjectId, 'tasks', taskId);
-      try {
-        await setDoc(taskDocRef, updates, { merge: true });
-      } catch (error) {
-        console.error("Error updating task:", error);
-      }
+      await setDoc(taskDocRef, updates, { merge: true });
     }
   }, [firestore, user, tasks]);
 
@@ -212,11 +169,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const taskToDelete = tasks.find(t => t.id === taskId);
     if (user && taskToDelete) {
         const taskDocRef = doc(firestore, 'users', user.uid, 'subjects', taskToDelete.subjectId, 'tasks', taskId);
-        try {
-            await deleteDoc(taskDocRef);
-        } catch (error) {
-            console.error("Error deleting task:", error);
-        }
+        await deleteDoc(taskDocRef);
     }
   }, [firestore, user, tasks]);
 
@@ -251,7 +204,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
       const today = startOfDay(new Date());
   
-      for (let i = -14; i < 21; i++) { // Check a wider range to be safe
+      for (let i = -7; i < 14; i++) { // Check from a week ago to two weeks in the future
           const dateToCheck = addDays(today, i);
           const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
   
@@ -265,17 +218,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                         t.subjectId === subject.id && 
                         startOfDay(new Date(t.dueDate)).getTime() === dateToCheck.getTime()
                       );
-
+                      
                       if (!existingTaskForDay) {
-                           const autoGeneratedTask = {
+                           addDoc(tasksCollectionRef, {
                               subjectId: subject.id,
                               subjectName: subject.name,
                               description: '',
                               dueDate: dateToCheck.toISOString(),
                               isCompleted: false,
                               isManual: false
-                          };
-                          addDoc(tasksCollectionRef, autoGeneratedTask).catch(err => console.log("Silently failed to create task", err));
+                          }).catch(err => console.log("Silently failed to create task", err));
                       }
                   }
               });
@@ -351,9 +303,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     const firstOccurrenceMap = new Map<string, HomeworkTask>();
-    const sortedTasks = upcomingTasks.sort((a, b) => (a.isManual === b.isManual) ? 0 : a.isManual ? -1 : 1);
 
-    for (const task of sortedTasks) {
+    for (const task of upcomingTasks) {
         if (!firstOccurrenceMap.has(task.subjectId)) {
             firstOccurrenceMap.set(task.subjectId, task);
         }
@@ -388,5 +339,3 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    
