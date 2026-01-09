@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import satori from 'satori';
 import sharp from 'sharp';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -15,7 +14,7 @@ export async function GET(request: NextRequest) {
         const svgPath = path.join(process.cwd(), 'public', 'icon.svg');
         const svg = await fs.readFile(svgPath, 'utf-8');
 
-        // Convert SVG to PNG using satori and sharp
+        // Convert SVG to PNG using sharp
         const pngBuffer = await sharp(Buffer.from(svg)).resize(size, size).png().toBuffer();
 
         return new NextResponse(pngBuffer, {
