@@ -1,26 +1,17 @@
 {
-  "name": "Homework Planner",
-  "short_name": "Planner",
-  "description": "Planificatorul tău inteligent pentru teme.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#8a2be2",
-  "icons": [
-    {
-      "src": "/api/icon?size=192",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/api/icon?size=512",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/public/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    }
-  ]
-}
+    "name": "Homework Planner",
+    "short_name": "Homework",
+    "description": "Planificatorul tău inteligent pentru teme.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1c1917",
+    "theme_color": "#8B5CF6",
+    "icons": [
+      {
+        "src": "/icon.svg",
+        "sizes": "any",
+        "type": "image/svg+xml"
+      }
+    ]
+  }
+  
