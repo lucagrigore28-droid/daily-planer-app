@@ -73,7 +73,7 @@ service cloud.firestore {
      * Prevents re-assigning ownership of the document, but allows adding new fields.
      */
     function isUserProfileUpdateValid() {
-      return !('id' in resource.data) || request.resource.data.id == resource.data.id;
+      return !('id' in request.resource.data) || request.resource.data.id == resource.data.id;
     }
 
     /**
@@ -100,10 +100,10 @@ service cloud.firestore {
     }
 
     /**
-     * Enforces immutability of the Task's ID on update.
+     * Enforces immutability of the Task's ID on update but allows partial updates.
      */
     function isTaskUpdateValid() {
-      return request.resource.data.id == resource.data.id;
+      return !('id' in request.resource.data) || request.resource.data.id == resource.data.id;
     }
 
     // -------------------------------------------------------------------------
