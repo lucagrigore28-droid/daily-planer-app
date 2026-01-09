@@ -15,7 +15,7 @@ export type HomeworkTask = {
   dueDate: string; // ISO string
   isCompleted: boolean;
   isManual: boolean;
-  plannedDate?: string; // ISO string for the day it's planned for weekend work
+  plannedDate?: string | null; // ISO string for the day it's planned for weekend work
   estimatedTime?: number; // in minutes
 };
 
