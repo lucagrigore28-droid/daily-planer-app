@@ -13,11 +13,6 @@ export const metadata: Metadata = {
   title: 'Homework Planner',
   description: 'Planificatorul tău inteligent pentru teme.',
   manifest: '/manifest.webmanifest',
-  icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-    apple: '/icon.svg',
-  }
 };
 
 export const viewport: Viewport = {
