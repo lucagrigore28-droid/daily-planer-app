@@ -3,6 +3,9 @@ import sharp from 'sharp';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+// Force this route to be dynamic
+export const dynamic = 'force-dynamic';
+
 // This function can be marked `async` if using `await` inside
 export async function GET(request: NextRequest) {
     try {
