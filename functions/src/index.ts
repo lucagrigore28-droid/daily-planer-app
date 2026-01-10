@@ -36,47 +36,47 @@ export const sendHomeworkNotifications = onSchedule(
     // Get current time in HH:MM format, adjusted for Bucharest timezone.
     const currentTime = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Bucharest' });
     
-    // Create two separate queries for each notification time field
-    const afterSchoolQuery = db
+    const usersSnapshot = await db
       .collection("users")
       .where("notifications.enabled", "==", true)
-      .where("notifications.afterSchoolTime", "==", currentTime);
-
-    const eveningQuery = db
-      .collection("users")
-      .where("notifications.enabled", "==", true)
-      .where("notifications.eveningTime", "==", currentTime);
-
-    const [afterSchoolSnapshot, eveningSnapshot] = await Promise.all([
-        afterSchoolQuery.get(),
-        eveningQuery.get(),
-    ]);
-
-    const usersToNotify = new Map<string, UserData>();
+      .get();
     
-    afterSchoolSnapshot.forEach(doc => {
-        if (!usersToNotify.has(doc.id)) {
-            usersToNotify.set(doc.id, doc.data() as UserData);
-        }
+    if (usersSnapshot.empty) {
+      logger.info("No users with notifications enabled.");
+      return;
+    }
+
+    const usersToNotify: { id: string, data: UserData }[] = [];
+    usersSnapshot.forEach(doc => {
+      const userData = doc.data() as UserData;
+      const isTimeMatch =
+        userData.notifications.afterSchoolTime === currentTime ||
+        userData.notifications.eveningTime === currentTime ||
+        (userData.notifications.weekendEnabled && (
+            userData.notifications.saturdayMorningTime === currentTime ||
+            userData.notifications.saturdayEveningTime === currentTime ||
+            userData.notifications.sundayMorningTime === currentTime ||
+            userData.notifications.sundayEveningTime === currentTime
+        ));
+
+      if (isTimeMatch) {
+        usersToNotify.push({ id: doc.id, data: userData });
+      }
     });
 
-    eveningSnapshot.forEach(doc => {
-        if (!usersToNotify.has(doc.id)) {
-            usersToNotify.set(doc.id, doc.data() as UserData);
-        }
-    });
-
-
-    if (usersToNotify.size === 0) {
+    if (usersToNotify.length === 0) {
       logger.info("No users to notify at this time.", { time: currentTime });
       return;
     }
 
     const notificationPromises: Promise<any>[] = [];
 
-    for (const [userId, userData] of usersToNotify.entries()) {
+    for (const user of usersToNotify) {
+      const { id: userId, data: userData } = user;
+      
       if (!userData.fcmTokens || userData.fcmTokens.length === 0) {
-        continue; // Skip user if no tokens
+        logger.warn(`User ${userId} has no FCM tokens. Skipping.`);
+        continue;
       }
 
       // Get tasks due today or tomorrow
@@ -119,6 +119,8 @@ export const sendHomeworkNotifications = onSchedule(
         });
 
         notificationPromises.push(getMessaging().sendEachForMulticast(message));
+      } else {
+        logger.info(`No upcoming tasks for user ${userId}. No notification sent.`);
       }
     }
 
