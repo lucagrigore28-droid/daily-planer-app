@@ -73,7 +73,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       try {
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
         if (!vapidKey) {
-            console.error('VAPID key is not configured.');
+            console.error('VAPID key is not configured. Make sure NEXT_PUBLIC_VAPID_KEY is set in your .env file.');
             return;
         }
         const currentToken = await getToken(messaging, { 
