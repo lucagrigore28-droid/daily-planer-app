@@ -3,6 +3,7 @@
 import React, { useMemo, type ReactNode, useEffect } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
+import { firebaseConfig } from './config';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
@@ -16,10 +17,11 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js').then((registration) => {
+      const swUrl = `/firebase-messaging-sw.js?apiKey=${firebaseConfig.apiKey}&authDomain=${firebaseConfig.authDomain}&projectId=${firebaseConfig.projectId}&storageBucket=${firebaseConfig.storageBucket}&messagingSenderId=${firebaseConfig.messagingSenderId}&appId=${firebaseConfig.appId}`;
+      navigator.serviceWorker.getRegistration(swUrl).then((registration) => {
         if (!registration) {
           navigator.serviceWorker
-            .register('/firebase-messaging-sw.js')
+            .register(swUrl)
             .then((registration) => {
               console.log('Service Worker registration successful, scope is:', registration.scope);
             })
