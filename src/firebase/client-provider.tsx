@@ -18,8 +18,10 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       const swUrl = `/firebase-messaging-sw.js?apiKey=${firebaseConfig.apiKey}&authDomain=${firebaseConfig.authDomain}&projectId=${firebaseConfig.projectId}&storageBucket=${firebaseConfig.storageBucket}&messagingSenderId=${firebaseConfig.messagingSenderId}&appId=${firebaseConfig.appId}`;
-      navigator.serviceWorker.getRegistration(swUrl).then((registration) => {
-        if (!registration) {
+      
+      navigator.serviceWorker.getRegistration().then((registration) => {
+        // If there's no registration, or the existing one isn't for our SW, register it.
+        if (!registration || registration.scope !== new URL('/', location.href).toString()) {
           navigator.serviceWorker
             .register(swUrl)
             .then((registration) => {
