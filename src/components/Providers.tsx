@@ -1,4 +1,5 @@
 'use client';
+
 import React from 'react';
 import { AppProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';

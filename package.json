@@ -7,6 +7,7 @@
     "dev": "next dev --turbopack",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
+    "prebuild": "node scripts/generate-fcm-sw.js",
     "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
@@ -77,5 +78,3 @@
     }
   }
 }
-
-    

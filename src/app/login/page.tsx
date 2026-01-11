@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Logo from '@/components/Logo';
-import { useUser } from '@/firebase/provider';
+import { useUser } from '@/firebase/auth/use-user';
 import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, getAuth } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
