@@ -1,38 +1,45 @@
 
 'use client';
 
-import React, { useMemo, type ReactNode } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { firebaseConfig } from './config';
+import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import { firebaseConfig } from '@/firebase/config';
 
 interface FirebaseClientProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const firebaseServices = useMemo(() => {
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-        console.error("Firebase config is not set. Please check your environment variables.");
-        return { app: null, auth: null, firestore: null };
-    }
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    return { app, auth, firestore };
-  }, []);
+type FirebaseServices = {
+  app: FirebaseApp;
+  auth: Auth;
+  firestore: Firestore;
+} | null;
 
-  if (!firebaseServices.app) {
+export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices>(null);
+
+  useEffect(() => {
+    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
+      setFirebaseServices({ app, auth, firestore });
+    }
+    // If the config is not set, firebaseServices remains null. The app should handle this gracefully.
+  }, []); // Empty dependency array ensures this runs only once on mount.
+
+  if (!firebaseServices) {
       return <>{children}</>;
   }
 
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.app}
-      auth={firebaseServices.auth!}
-      firestore={firebaseServices.firestore!}
+      auth={firebaseServices.auth}
+      firestore={firebaseServices.firestore}
     >
       {children}
     </FirebaseProvider>

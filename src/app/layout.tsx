@@ -1,12 +1,9 @@
 
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
-import { AppProvider } from '@/contexts/AppContext';
-import { Toaster } from '@/components/ui/toaster';
 import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import { ThemeProvider } from '@/components/ThemeProvider';
-import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
+import Providers from '@/components/Providers';
 
 
 export const metadata: Metadata = {
@@ -46,17 +43,9 @@ export default function RootLayout({
   return (
     <html lang="ro" suppressHydrationWarning>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-        >
-          <AppProvider>
-              {children}
-              <Toaster />
-              <ServiceWorkerRegistrar />
-          </AppProvider>
-        </ThemeProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

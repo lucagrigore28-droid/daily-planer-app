@@ -243,10 +243,8 @@ function AppContainer({ children }: { children: ReactNode }) {
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
-    <FirebaseClientProvider>
       <AppContainer>
         {children}
       </AppContainer>
-    </FirebaseClientProvider>
-  )
+  );
 }
