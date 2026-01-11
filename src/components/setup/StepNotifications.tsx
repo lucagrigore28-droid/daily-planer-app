@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
 import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { getMessaging, getToken } from "firebase/messaging";
-import { app } from '@/firebase/config';
+import { getToken, getMessaging } from "firebase/messaging";
+import firebaseApp from '@/firebase/config';
 import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 import type { UserNotifications } from '@/lib/types';
@@ -22,6 +22,11 @@ const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || "";
 
 export async function requestPermissionAndGetToken(addFcmToken: (token: string) => void) {
   try {
+    if (typeof window === 'undefined' || !('Notification' in window) || !('serviceWorker' in navigator)) {
+        console.log("Notificările nu sunt suportate în acest mediu.");
+        return null;
+    }
+      
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
       console.log("Permisiune notificări refuzată");
@@ -29,19 +34,21 @@ export async function requestPermissionAndGetToken(addFcmToken: (token: string) 
     }
 
     if (!VAPID_KEY) {
-      console.error("VAPID key is not set. Check NEXT_PUBLIC_VAPID_KEY environment variable.");
-      alert('Configurare incompletă: Cheia VAPID pentru notificări lipsește.');
+      console.error("CRITICAL: NEXT_PUBLIC_VAPID_KEY nu este setat. Token-ul nu poate fi obținut.");
+      alert('Configurare incompletă: Cheia VAPID pentru notificări lipsește. Verifică variabilele de mediu.');
       return null;
     }
     
-    const messaging = getMessaging(app);
+    const messaging = getMessaging(firebaseApp);
+    
     const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
+    
     if (currentToken) {
       console.log("FCM token:", currentToken);
       addFcmToken(currentToken);
       return currentToken;
     } else {
-      console.log("Nu s-a putut obține token-ul (null). Verifică VAPID / config.");
+      console.log("Nu s-a putut obține token-ul (null). Verifică VAPID key / config.");
       return null;
     }
   } catch (err) {

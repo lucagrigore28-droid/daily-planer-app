@@ -7,7 +7,7 @@ import { AppContext } from '@/contexts/AppContext';
 import SetupWizard from '@/components/setup/SetupWizard';
 import HomeworkDashboard from '@/components/dashboard/HomeworkDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/provider';
 import WelcomeBackScreen from '@/components/dashboard/WelcomeBackScreen';
 
 function LoadingScreen() {

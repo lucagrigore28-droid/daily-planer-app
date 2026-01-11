@@ -5,7 +5,7 @@ import { AppProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider } from '@/components/FirebaseClientProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 

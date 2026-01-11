@@ -1,5 +1,6 @@
 'use client';
-import { FirebaseContext, UserHookResult } from '@/firebase/provider';
+import { FirebaseContext } from '@/firebase/provider';
+import type { UserHookResult } from '@/firebase/provider';
 import { useContext } from 'react';
 
 /**
