@@ -4,7 +4,7 @@ import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import type { HomeworkTask, UserData, NotificationTime } from '@/lib/types';
-import { formatInTimeZone, utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
+import { formatInTimeZone, utcToZonedTime } from 'date-fns-tz';
 import { addDays, getDay, startOfDay, endOfDay } from 'date-fns';
 
 // Helper function to initialize Firebase Admin SDK
@@ -69,10 +69,6 @@ export async function GET() {
             const userNotifs = userData.notifications;
 
             if (!userNotifs || !userData.fcmTokens?.length) continue;
-
-            const isWeekday = todayDayOfWeek >= 1 && todayDayOfWeek <= 5;
-            const isSaturday = todayDayOfWeek === 6;
-            const isSunday = todayDayOfWeek === 0;
 
             const checkAndSend = async (key: string, config: NotificationTime, bodyFn: () => Promise<string | null>) => {
                 if (config.enabled && config.time === currentTime && userNotifs.lastNotificationSent?.[key] !== todayDateStr) {
@@ -179,6 +175,10 @@ export async function GET() {
                     return body;
                 });
             }
+
+            const isWeekday = todayDayOfWeek >= 1 && todayDayOfWeek <= 5;
+            const isSaturday = todayDayOfWeek === 6;
+            const isSunday = todayDayOfWeek === 0;
         }
         
         await Promise.all(notificationPromises);
@@ -234,5 +234,7 @@ async function getWeekendAndNextWeekTasks(db: FirebaseFirestore.Firestore, userI
         
     return tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
 }
+
+    
 
     
