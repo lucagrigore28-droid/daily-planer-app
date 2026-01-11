@@ -1,37 +1,24 @@
-// DO NOT CHANGE: This file is used to handle background notifications.
-// It must be in the public folder.
-
-// Scripts for Firebase products
+// public/firebase-messaging-sw.js
 importScripts("https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging-compat.js");
 
-// Your web app's Firebase configuration
-// This is sourced from the query params in the service worker registration
-const urlParams = new URLSearchParams(self.location.search);
 const firebaseConfig = {
-    apiKey: urlParams.get('apiKey'),
-    authDomain: urlParams.get('authDomain'),
-    projectId: urlParams.get('projectId'),
-    storageBucket: urlParams.get('storageBucket'),
-    messagingSenderId: urlParams.get('messagingSenderId'),
-    appId: urlParams.get('appId'),
-    measurementId: urlParams.get('measurementId')
+  apiKey: "AIzaSyCcD3JASDRZYeRnGSEakgF8-yKRmSpyYJw",
+  authDomain: "studio-524597312-3104b.firebaseapp.com",
+  projectId: "studio-524597312-3104b",
+  storageBucket: "studio-524597312-3104b.appspot.com",
+  messagingSenderId: "451317985684",
+  appId: "1:451317985684:web:5f70b71ee8dab7346b5f81"
 };
 
-
-// Initialize Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
-
+firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
-  const notificationTitle = payload.notification?.title || 'Notificare Nouă';
+  const notificationTitle = payload.notification?.title || 'Background Message Title';
   const notificationOptions = {
-    body: payload.notification?.body || 'Ai primit un mesaj nou.',
+    body: payload.notification?.body || 'Background Message body.',
     icon: '/icon.svg'
   };
 
