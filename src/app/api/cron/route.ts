@@ -47,6 +47,10 @@ export async function GET() {
     const currentTime = formatInTimeZone(zonedNow, timeZone, 'HH:mm');
     const todayDateStr = formatInTimeZone(zonedNow, timeZone, 'yyyy-MM-dd');
     const todayDayOfWeek = getDay(zonedNow); // Sunday is 0, Saturday is 6
+    
+    const isWeekday = todayDayOfWeek >= 1 && todayDayOfWeek <= 5;
+    const isSaturday = todayDayOfWeek === 6;
+    const isSunday = todayDayOfWeek === 0;
 
     console.log(`Cron job started at ${currentTime} in ${timeZone}. Day of week: ${todayDayOfWeek}`);
 
@@ -175,10 +179,6 @@ export async function GET() {
                     return body;
                 });
             }
-
-            const isWeekday = todayDayOfWeek >= 1 && todayDayOfWeek <= 5;
-            const isSaturday = todayDayOfWeek === 6;
-            const isSunday = todayDayOfWeek === 0;
         }
         
         await Promise.all(notificationPromises);
@@ -204,7 +204,16 @@ async function getTasksForTomorrow(db: FirebaseFirestore.Firestore, userId: stri
         .where("dueDate", "<=", endOfTomorrow.toISOString())
         .get();
         
-    return tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
+    const tasks = await Promise.all(tasksSnapshot.docs.map(async doc => {
+        const task = doc.data() as HomeworkTask;
+        if (!task.subjectName) {
+            const subjectDoc = await db.doc(`users/${userId}/subjects/${task.subjectId}`).get();
+            task.subjectName = subjectDoc.exists ? subjectDoc.data()?.name : 'Materie ștearsă';
+        }
+        return task;
+    }));
+
+    return tasks;
 }
 
 async function getTasksForNextWeek(db: FirebaseFirestore.Firestore, userId: string, now: Date): Promise<HomeworkTask[]> {
@@ -218,23 +227,40 @@ async function getTasksForNextWeek(db: FirebaseFirestore.Firestore, userId: stri
         .where("dueDate", "<", endOfNextWeek.toISOString())
         .get();
         
-    return tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
+    const tasks = await Promise.all(tasksSnapshot.docs.map(async doc => {
+        const task = doc.data() as HomeworkTask;
+        if (!task.subjectName) {
+            const subjectDoc = await db.doc(`users/${userId}/subjects/${task.subjectId}`).get();
+            task.subjectName = subjectDoc.exists ? subjectDoc.data()?.name : 'Materie ștearsă';
+        }
+        return task;
+    }));
+    return tasks;
 }
 
 async function getWeekendAndNextWeekTasks(db: FirebaseFirestore.Firestore, userId: string, now: Date): Promise<HomeworkTask[]> {
     const startOfToday = startOfDay(now);
     // From today until end of next sunday
-    const endOfNextWeek = endOfDay(addDays(startOfToday, 7 - getDay(startOfToday) + 7));
+    const dayOfWeek = getDay(startOfToday); // 0=Sun, 1=Mon...
+    const daysUntilNextSunday = 7 - dayOfWeek;
+    const endOfThisWeek = endOfDay(addDays(startOfToday, daysUntilNextSunday));
+
 
     const tasksSnapshot = await db
         .collection(`users/${userId}/tasks`)
         .where("dueDate", ">=", startOfToday.toISOString())
-        .where("dueDate", "<=", endOfNextWeek.toISOString())
+        .where("dueDate", "<=", endOfThisWeek.toISOString())
         .get();
         
-    return tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
+    const tasks = await Promise.all(tasksSnapshot.docs.map(async doc => {
+        const task = doc.data() as HomeworkTask;
+        if (!task.subjectName) {
+            const subjectDoc = await db.doc(`users/${userId}/subjects/${task.subjectId}`).get();
+            task.subjectName = subjectDoc.exists ? subjectDoc.data()?.name : 'Materie ștearsă';
+        }
+        return task;
+    }));
+    return tasks;
 }
-
-    
 
     
