@@ -42,44 +42,22 @@ export async function GET(request: Request) {
     try {
         const now = new Date();
         const nowInBucharest = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Bucharest' }));
-        const currentTime = nowInBucharest.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+        const currentHour = nowInBucharest.getHours(); // Get the current hour (0-23)
         
         const usersSnapshot = await db
             .collection("users")
             .where("notifications.enabled", "==", true)
+            .where("notifications.dailyTime", "==", `${currentHour.toString().padStart(2, '0')}:00`)
             .get();
 
         if (usersSnapshot.empty) {
-            console.log("No users with notifications enabled.");
-            return NextResponse.json({ message: "No users with notifications enabled." });
-        }
-
-        const usersToNotify: { id: string, data: UserData }[] = [];
-        usersSnapshot.forEach(doc => {
-            const userData = doc.data() as UserData;
-            
-             const isTimeMatch =
-                userData.notifications.afterSchoolTime === currentTime ||
-                userData.notifications.eveningTime === currentTime ||
-                (userData.notifications.weekendEnabled && (
-                    userData.notifications.saturdayMorningTime === currentTime ||
-                    userData.notifications.saturdayEveningTime === currentTime ||
-                    userData.notifications.sundayMorningTime === currentTime ||
-                    userData.notifications.sundayEveningTime === currentTime
-                ));
-
-            if (isTimeMatch) {
-                usersToNotify.push({ id: doc.id, data: userData });
-            }
-        });
-
-        if (usersToNotify.length === 0) {
-            console.log("No users to notify at this time.", { time: currentTime });
+            console.log(`No users to notify at hour: ${currentHour}:00.`);
             return NextResponse.json({ message: "No users to notify at this time." });
         }
 
-        for (const user of usersToNotify) {
-            const { id: userId, data: userData } = user;
+        for (const doc of usersSnapshot.docs) {
+            const userId = doc.id;
+            const userData = doc.data() as UserData;
 
             if (!userData.fcmTokens || userData.fcmTokens.length === 0) {
                 console.warn(`User ${userId} has no FCM tokens. Skipping.`);
@@ -125,7 +103,7 @@ export async function GET(request: Request) {
             }
         }
 
-        console.log("Finished sending notifications.");
+        console.log("Finished sending notifications for hour:", currentHour);
         return NextResponse.json({ message: "Notifications sent successfully." });
 
     } catch (error) {
@@ -133,3 +111,5 @@ export async function GET(request: Request) {
         return new NextResponse('Error in cron job', { status: 500 });
     }
 }
+
+export const dynamic = 'force-dynamic';

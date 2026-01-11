@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
 import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { getMessaging, getToken } from "firebase/messaging";
 import { useFirebaseApp } from '@/firebase';
@@ -21,12 +20,9 @@ type StepProps = {
 
 const generateTimeSlots = () => {
     const slots = [];
-    for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 60; m += 30) {
-            const hour = h.toString().padStart(2, '0');
-            const minute = m.toString().padStart(2, '0');
-            slots.push(`${hour}:${minute}`);
-        }
+    for (let h = 7; h < 23; h++) {
+        const hour = h.toString().padStart(2, '0');
+        slots.push(`${hour}:00`);
     }
     return slots;
 };
@@ -65,13 +61,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   const notifications = context?.userData?.notifications;
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(notifications?.enabled || false);
-  const [afterSchoolTime, setAfterSchoolTime] = useState(notifications?.afterSchoolTime || '15:00');
-  const [eveningTime, setEveningTime] = useState(notifications?.eveningTime || '20:00');
-  const [weekendEnabled, setWeekendEnabled] = useState(notifications?.weekendEnabled ?? true);
-  const [saturdayMorningTime, setSaturdayMorningTime] = useState(notifications?.saturdayMorningTime || '10:00');
-  const [saturdayEveningTime, setSaturdayEveningTime] = useState(notifications?.saturdayEveningTime || '20:00');
-  const [sundayMorningTime, setSundayMorningTime] = useState(notifications?.sundayMorningTime || '11:00');
-  const [sundayEveningTime, setSundayEveningTime] = useState(notifications?.sundayEveningTime || '20:00');
+  const [dailyTime, setDailyTime] = useState(notifications?.dailyTime || '19:00');
 
 
   useEffect(() => {
@@ -84,13 +74,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     const notifications = context?.userData?.notifications;
     if (notifications) {
       setNotificationsEnabled(notifications.enabled);
-      setAfterSchoolTime(notifications.afterSchoolTime);
-      setEveningTime(notifications.eveningTime);
-      setWeekendEnabled(notifications.weekendEnabled);
-      setSaturdayMorningTime(notifications.saturdayMorningTime);
-      setSaturdayEveningTime(notifications.saturdayEveningTime);
-      setSundayMorningTime(notifications.sundayMorningTime);
-      setSundayEveningTime(notifications.sundayEveningTime);
+      setDailyTime(notifications.dailyTime || '19:00');
     }
   }, [context?.userData?.notifications]);
 
@@ -215,72 +199,17 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
             {notificationsEnabled && permission === 'granted' && (
                 <div className="space-y-8 fade-in-up">
                      <div>
-                        <h4 className="font-semibold text-lg mb-4">Notificări în timpul săptămânii</h4>
+                        <h4 className="font-semibold text-lg mb-4">Setare notificare zilnică</h4>
                         <div className="space-y-6">
                             <TimeSelector 
-                                id="after-school-time"
-                                label="Prima notificare (după școală)"
-                                value={afterSchoolTime}
-                                onChange={setAfterSchoolTime}
-                                onBlur={(value) => handleUpdateNotificationSettings('afterSchoolTime', value)}
-                                description="O alertă când ajungi acasă, ca să știi ce ai de făcut."
-                            />
-                            <TimeSelector 
-                                id="evening-time"
-                                label="A doua notificare (seara)"
-                                value={eveningTime}
-                                onChange={setEveningTime}
-                                onBlur={(value) => handleUpdateNotificationSettings('eveningTime', value)}
-                                description="Un ultim memento, în caz că ai uitat ceva."
+                                id="daily-time"
+                                label="Ora de notificare"
+                                value={dailyTime}
+                                onChange={setDailyTime}
+                                onBlur={(value) => handleUpdateNotificationSettings('dailyTime', value)}
+                                description="Vei primi o singură notificare pe zi, la ora selectată."
                             />
                         </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-semibold text-lg">Notificări de Weekend</h4>
-                             <Switch
-                                checked={weekendEnabled}
-                                onCheckedChange={(checked) => {
-                                    setWeekendEnabled(checked);
-                                    handleUpdateNotificationSettings('weekendEnabled', checked);
-                                }}
-                            />
-                        </div>
-                        {weekendEnabled && (
-                            <div className="space-y-6 pl-4 border-l-2 border-primary/50 fade-in-up">
-                                 <TimeSelector 
-                                    id="saturday-morning-time"
-                                    label="Sâmbătă dimineața"
-                                    value={saturdayMorningTime}
-                                    onChange={setSaturdayMorningTime}
-                                    onBlur={(value) => handleUpdateNotificationSettings('saturdayMorningTime', value)}
-                                />
-                                 <TimeSelector 
-                                    id="saturday-evening-time"
-                                    label="Sâmbătă seara"
-                                    value={saturdayEveningTime}
-                                    onChange={setSaturdayEveningTime}
-                                    onBlur={(value) => handleUpdateNotificationSettings('saturdayEveningTime', value)}
-                                />
-                                 <TimeSelector 
-                                    id="sunday-morning-time"
-                                    label="Duminică dimineața"
-                                    value={sundayMorningTime}
-                                    onChange={setSundayMorningTime}
-                                    onBlur={(value) => handleUpdateNotificationSettings('sundayMorningTime', value)}
-                                />
-                                <TimeSelector 
-                                    id="sunday-evening-time"
-                                    label="Duminică seara"
-                                    value={sundayEveningTime}
-                                    onChange={setSundayEveningTime}
-                                    onBlur={(value) => handleUpdateNotificationSettings('sundayEveningTime', value)}
-                                />
-                            </div>
-                        )}
                     </div>
                      <div className="p-3 rounded-lg border bg-secondary/50 text-secondary-foreground text-sm">
                         <p>Toate orele de notificare sunt bazate pe fusul orar al României (EET/EEST).</p>
