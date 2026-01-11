@@ -7,6 +7,7 @@ import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 
 
 export const metadata: Metadata = {
@@ -55,6 +56,7 @@ export default function RootLayout({
             <AppProvider>
               {children}
               <Toaster />
+              <ServiceWorkerRegistrar />
             </AppProvider>
           </ThemeProvider>
         </FirebaseClientProvider>

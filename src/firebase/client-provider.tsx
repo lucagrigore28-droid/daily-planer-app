@@ -14,16 +14,6 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return initializeFirebase();
   }, []); // Empty dependency array ensures this runs only once on mount
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/firebase-messaging-sw.js")
-        .then((reg) => console.log("Service Worker registered:", reg))
-        .catch((err) => console.error("Service Worker registration failed:", err));
-    }
-  }, []);
-
-
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.firebaseApp}

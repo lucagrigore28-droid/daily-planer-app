@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -8,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
 import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { getToken } from "firebase/messaging";
-import { messaging } from '@/firebase/config';
+import { getMessaging, getToken } from "firebase/messaging";
+import { app } from '@/firebase/config';
 import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 import type { UserNotifications } from '@/lib/types';
@@ -34,7 +33,8 @@ export async function requestPermissionAndGetToken(addFcmToken: (token: string) 
       alert('Configurare incompletă: Cheia VAPID pentru notificări lipsește.');
       return null;
     }
-
+    
+    const messaging = getMessaging(app);
     const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
     if (currentToken) {
       console.log("FCM token:", currentToken);

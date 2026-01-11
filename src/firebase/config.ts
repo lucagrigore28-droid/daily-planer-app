@@ -1,6 +1,5 @@
 // src/firebase/config.ts
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getMessaging } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -19,5 +18,4 @@ function initializeClientApp() {
 }
 
 export const app = initializeClientApp();
-export const messaging = getMessaging(app);
 export default app;
