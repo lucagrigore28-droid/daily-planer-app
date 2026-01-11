@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
 import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { getMessaging, getToken } from "firebase/messaging";
-import { useFirebaseApp } from '@/firebase';
+import { getToken } from "firebase/messaging";
+import { messaging } from '@/firebase/config';
 import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 import type { UserNotifications } from '@/lib/types';
@@ -19,9 +19,39 @@ type StepProps = {
   onBack?: () => void;
 };
 
+const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_KEY || "";
+
+export async function requestPermissionAndGetToken(addFcmToken: (token: string) => void) {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      console.log("Permisiune notificări refuzată");
+      return null;
+    }
+
+    if (!VAPID_KEY) {
+      console.error("VAPID key is not set. Check NEXT_PUBLIC_VAPID_KEY environment variable.");
+      alert('Configurare incompletă: Cheia VAPID pentru notificări lipsește.');
+      return null;
+    }
+
+    const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
+    if (currentToken) {
+      console.log("FCM token:", currentToken);
+      addFcmToken(currentToken);
+      return currentToken;
+    } else {
+      console.log("Nu s-a putut obține token-ul (null). Verifică VAPID / config.");
+      return null;
+    }
+  } catch (err) {
+    console.error("Eroare la getToken:", err);
+    return null;
+  }
+}
+
 export default function StepNotifications({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const firebaseApp = useFirebaseApp();
   const [permission, setPermission] = useState<'default' | 'granted' | 'denied'>('default');
   
   const notifications = context?.userData?.notifications;
@@ -53,54 +83,23 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       context?.updateUser({ notifications: newNotifications });
     }
   };
-
-  const requestPermissionAndToken = async () => {
-    if (!("Notification" in window) || !firebaseApp || !('serviceWorker' in navigator)) {
-      alert("Acest browser nu suportă notificări în fundal.");
-      return;
-    }
-
-    const status = await Notification.requestPermission();
-    setPermission(status);
-
-    if (status === 'granted') {
-      handleUpdateNotificationSettings({ enabled: true, dailyTime });
-      
-      const messaging = getMessaging(firebaseApp);
-      try {
-        const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
-        if (!vapidKey) {
-            console.error('VAPID key is not configured. Make sure NEXT_PUBLIC_VAPID_KEY is set in your .env or environment variables.');
-            alert('Configurare incompletă: Cheia VAPID pentru notificări lipsește.');
-            return;
-        }
-        const currentToken = await getToken(messaging, { 
-            vapidKey,
-            serviceWorkerRegistration: await navigator.serviceWorker.ready,
-        });
-        if (currentToken) {
-          console.log('FCM Token:', currentToken);
-          context?.addFcmToken(currentToken);
-        } else {
-          console.log('No registration token available. Request permission to generate one.');
-        }
-      } catch (err) {
-        console.error('An error occurred while retrieving token. ', err);
-      }
-    } else {
-      handleUpdateNotificationSettings({ enabled: false });
-    }
-  };
   
-  const handleMasterToggle = (enabled: boolean) => {
+  const handleMasterToggle = async (enabled: boolean) => {
     if (enabled && permission !== 'granted') {
-        requestPermissionAndToken();
+        const token = await requestPermissionAndGetToken(context.addFcmToken);
+        if (token) {
+            handleUpdateNotificationSettings({ enabled: true, dailyTime });
+            setPermission('granted');
+            setMasterEnabled(true);
+        } else {
+            handleUpdateNotificationSettings({ enabled: false });
+            setMasterEnabled(false);
+        }
     } else {
-        // When toggling, always save the complete state atomically
         handleUpdateNotificationSettings({ enabled, dailyTime });
-
+        setMasterEnabled(enabled);
         if (enabled && permission === 'granted' && !context.userData?.fcmTokens?.length) {
-            requestPermissionAndToken();
+            await requestPermissionAndGetToken(context.addFcmToken);
         }
     }
   }

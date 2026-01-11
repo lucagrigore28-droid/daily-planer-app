@@ -1,7 +1,7 @@
 
 'use client';
 
-import { firebaseConfig } from '@/firebase/config';
+import { firebaseConfig as config } from '@/firebase/config-hardcoded'; // We will replace this later
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'
@@ -25,11 +25,11 @@ export function initializeFirebase() {
       if (process.env.NODE_ENV === "production") {
         console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
       }
-      firebaseApp = initializeApp(firebaseConfig);
+      firebaseApp = initializeApp(config);
     }
   } else {
     // If on Vercel, always use the explicit config.
-    firebaseApp = initializeApp(firebaseConfig);
+    firebaseApp = initializeApp(config);
   }
 
   return getSdks(firebaseApp);
@@ -51,3 +51,4 @@ export * from './non-blocking-updates';
 export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
+
