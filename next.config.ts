@@ -1,5 +1,4 @@
 import type {NextConfig} from 'next';
-require('dotenv').config();
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -9,9 +8,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: ['sharp'],
-  },
+  serverExternalPackages: ['sharp'],
   images: {
     remotePatterns: [
       {
@@ -30,7 +27,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-        pathname: '/**',
+pathname: '/**',
       },
     ],
   },
