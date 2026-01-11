@@ -4,8 +4,8 @@ import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import type { HomeworkTask, UserData, NotificationTime } from '@/lib/types';
-import { formatInTimeZone, utcToZonedTime, zonedTimeToUtc, startOfDay, endOfDay } from 'date-fns-tz';
-import { addDays, getDay } from 'date-fns';
+import { formatInTimeZone, utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
+import { addDays, getDay, startOfDay, endOfDay } from 'date-fns';
 
 // Helper function to initialize Firebase Admin SDK
 function initializeFirebaseAdmin(): { db: ReturnType<typeof getFirestore>, messaging: ReturnType<typeof getMessaging> } | null {
@@ -122,7 +122,7 @@ export async function GET() {
             // --- Saturday Notifications ---
             if (isSaturday) {
                 await checkAndSend('sat_morning', userNotifs.weekend.saturdayMorning, async () => {
-                    const plannedTasks = allWeekendTasks.filter(t => t.plannedDate && getDay(zonedTimeToUtc(t.plannedDate, timeZone)) === 6);
+                    const plannedTasks = allWeekendTasks.filter(t => t.plannedDate && getDay(utcToZonedTime(new Date(t.plannedDate), timeZone)) === 6);
                     if (plannedTasks.length > 0) {
                         const subjects = [...new Set(plannedTasks.map(t => t.subjectName))];
                         return `Salut ${userData.name}! Azi ai de lucru la ${subjects.slice(0, 2).join(', ')}${subjects.length > 2 ? ` și încă ${subjects.length-2} altele` : ''}. Spor!`;
@@ -133,8 +133,8 @@ export async function GET() {
                     return null;
                 });
                  await checkAndSend('sat_evening', userNotifs.weekend.saturdayEvening, async () => {
-                    const completedToday = allWeekendTasks.filter(t => t.completedAt && getDay(zonedTimeToUtc(t.completedAt, timeZone)) === 6);
-                    const plannedForTomorrow = allWeekendTasks.filter(t => t.plannedDate && getDay(zonedTimeToUtc(t.plannedDate, timeZone)) === 0);
+                    const completedToday = allWeekendTasks.filter(t => t.completedAt && getDay(utcToZonedTime(new Date(t.completedAt), timeZone)) === 6);
+                    const plannedForTomorrow = allWeekendTasks.filter(t => t.plannedDate && getDay(utcToZonedTime(new Date(t.plannedDate), timeZone)) === 0);
                     if(completedToday.length === 0 && plannedForTomorrow.length === 0) return null;
                     
                     let body = `Salut ${userData.name}!`;
@@ -153,7 +153,7 @@ export async function GET() {
             // --- Sunday Notifications ---
             if (isSunday) {
                 await checkAndSend('sun_morning', userNotifs.weekend.sundayMorning, async () => {
-                    const plannedTasks = allWeekendTasks.filter(t => t.plannedDate && getDay(zonedTimeToUtc(t.plannedDate, timeZone)) === 0);
+                    const plannedTasks = allWeekendTasks.filter(t => t.plannedDate && getDay(utcToZonedTime(new Date(t.plannedDate), timeZone)) === 0);
                      if (plannedTasks.length > 0) {
                         const subjects = [...new Set(plannedTasks.map(t => t.subjectName))];
                         return `Salut ${userData.name}! Azi ai de lucru la ${subjects.slice(0, 2).join(', ')}${subjects.length > 2 ? ` și încă ${subjects.length-2} altele` : ''}. Organizează-te!`;
@@ -164,7 +164,7 @@ export async function GET() {
                     return null;
                 });
                 await checkAndSend('sun_evening', userNotifs.weekend.sundayEvening, async () => {
-                    const completedToday = allWeekendTasks.filter(t => t.completedAt && getDay(zonedTimeToUtc(t.completedAt, timeZone)) === 0);
+                    const completedToday = allWeekendTasks.filter(t => t.completedAt && getDay(utcToZonedTime(new Date(t.completedAt), timeZone)) === 0);
                     const tasksForTomorrow = await getTasksForTomorrow(db, userId, zonedNow);
                     if(completedToday.length === 0 && tasksForTomorrow.length === 0) return null;
 

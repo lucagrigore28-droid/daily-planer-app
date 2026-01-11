@@ -11,6 +11,7 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { utcToZonedTime } from 'date-fns-tz';
 
 const initialUserData: UserData = {
   name: '',
