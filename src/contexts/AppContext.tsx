@@ -24,6 +24,12 @@ const initialUserData: UserData = {
     secondDailyTime: '08:00',
     weekendSummaryEnabled: true,
     weekendSummaryTime: '20:00',
+    weekend: {
+        saturdayMorning: { enabled: true, time: '10:00' },
+        saturdayEvening: { enabled: true, time: '20:00' },
+        sundayMorning: { enabled: true, time: '10:00' },
+        sundayEvening: { enabled: true, time: '20:00' },
+    },
     lastNotificationSent: {},
   },
   theme: 'purple',
@@ -99,7 +105,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
     if (user) {
       const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-      setDocumentNonBlocking(taskDocRef, updates, { merge: true });
+      const finalUpdates = { ...updates };
+      if (updates.isCompleted !== undefined) {
+        finalUpdates.completedAt = updates.isCompleted ? new Date().toISOString() : undefined;
+      }
+      setDocumentNonBlocking(taskDocRef, finalUpdates, { merge: true });
     }
   }, [firestore, user]);
 
@@ -198,7 +208,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Deep merge to ensure nested objects like 'notifications' have default values.
     const mergedNotifications = {
       ...initialUserData.notifications,
-      ...(userData?.notifications || {})
+      ...(userData?.notifications || {}),
+      weekend: {
+        ...initialUserData.notifications.weekend,
+        ...(userData?.notifications?.weekend || {})
+      }
     };
     if (userData === null) return initialUserData;
 

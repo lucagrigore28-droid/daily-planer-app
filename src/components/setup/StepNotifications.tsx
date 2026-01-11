@@ -6,21 +6,22 @@ import { CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
-import { BellRing, BellOff, CalendarClock, Sparkles } from 'lucide-react';
+import { BellRing, BellOff, CalendarClock, Sparkles, Moon, Sun } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
 import { getMessaging, getToken } from "firebase/messaging";
 import { useFirebaseApp } from '@/firebase';
 import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import type { WeekendNotifications, NotificationTime } from '@/lib/types';
 
 type StepProps = {
   onNext?: () => void;
   onBack?: () => void;
 };
 
-
-const TimeSelector = ({ id, label, value, onChange, onBlur, description }: { id: string, label: string, value: string, onChange: (value: string) => void, onBlur: (value: string) => void, description?: string }) => (
+const TimeSelector = ({ id, label, value, onChange, description }: { id: string, label: string, value: string, onChange: (value: string) => void, description?: string }) => (
     <div className="grid gap-2">
         <Label htmlFor={id}>{label}</Label>
         <Input
@@ -28,12 +29,76 @@ const TimeSelector = ({ id, label, value, onChange, onBlur, description }: { id:
             type="time"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            onBlur={(e) => onBlur(e.target.value)}
             className="w-48"
         />
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
     </div>
 );
+
+const NotificationSetting = ({ id, label, checked, onCheckedChange }: { id: string, label: string, checked: boolean, onCheckedChange: (checked: boolean) => void }) => (
+    <div className="flex items-center space-x-2">
+        <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+        <Label htmlFor={id}>{label}</Label>
+    </div>
+);
+
+const WeekendDaySettings = ({ title, morningConfig, onMorningChange, eveningConfig, onEveningChange }: {
+    title: string;
+    morningConfig: NotificationTime;
+    onMorningChange: (config: NotificationTime) => void;
+    eveningConfig: NotificationTime;
+    onEveningChange: (config: NotificationTime) => void;
+}) => {
+    return (
+        <div className="space-y-6 rounded-lg border p-4">
+            <h5 className="font-semibold text-lg">{title}</h5>
+            <div className="space-y-4 pl-4 border-l-2 border-border">
+                <div className="flex items-center gap-4">
+                     <Sun className="h-5 w-5 text-amber-500" />
+                     <h6 className="font-medium">Notificare de dimineață</h6>
+                </div>
+                <div className="pl-9 space-y-4">
+                    <NotificationSetting
+                        id={`${title}-morning-enabled`}
+                        label="Activată"
+                        checked={morningConfig.enabled}
+                        onCheckedChange={(enabled) => onMorningChange({ ...morningConfig, enabled })}
+                    />
+                    {morningConfig.enabled && (
+                        <TimeSelector
+                            id={`${title}-morning-time`}
+                            label="Ora"
+                            value={morningConfig.time}
+                            onChange={(time) => onMorningChange({ ...morningConfig, time })}
+                        />
+                    )}
+                </div>
+            </div>
+            <div className="space-y-4 pl-4 border-l-2 border-border">
+                <div className="flex items-center gap-4">
+                     <Moon className="h-5 w-5 text-blue-400" />
+                     <h6 className="font-medium">Notificare de seară</h6>
+                </div>
+                 <div className="pl-9 space-y-4">
+                    <NotificationSetting
+                        id={`${title}-evening-enabled`}
+                        label="Activată"
+                        checked={eveningConfig.enabled}
+                        onCheckedChange={(enabled) => onEveningChange({ ...eveningConfig, enabled })}
+                    />
+                    {eveningConfig.enabled && (
+                        <TimeSelector
+                            id={`${title}-evening-time`}
+                            label="Ora"
+                            value={eveningConfig.time}
+                            onChange={(time) => onEveningChange({ ...eveningConfig, time })}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 
 export default function StepNotifications({ onNext, onBack }: StepProps) {
@@ -52,6 +117,13 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   
   const [weekendEnabled, setWeekendEnabled] = useState(notifications?.weekendSummaryEnabled || true);
   const [weekendTime, setWeekendTime] = useState(notifications?.weekendSummaryTime || '20:00');
+  
+  const [weekendNotifications, setWeekendNotifications] = useState<WeekendNotifications>(notifications?.weekend || {
+    saturdayMorning: { enabled: true, time: '10:00' },
+    saturdayEvening: { enabled: true, time: '20:00' },
+    sundayMorning: { enabled: true, time: '10:00' },
+    sundayEvening: { enabled: true, time: '20:00' },
+  });
 
 
   useEffect(() => {
@@ -69,6 +141,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       setSecondDailyTime(notifs.secondDailyTime || '08:00');
       setWeekendEnabled(notifs.weekendSummaryEnabled);
       setWeekendTime(notifs.weekendSummaryTime || '20:00');
+      setWeekendNotifications(notifs.weekend || weekendNotifications);
     }
   }, [context?.userData?.notifications]);
 
@@ -107,14 +180,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
         console.error('An error occurred while retrieving token. ', err);
       }
       
-      if (context?.userData) {
-        context?.updateUser({
-          notifications: {
-            ...context.userData.notifications,
-            enabled: true,
-          }
-        });
-      }
+      handleUpdateNotificationSettings({ enabled: true });
     }
   };
   
@@ -125,22 +191,14 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     }
 
     setMasterEnabled(enabled);
-    
-    if (context?.userData) {
-      context?.updateUser({
-        notifications: {
-          ...context.userData.notifications,
-          enabled,
-        }
-      });
-    }
+    handleUpdateNotificationSettings({ enabled });
 
     if (enabled && permission === 'granted' && !context.userData?.fcmTokens?.length) {
         requestPermissionAndToken();
     }
   }
 
-  const handleUpdateNotificationSettings = (updates: Partial<typeof notifications>) => {
+  const handleUpdateNotificationSettings = (updates: any) => {
       if (context?.userData) {
         context?.updateUser({
             notifications: {
@@ -153,18 +211,16 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
 
   const showNavButtons = !!onNext;
 
-
   return (
     <div className="flex flex-col h-full">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Notificări Inteligente</CardTitle>
         <CardDescription>
-          Primește memento-uri utile pentru a fi mereu la zi. Nu vom trimite spam.
+          Primește memento-uri utile pentru a fi mereu la zi. Poți configura notificări separate pentru weekend.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 min-h-0">
-        <ScrollArea className="h-full pr-4">
-          <div className="space-y-8">
+        <div className="space-y-6">
             <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50">
                 <div className="flex items-center space-x-3">
                     {permission === 'granted' && masterEnabled ? <BellRing className="h-6 w-6 text-primary" /> : <BellOff className="h-6 w-6 text-muted-foreground" />}
@@ -185,84 +241,112 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
             </div>
             
             {masterEnabled && permission === 'granted' && (
-                <div className="space-y-8 fade-in-up">
-                     <div>
-                        <div className="flex items-center gap-3 mb-4">
-                           <CalendarClock className="h-6 w-6 text-primary/80" />
-                           <h4 className="font-semibold text-lg">Notificări Zilnice</h4>
-                        </div>
-                        <div className="space-y-6 pl-9">
-                            <TimeSelector 
-                                id="daily-time"
-                                label="Ora principală"
-                                value={dailyTime}
-                                onChange={setDailyTime}
-                                onBlur={(value) => handleUpdateNotificationSettings({ dailyTime: value })}
-                                description="Un sumar zilnic cu temele pentru a doua zi."
-                            />
-                            <div className="space-y-4">
-                               <div className="flex items-center space-x-2">
-                                    <Switch
-                                        id="second-daily-switch"
-                                        checked={secondDailyEnabled}
+                <Tabs defaultValue="weekdays" className="w-full fade-in-up">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="weekdays">Zilele Săptămânii</TabsTrigger>
+                        <TabsTrigger value="weekend">Weekend</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="weekdays">
+                       <ScrollArea className="h-[300px] p-1">
+                         <div className="space-y-8 pt-4">
+                           <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                   <CalendarClock className="h-6 w-6 text-primary/80" />
+                                   <h4 className="font-semibold text-lg">Notificări Zilnice (Luni-Vineri)</h4>
+                                </div>
+                                <div className="space-y-6 pl-9">
+                                    <TimeSelector 
+                                        id="daily-time"
+                                        label="Ora principală"
+                                        value={dailyTime}
+                                        onChange={setDailyTime}
+                                        onBlur={(e) => handleUpdateNotificationSettings({ dailyTime: e.target.value })}
+                                        description="Un sumar zilnic cu temele pentru a doua zi."
+                                    />
+                                    <div className="space-y-4">
+                                       <NotificationSetting
+                                            id="second-daily-switch"
+                                            label="Activează a doua notificare zilnică"
+                                            checked={secondDailyEnabled}
+                                            onCheckedChange={(checked) => {
+                                              setSecondDailyEnabled(checked);
+                                              handleUpdateNotificationSettings({ secondDailyTimeEnabled: checked });
+                                            }}
+                                        />
+                                        {secondDailyEnabled && (
+                                           <div className="fade-in-up">
+                                              <TimeSelector 
+                                                  id="second-daily-time"
+                                                  label="A doua oră"
+                                                  value={secondDailyTime}
+                                                  onChange={setSecondDailyTime}
+                                                  onBlur={(e) => handleUpdateNotificationSettings({ secondDailyTime: e.target.value })}
+                                                  description="Un al doilea memento, de ex. dimineața."
+                                              />
+                                           </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                             <Separator />
+                             <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Sparkles className="h-6 w-6 text-primary/80" />
+                                    <h4 className="font-semibold text-lg">Sumar de Weekend</h4>
+                                </div>
+                                 <div className="space-y-6 pl-9">
+                                      <NotificationSetting
+                                        id="weekend-summary-switch"
+                                        label="Activează sumarul de vineri"
+                                        checked={weekendEnabled}
                                         onCheckedChange={(checked) => {
-                                          setSecondDailyEnabled(checked);
-                                          handleUpdateNotificationSettings({ secondDailyTimeEnabled: checked });
+                                          setWeekendEnabled(checked);
+                                          handleUpdateNotificationSettings({ weekendSummaryEnabled: checked });
                                         }}
                                     />
-                                    <Label htmlFor="second-daily-switch">Activează a doua notificare zilnică</Label>
-                                </div>
-                                {secondDailyEnabled && (
-                                   <div className="fade-in-up">
-                                      <TimeSelector 
-                                          id="second-daily-time"
-                                          label="A doua oră"
-                                          value={secondDailyTime}
-                                          onChange={setSecondDailyTime}
-                                          onBlur={(value) => handleUpdateNotificationSettings({ secondDailyTime: value })}
-                                          description="Un al doilea memento, de ex. dimineața."
-                                      />
-                                   </div>
-                                )}
+                                     {weekendEnabled && (
+                                        <div className="fade-in-up">
+                                          <TimeSelector 
+                                              id="weekend-summary-time"
+                                              label="Ora sumarului"
+                                              value={weekendTime}
+                                              onChange={setWeekendTime}
+                                              onBlur={(e) => handleUpdateNotificationSettings({ weekendSummaryTime: e.target.value })}
+                                              description="Vinerea, vei primi un sumar cu toate temele."
+                                          />
+                                        </div>
+                                      )}
+                                 </div>
                             </div>
-                        </div>
-                    </div>
-                     <Separator />
-                     <div>
-                        <div className="flex items-center gap-3 mb-4">
-                            <Sparkles className="h-6 w-6 text-primary/80" />
-                            <h4 className="font-semibold text-lg">Notificare de Weekend</h4>
-                        </div>
-                         <div className="space-y-6 pl-9">
-                              <div className="flex items-center space-x-2">
-                                <Switch
-                                    id="weekend-summary-switch"
-                                    checked={weekendEnabled}
-                                    onCheckedChange={(checked) => {
-                                      setWeekendEnabled(checked);
-                                      handleUpdateNotificationSettings({ weekendSummaryEnabled: checked });
-                                    }}
-                                />
-                                <Label htmlFor="weekend-summary-switch">Activează sumarul de weekend</Label>
-                            </div>
-                             {weekendEnabled && (
-                                <div className="fade-in-up">
-                                  <TimeSelector 
-                                      id="weekend-summary-time"
-                                      label="Ora sumarului de weekend"
-                                      value={weekendTime}
-                                      onChange={setWeekendTime}
-                                      onBlur={(value) => handleUpdateNotificationSettings({ weekendSummaryTime: value })}
-                                      description="Vinerea, vei primi un sumar cu toate temele."
-                                  />
-                                </div>
-                              )}
                          </div>
-                    </div>
-                </div>
+                       </ScrollArea>
+                    </TabsContent>
+                    <TabsContent value="weekend">
+                        <ScrollArea className="h-[300px] p-1">
+                            <div className="space-y-6 pt-4">
+                                <WeekendDaySettings
+                                    title="Sâmbătă"
+                                    morningConfig={weekendNotifications.saturdayMorning}
+                                    onMorningChange={(config) => setWeekendNotifications(prev => ({...prev, saturdayMorning: config}))}
+                                    eveningConfig={weekendNotifications.saturdayEvening}
+                                    onEveningChange={(config) => setWeekendNotifications(prev => ({...prev, saturdayEvening: config}))}
+                                />
+                                 <WeekendDaySettings
+                                    title="Duminică"
+                                    morningConfig={weekendNotifications.sundayMorning}
+                                    onMorningChange={(config) => setWeekendNotifications(prev => ({...prev, sundayMorning: config}))}
+                                    eveningConfig={weekendNotifications.sundayEvening}
+                                    onEveningChange={(config) => setWeekendNotifications(prev => ({...prev, sundayEvening: config}))}
+                                />
+                            </div>
+                        </ScrollArea>
+                         <Button size="sm" className="mt-4 w-full" onMouseDown={() => handleUpdateNotificationSettings({ weekend: weekendNotifications })}>
+                            Salvează Setările de Weekend
+                        </Button>
+                    </TabsContent>
+                </Tabs>
             )}
-          </div>
-        </ScrollArea>
+        </div>
       </CardContent>
        {showNavButtons && (
          <CardFooter className="flex justify-between">

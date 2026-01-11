@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
-import type { HomeworkTask, UserData } from '@/lib/types';
-import { formatInTimeZone, zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
+import type { HomeworkTask, UserData, NotificationTime } from '@/lib/types';
+import { formatInTimeZone, utcToZonedTime, zonedTimeToUtc, startOfDay, endOfDay } from 'date-fns-tz';
+import { addDays, getDay } from 'date-fns';
 
 // Helper function to initialize Firebase Admin SDK
 function initializeFirebaseAdmin(): { db: ReturnType<typeof getFirestore>, messaging: ReturnType<typeof getMessaging> } | null {
@@ -31,7 +32,7 @@ function initializeFirebaseAdmin(): { db: ReturnType<typeof getFirestore>, messa
     }
 }
 
-export const dynamic = 'force-dynamic'; // Ensures the route is not cached
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
     const admin = initializeFirebaseAdmin();
@@ -45,9 +46,9 @@ export async function GET() {
     const zonedNow = utcToZonedTime(now, timeZone);
     const currentTime = formatInTimeZone(zonedNow, timeZone, 'HH:mm');
     const todayDateStr = formatInTimeZone(zonedNow, timeZone, 'yyyy-MM-dd');
-    const todayDayOfWeek = zonedNow.getDay(); // Sunday is 0, Friday is 5
+    const todayDayOfWeek = getDay(zonedNow); // Sunday is 0, Saturday is 6
 
-    console.log(`Cron job started at ${currentTime} in ${timeZone}`);
+    console.log(`Cron job started at ${currentTime} in ${timeZone}. Day of week: ${todayDayOfWeek}`);
 
     try {
         const usersSnapshot = await db
@@ -67,30 +68,116 @@ export async function GET() {
             const userData = userDoc.data() as UserData;
             const userNotifs = userData.notifications;
 
-            // --- Daily Notification Logic ---
-            const dailyTimes = [{ type: 'daily1', time: userNotifs.dailyTime, enabled: true }, { type: 'daily2', time: userNotifs.secondDailyTime, enabled: userNotifs.secondDailyTimeEnabled }];
+            if (!userNotifs || !userData.fcmTokens?.length) continue;
+
+            const isWeekday = todayDayOfWeek >= 1 && todayDayOfWeek <= 5;
+            const isSaturday = todayDayOfWeek === 6;
+            const isSunday = todayDayOfWeek === 0;
+
+            const checkAndSend = async (key: string, config: NotificationTime, bodyFn: () => Promise<string | null>) => {
+                if (config.enabled && config.time === currentTime && userNotifs.lastNotificationSent?.[key] !== todayDateStr) {
+                    const body = await bodyFn();
+                    if (body) {
+                        console.log(`[${key}] Sending notification to ${userData.name}`);
+                        notificationPromises.push(messaging.sendEachForMulticast({ notification: { title: "Memento teme", body }, tokens: userData.fcmTokens! }));
+                        notificationPromises.push(db.collection('users').doc(userId).set({ notifications: { lastNotificationSent: { [key]: todayDateStr } } }, { merge: true }));
+                    }
+                }
+            };
             
-            for (const { type, time, enabled } of dailyTimes) {
-                 if (enabled && time === currentTime && userNotifs.lastNotificationSent?.[type] !== todayDateStr) {
+            // --- Weekday Notifications ---
+            if (isWeekday) {
+                // Daily notification 1
+                await checkAndSend('daily1', { enabled: true, time: userNotifs.dailyTime }, async () => {
                     const tasks = await getTasksForTomorrow(db, userId, zonedNow);
                     if (tasks.length > 0) {
-                        const body = `Salut ${userData.name}! Mai ai ${tasks.length} ${tasks.length === 1 ? "temă" : "teme"} pentru mâine. Nu uita de ${tasks[0].subjectName}!`;
-                        console.log(`[${type}] Sending daily notification to ${userData.name}`);
-                        notificationPromises.push(messaging.sendEachForMulticast({ notification: { title: "Memento teme zilnice", body }, tokens: userData.fcmTokens || [] }));
-                        notificationPromises.push(db.collection('users').doc(userId).set({ notifications: { lastNotificationSent: { [type]: todayDateStr } } }, { merge: true }));
+                        return `Salut ${userData.name}! Mai ai ${tasks.length} ${tasks.length === 1 ? "temă" : "teme"} pentru mâine. Nu uita de ${tasks[0].subjectName}!`;
                     }
-                 }
-            }
-            
-            // --- Weekend Summary Notification Logic ---
-            if (userNotifs.weekendSummaryEnabled && todayDayOfWeek === 5 && userNotifs.weekendSummaryTime === currentTime && userNotifs.lastNotificationSent?.['weekend'] !== todayDateStr) {
-                const tasks = await getTasksForNextWeek(db, userId, zonedNow);
-                if (tasks.length > 0) {
-                    const body = `Salut ${userData.name}! Pentru weekend și săptămâna viitoare ai ${tasks.length} ${tasks.length === 1 ? "temă nouă" : "teme noi"}. Planifică-ți timpul!`;
-                    console.log(`[weekend] Sending weekend summary to ${userData.name}`);
-                    notificationPromises.push(messaging.sendEachForMulticast({ notification: { title: "Sumar teme weekend", body }, tokens: userData.fcmTokens || [] }));
-                    notificationPromises.push(db.collection('users').doc(userId).set({ notifications: { lastNotificationSent: { ['weekend']: todayDateStr } } }, { merge: true }));
+                    return null;
+                });
+
+                // Daily notification 2
+                await checkAndSend('daily2', { enabled: userNotifs.secondDailyTimeEnabled, time: userNotifs.secondDailyTime }, async () => {
+                    const tasks = await getTasksForTomorrow(db, userId, zonedNow);
+                    if (tasks.length > 0) {
+                        return `Salut ${userData.name}! Un mic memento: ai ${tasks.length} ${tasks.length === 1 ? "temă" : "teme"} pentru mâine.`;
+                    }
+                    return null;
+                });
+
+                 // --- Weekend Summary Notification Logic (Friday only) ---
+                if (todayDayOfWeek === 5) {
+                    await checkAndSend('weekend_summary', { enabled: userNotifs.weekendSummaryEnabled, time: userNotifs.weekendSummaryTime }, async () => {
+                        const tasks = await getTasksForNextWeek(db, userId, zonedNow);
+                         if (tasks.length > 0) {
+                            return `Salut ${userData.name}! Pentru weekend și săptămâna viitoare ai ${tasks.length} ${tasks.length === 1 ? "temă" : "teme noi"}. Planifică-ți timpul!`;
+                        }
+                        return null;
+                    });
                 }
+            }
+
+            const allWeekendTasks = await getWeekendAndNextWeekTasks(db, userId, zonedNow);
+
+            // --- Saturday Notifications ---
+            if (isSaturday) {
+                await checkAndSend('sat_morning', userNotifs.weekend.saturdayMorning, async () => {
+                    const plannedTasks = allWeekendTasks.filter(t => t.plannedDate && getDay(zonedTimeToUtc(t.plannedDate, timeZone)) === 6);
+                    if (plannedTasks.length > 0) {
+                        const subjects = [...new Set(plannedTasks.map(t => t.subjectName))];
+                        return `Salut ${userData.name}! Azi ai de lucru la ${subjects.slice(0, 2).join(', ')}${subjects.length > 2 ? ` și încă ${subjects.length-2} altele` : ''}. Spor!`;
+                    }
+                    if (allWeekendTasks.length > 0) {
+                        return `Salut ${userData.name}! Ai ${allWeekendTasks.length} teme pentru săptămâna viitoare. Poți începe azi!`;
+                    }
+                    return null;
+                });
+                 await checkAndSend('sat_evening', userNotifs.weekend.saturdayEvening, async () => {
+                    const completedToday = allWeekendTasks.filter(t => t.completedAt && getDay(zonedTimeToUtc(t.completedAt, timeZone)) === 6);
+                    const plannedForTomorrow = allWeekendTasks.filter(t => t.plannedDate && getDay(zonedTimeToUtc(t.plannedDate, timeZone)) === 0);
+                    if(completedToday.length === 0 && plannedForTomorrow.length === 0) return null;
+                    
+                    let body = `Salut ${userData.name}!`;
+                    if (completedToday.length > 0) {
+                         const subjects = [...new Set(completedToday.map(t => t.subjectName))];
+                         body += ` Bravo pentru progresul de azi, ai terminat teme la ${subjects.join(', ')}.`;
+                    }
+                    if (plannedForTomorrow.length > 0) {
+                         const subjects = [...new Set(plannedForTomorrow.map(t => t.subjectName))];
+                         body += ` Pentru mâine ai planificat teme la ${subjects.slice(0, 2).join(', ')}. Odihnește-te bine!`;
+                    }
+                    return body;
+                });
+            }
+
+            // --- Sunday Notifications ---
+            if (isSunday) {
+                await checkAndSend('sun_morning', userNotifs.weekend.sundayMorning, async () => {
+                    const plannedTasks = allWeekendTasks.filter(t => t.plannedDate && getDay(zonedTimeToUtc(t.plannedDate, timeZone)) === 0);
+                     if (plannedTasks.length > 0) {
+                        const subjects = [...new Set(plannedTasks.map(t => t.subjectName))];
+                        return `Salut ${userData.name}! Azi ai de lucru la ${subjects.slice(0, 2).join(', ')}${subjects.length > 2 ? ` și încă ${subjects.length-2} altele` : ''}. Organizează-te!`;
+                    }
+                    if (allWeekendTasks.length > 0) {
+                         return `Salut ${userData.name}! Mai ai ${allWeekendTasks.length} teme pentru săptămâna viitoare. Nu le lăsa pe ultima sută de metri!`;
+                    }
+                    return null;
+                });
+                await checkAndSend('sun_evening', userNotifs.weekend.sundayEvening, async () => {
+                    const completedToday = allWeekendTasks.filter(t => t.completedAt && getDay(zonedTimeToUtc(t.completedAt, timeZone)) === 0);
+                    const tasksForTomorrow = await getTasksForTomorrow(db, userId, zonedNow);
+                    if(completedToday.length === 0 && tasksForTomorrow.length === 0) return null;
+
+                    let body = `Salut ${userData.name}!`;
+                    if(completedToday.length > 0) {
+                        body += ` Ai terminat ${completedToday.length} ${completedToday.length === 1 ? 'temă' : 'teme'} azi.`
+                    }
+                    if(tasksForTomorrow.length > 0) {
+                        const subjects = [...new Set(tasksForTomorrow.map(t => t.subjectName))];
+                        body += ` Pentru mâine te așteaptă teme la ${subjects.slice(0, 2).join(', ')}. Noapte bună!`;
+                    }
+                    return body;
+                });
             }
         }
         
@@ -106,33 +193,43 @@ export async function GET() {
 }
 
 async function getTasksForTomorrow(db: FirebaseFirestore.Firestore, userId: string, now: Date): Promise<HomeworkTask[]> {
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    const startOfTomorrow = new Date(tomorrow.setHours(0, 0, 0, 0));
-
-    const dayAfterTomorrow = new Date(tomorrow);
-    dayAfterTomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrow = addDays(now, 1);
+    const startOfTomorrow = startOfDay(tomorrow);
+    const endOfTomorrow = endOfDay(tomorrow);
     
     const tasksSnapshot = await db
         .collection(`users/${userId}/tasks`)
         .where("isCompleted", "==", false)
         .where("dueDate", ">=", startOfTomorrow.toISOString())
-        .where("dueDate", "<", dayAfterTomorrow.toISOString())
+        .where("dueDate", "<=", endOfTomorrow.toISOString())
         .get();
         
     return tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
 }
 
 async function getTasksForNextWeek(db: FirebaseFirestore.Firestore, userId: string, now: Date): Promise<HomeworkTask[]> {
-    const startOfToday = new Date(now.setHours(0, 0, 0, 0));
-    const endOfNextWeek = new Date(startOfToday);
-    endOfNextWeek.setDate(startOfToday.getDate() + (7 - startOfToday.getDay()) + 7); // End of next Sunday
+    const startOfToday = startOfDay(now);
+    const endOfNextWeek = addDays(startOfToday, 7);
 
     const tasksSnapshot = await db
         .collection(`users/${userId}/tasks`)
         .where("isCompleted", "==", false)
         .where("dueDate", ">=", startOfToday.toISOString())
         .where("dueDate", "<", endOfNextWeek.toISOString())
+        .get();
+        
+    return tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
+}
+
+async function getWeekendAndNextWeekTasks(db: FirebaseFirestore.Firestore, userId: string, now: Date): Promise<HomeworkTask[]> {
+    const startOfToday = startOfDay(now);
+    // From today until end of next sunday
+    const endOfNextWeek = endOfDay(addDays(startOfToday, 7 - getDay(startOfToday) + 7));
+
+    const tasksSnapshot = await db
+        .collection(`users/${userId}/tasks`)
+        .where("dueDate", ">=", startOfToday.toISOString())
+        .where("dueDate", "<=", endOfNextWeek.toISOString())
         .get();
         
     return tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
