@@ -1,28 +1,23 @@
-// This file needs to be in the public directory.
+// This file is intentionally left empty.
+// It will be populated with the necessary Firebase scripts dynamically.
+// For local development, you might want to add the following lines:
+/*
+importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js");
 
-// Scripts for firebase and firebase messaging
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+const urlParams = new URLSearchParams(location.search);
+const firebaseConfig = JSON.parse(urlParams.get('firebaseConfig'));
 
-// Initialize the Firebase app in the service worker
-// "Default" Firebase app (important for initialization)
-firebase.initializeApp({
-  apiKey: new URL(location).searchParams.get('apiKey'),
-  authDomain: new URL(location).searchParams.get('authDomain'),
-  projectId: new URL(location).searchParams.get('projectId'),
-  storageBucket: new URL(location).searchParams.get('storageBucket'),
-  messagingSenderId: new URL(location).searchParams.get('messagingSenderId'),
-  appId: new URL(location).searchParams.get('appId'),
-  measurementId: new URL(location).searchParams.get('measurementId'),
-});
+firebase.initializeApp(firebaseConfig);
 
-// Retrieve an instance of Firebase Messaging so that it can handle background
-// messages.
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function (payload) {
-  console.log('Received background message ', payload);
-
+messaging.onBackgroundMessage((payload) => {
+  console.log(
+    '[firebase-messaging-sw.js] Received background message ',
+    payload
+  );
+  // Customize notification here
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
@@ -31,3 +26,4 @@ messaging.onBackgroundMessage(function (payload) {
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
+*/

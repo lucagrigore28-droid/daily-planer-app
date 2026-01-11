@@ -92,9 +92,11 @@ function MobileSettingsView({ onBack }: { onBack: () => void }) {
                     </Button>
                     <h2 className="text-lg font-semibold">{selectedTab.label}</h2>
                 </header>
-                <div className="flex-1 p-4 overflow-y-auto">
-                    {selectedTab.component}
-                </div>
+                <ScrollArea className="flex-1 min-h-0">
+                    <div className="p-4">
+                        {selectedTab.component}
+                    </div>
+                </ScrollArea>
             </div>
         );
     }
@@ -144,13 +146,15 @@ function DesktopSettingsView() {
                    ))}
                 </TabsList>
                 
-                <div className="flex-1 mt-4 md:mt-0 min-h-0">
-                    {TABS.map(tab => (
-                        <TabsContent key={tab.value} value={tab.value} className="h-full flex-1 min-w-0 data-[state=inactive]:hidden">
-                           {tab.component}
-                        </TabsContent>
-                    ))}
-                </div>
+                <ScrollArea className="flex-1 mt-4 md:mt-0 min-h-0">
+                    <div className="md:pr-6">
+                        {TABS.map(tab => (
+                            <TabsContent key={tab.value} value={tab.value} className="h-full m-0 data-[state=inactive]:hidden">
+                               {tab.component}
+                            </TabsContent>
+                        ))}
+                    </div>
+                </ScrollArea>
             </Tabs>
         </>
     );
