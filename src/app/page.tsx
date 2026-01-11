@@ -7,7 +7,6 @@ import { AppContext } from '@/contexts/AppContext';
 import SetupWizard from '@/components/setup/SetupWizard';
 import HomeworkDashboard from '@/components/dashboard/HomeworkDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUser } from '@/firebase/provider';
 import WelcomeBackScreen from '@/components/dashboard/WelcomeBackScreen';
 
 function LoadingScreen() {
@@ -23,13 +22,13 @@ function LoadingScreen() {
     );
 }
 
-
-function AppContainer() {
+export default function Home() {
   const context = useContext(AppContext);
-  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const [showWelcomeBack, setShowWelcomeBack] = useState(true);
   const [isNewSetup, setIsNewSetup] = useState(false);
+
+  const { isUserLoading, user, userData, isDataLoaded } = context || { isUserLoading: true, user: null, userData: null, isDataLoaded: false };
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -37,13 +36,7 @@ function AppContainer() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user || !context || context.userData === undefined) {
-    return <LoadingScreen />;
-  }
-
-  const { userData, isDataLoaded } = context;
-
-  if (!isDataLoaded) {
+  if (isUserLoading || !user || !context || !isDataLoaded) {
     return <LoadingScreen />;
   }
 
@@ -66,8 +59,4 @@ function AppContainer() {
       <HomeworkDashboard />
     </div>
   );
-}
-
-export default function Home() {
-  return <AppContainer />;
 }

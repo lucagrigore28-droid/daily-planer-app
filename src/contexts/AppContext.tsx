@@ -1,10 +1,10 @@
 
 "use client";
 
-import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useContext } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
-import { useUser, useFirestore, useAuth, useMemoFirebase } from '@/firebase/provider';
+import { FirebaseContext, useMemoFirebase } from '@/firebase/provider';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, arrayUnion, deleteField } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
@@ -48,15 +48,18 @@ type AppContextType = {
 export const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
-  const auth = useAuth();
+  const firebaseContext = useContext(FirebaseContext);
   const router = useRouter();
 
-  const userDocRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const user = firebaseContext?.user;
+  const isUserLoading = firebaseContext?.isUserLoading ?? true;
+  const firestore = firebaseContext?.firestore;
+  const auth = firebaseContext?.auth;
+
+  const userDocRef = useMemoFirebase(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
   
-  const tasksCollectionRef = useMemoFirebase(() => (user ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
+  const tasksCollectionRef = useMemoFirebase(() => (user && firestore ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
   const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
   const [currentDate] = useState(new Date());
@@ -75,7 +78,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUser = useCallback((data: Partial<UserData>) => {
     if (userDocRef) {
-      // Create a deep copy to avoid direct mutation of the memoized userData
       const currentData = userData ? JSON.parse(JSON.stringify(userData)) : {};
       
       const newNotifications = data.notifications 
@@ -102,9 +104,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [tasksCollectionRef]);
 
   const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
-    if (user) {
+    if (user && firestore) {
       const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-      const finalUpdates: any = { ...updates }; // Use 'any' to allow for deleteField()
+      const finalUpdates: any = { ...updates };
       if (updates.isCompleted !== undefined) {
         if (updates.isCompleted) {
           finalUpdates.completedAt = new Date().toISOString();
@@ -118,14 +120,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
 
   const deleteTask = useCallback((taskId: string) => {
-    if (user) {
+    if (user && firestore) {
         const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
         deleteDocumentNonBlocking(taskDocRef);
     }
   }, [firestore, user]);
 
   const deleteAllTasks = useCallback(async () => {
-    if (!tasksCollectionRef) return;
+    if (!tasksCollectionRef || !firestore) return;
 
     const q = query(tasksCollectionRef);
     const snapshot = await getDocs(q);
@@ -145,31 +147,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [userDocRef, userData, updateUser]);
 
   const logout = useCallback(async () => {
+    if (!auth) return;
     await signOut(auth);
     router.push('/login');
   }, [auth, router]);
 
   const resetData = useCallback(async () => {
-    if (!user || !userDocRef) return;
+    if (!user || !userDocRef || !auth) return;
 
-    // This will delete all tasks for the user.
     await deleteAllTasks();
 
     if (user.isAnonymous) {
-        // For anonymous users, delete their document and the user account itself.
-        // This will trigger onAuthStateChanged, leading to a redirect to /login.
         await deleteDoc(userDocRef);
         await user.delete();
     } else {
-        // For authenticated users, reset their data to initial state but keep their name/theme.
-        // This will effectively re-trigger the setup wizard.
         await setDoc(userDocRef, {
             ...initialUserData,
             name: userData?.name || '', 
             theme: userData?.theme || initialUserData.theme,
         }, { merge: false });
     }
-  }, [user, userDocRef, userData, deleteAllTasks, auth, router]);
+  }, [user, userDocRef, userData, deleteAllTasks, auth]);
   
   const getNextSchoolDayWithTasks = useCallback(() => {
     if (!tasks || !userData) return null;
@@ -210,7 +208,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (isUserDataLoading || userData === undefined) return null;
     if (userData === null) return initialUserData;
 
-    // Deep merge to ensure nested objects like 'notifications' have default values.
     const mergedNotifications = {
       ...initialUserData.notifications,
       ...(userData?.notifications || {}),
@@ -219,7 +216,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return { ...initialUserData, ...userData, notifications: mergedNotifications };
   }, [userData, isUserDataLoading]);
   
-  const value = {
+  const value: AppContextType = {
     userData: memoizedUserData,
     tasks: tasks || [],
     updateUser,

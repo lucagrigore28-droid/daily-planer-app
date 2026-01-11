@@ -47,19 +47,19 @@ export default function RootLayout({
   return (
     <html lang="ro" suppressHydrationWarning>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
-        <FirebaseClientProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-          >
-            <AppProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+        >
+          <AppProvider>
+            <FirebaseClientProvider>
               {children}
               <Toaster />
               <ServiceWorkerRegistrar />
-            </AppProvider>
-          </ThemeProvider>
-        </FirebaseClientProvider>
+            </FirebaseClientProvider>
+          </AppProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
