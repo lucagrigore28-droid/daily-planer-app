@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -43,6 +42,15 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     }
   }, [context?.userData?.notifications]);
 
+  const handleUpdateNotificationSettings = (updates: Partial<typeof notifications>) => {
+    if (context?.userData) {
+      const newNotifications = {
+        ...context.userData.notifications,
+        ...updates,
+      };
+      context?.updateUser({ notifications: newNotifications });
+    }
+  };
 
   const requestPermissionAndToken = async () => {
     if (!("Notification" in window) || !firebaseApp || !('serviceWorker' in navigator)) {
@@ -78,7 +86,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
         console.error('An error occurred while retrieving token. ', err);
       }
       
-      handleUpdateNotificationSettings({ enabled: true });
+      handleUpdateNotificationSettings({ enabled: true, dailyTime: dailyTime });
     }
   };
   
@@ -89,23 +97,12 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     }
 
     setMasterEnabled(enabled);
-    handleUpdateNotificationSettings({ enabled });
+    handleUpdateNotificationSettings({ enabled: enabled, dailyTime: dailyTime });
 
     if (enabled && permission === 'granted' && !context.userData?.fcmTokens?.length) {
         requestPermissionAndToken();
     }
   }
-
-  const handleUpdateNotificationSettings = (updates: any) => {
-      if (context?.userData) {
-        context?.updateUser({
-            notifications: {
-                ...context.userData.notifications,
-                ...updates,
-            }
-        });
-      }
-  };
 
   return (
     <div className={cn("flex flex-col h-full", isWizardStep ? "" : "bg-card/80 backdrop-blur-sm sm:border sm:rounded-lg sm:shadow-lg")}>

@@ -198,12 +198,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const memoizedUserData = useMemo(() => {
     if (isUserDataLoading || userData === undefined) return null;
+    if (userData === null) return initialUserData;
+
     // Deep merge to ensure nested objects like 'notifications' have default values.
     const mergedNotifications = {
       ...initialUserData.notifications,
       ...(userData?.notifications || {}),
     };
-    if (userData === null) return initialUserData;
 
     return { ...initialUserData, ...userData, notifications: mergedNotifications };
   }, [userData, isUserDataLoading]);
