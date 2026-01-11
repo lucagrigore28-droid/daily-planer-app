@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -258,7 +257,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
                     </TabsList>
                     <div className="flex-1 mt-2 min-h-0">
                       <TabsContent value="weekdays" className="h-full m-0">
-                         <ScrollArea className="h-full p-1">
+                         <ScrollArea className="flex-1 min-h-0 p-1">
                            <div className="space-y-8 pt-4">
                              <div>
                                   <div className="flex items-center gap-3 mb-4">
@@ -333,7 +332,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
                          </ScrollArea>
                       </TabsContent>
                       <TabsContent value="weekend" className="h-full m-0">
-                          <ScrollArea className="h-full p-1">
+                          <ScrollArea className="flex-1 min-h-0 p-1">
                               <div className="space-y-6 pt-4">
                                   <WeekendDaySettings
                                       title="Sâmbătă"
@@ -368,5 +367,3 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     </div>
   );
 }
-
-    

@@ -21,7 +21,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       
       navigator.serviceWorker.getRegistration().then((registration) => {
         // If there's no registration, or the existing one isn't for our SW, register it.
-        if (!registration || registration.scope !== new URL('/', location.href).toString()) {
+        if (!registration || registration.scope !== new URL('/', location.href).toString() || !registration.active?.scriptURL.includes('firebase-messaging-sw.js')) {
           navigator.serviceWorker
             .register(swUrl)
             .then((registration) => {
