@@ -234,3 +234,5 @@ async function getWeekendAndNextWeekTasks(db: FirebaseFirestore.Firestore, userI
         
     return tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
 }
+
+    
