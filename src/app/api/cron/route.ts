@@ -5,14 +5,22 @@ import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import type { HomeworkTask, UserData, NotificationTime } from '@/lib/types';
 import { formatInTimeZone } from 'date-fns-tz';
-import { addDays, getDay, startOfDay, endOfDay } from 'date-fns';
+import { addDays, getDay, startOfDay, endOfDay, subMinutes, set } from 'date-fns';
 
 let adminApp: App | null = null;
+const CRON_INTERVAL_MINUTES = 5;
 
 // A more robust way to initialize admin app in a serverless environment
 function initializeFirebaseAdmin() {
     if (adminApp) {
         return { db: getFirestore(adminApp), messaging: getMessaging(adminApp) };
+    }
+
+    // Check if the app is already initialized
+    const existingApp = getApps().find(app => app.name === 'firebase-admin-app-notifications');
+    if (existingApp) {
+        adminApp = existingApp;
+        return { db: getFirestore(existingApp), messaging: getMessaging(existingApp) };
     }
     
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -25,14 +33,9 @@ function initializeFirebaseAdmin() {
         const serviceAccount = JSON.parse(serviceAccountString);
         adminApp = initializeApp({
             credential: cert(serviceAccount)
-        }, 'firebase-admin-app-notifications'); // Use a unique name
+        }, 'firebase-admin-app-notifications');
         return { db: getFirestore(adminApp), messaging: getMessaging(adminApp) };
     } catch (e: any) {
-         if (e.code === 'app/duplicate-app') {
-            const existingApp = getApps().find(app => app.name === 'firebase-admin-app-notifications')!;
-            adminApp = existingApp;
-            return { db: getFirestore(existingApp), messaging: getMessaging(existingApp) };
-        }
         console.error("Firebase Admin initialization failed:", e);
         throw new Error(`Firebase Admin initialization failed: ${e.message}`);
     }
@@ -57,10 +60,15 @@ export async function GET() {
 
     const timeZone = 'Europe/Bucharest';
     const now = new Date();
-    // Get current time and date in the target timezone as strings
-    const currentTime = formatInTimeZone(now, timeZone, 'HH:mm');
+    
+    // Define the time window for checking notifications
+    const endRange = set(now, { seconds: 0, milliseconds: 0});
+    const startRange = subMinutes(endRange, CRON_INTERVAL_MINUTES);
+    
+    const endRangeTime = formatInTimeZone(endRange, timeZone, 'HH:mm');
+    const startRangeTime = formatInTimeZone(startRange, timeZone, 'HH:mm');
+
     const todayDateStr = formatInTimeZone(now, timeZone, 'yyyy-MM-dd');
-    // Get the day of the week from the original date object
     const zonedNow = new Date(formatInTimeZone(now, timeZone, "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"));
     const todayDayOfWeek = getDay(zonedNow); // Sunday is 0, Saturday is 6
     
@@ -68,7 +76,7 @@ export async function GET() {
     const isSaturday = todayDayOfWeek === 6;
     const isSunday = todayDayOfWeek === 0;
 
-    console.log(`Cron job running at ${currentTime} in ${timeZone}. Day of week: ${todayDayOfWeek}`);
+    console.log(`Cron job running for interval ${startRangeTime} - ${endRangeTime} in ${timeZone}. Day of week: ${todayDayOfWeek}`);
 
     try {
         const usersSnapshot = await db
@@ -81,44 +89,50 @@ export async function GET() {
             return NextResponse.json({ message: "No users have notifications enabled." });
         }
         
-        console.log(`Found ${usersSnapshot.docs.length} potential users for notifications.`);
-        const notificationPromises = [];
+        console.log(`Found ${usersSnapshot.docs.length} users with notifications enabled.`);
+        const notificationPromises: Promise<any>[] = [];
 
         for (const userDoc of usersSnapshot.docs) {
             const userId = userDoc.id;
             const userData = userDoc.data() as UserData;
             const userNotifs = userData.notifications;
 
-            if (!userNotifs || !userData.fcmTokens?.length || userData.fcmTokens.length === 0) {
+            if (!userNotifs || !userData.fcmTokens?.length) {
                  console.log(`Skipping user ${userId} (no notification settings or no tokens).`);
                  continue;
             }
 
             const checkAndSend = async (key: string, config: NotificationTime, bodyFn: () => Promise<string | null>) => {
-                if (config.enabled && config.time === currentTime && userNotifs.lastNotificationSent?.[key] !== todayDateStr) {
-                    console.log(`[${userId}] - Condition met for notification key: ${key}`);
+                const configTime = config.time;
+                // Check if the notification time falls within our cron interval
+                const shouldSend = config.enabled && configTime > startRangeTime && configTime <= endRangeTime;
+
+                if (shouldSend && userNotifs.lastNotificationSent?.[key] !== todayDateStr) {
+                    console.log(`[${userId}] - Condition met for notification '${key}' at time ${configTime}.`);
                     const body = await bodyFn();
                     if (body) {
-                        console.log(`[${userId}] - Sending notification to ${userData.name}`);
+                        console.log(`[${userId}] - Sending notification to ${userData.name}: "${body}"`);
                         const message = {
                             notification: { title: "Memento Teme", body },
                             tokens: userData.fcmTokens!,
                         };
-                        try {
-                           const response = await messaging.sendEachForMulticast(message);
-                           console.log(`[${userId}] - Successfully sent message: ${response.successCount} successes, ${response.failureCount} failures.`);
-                           if (response.failureCount > 0) {
-                                response.responses.forEach(resp => {
-                                    if (!resp.success) {
-                                        console.error(`[${userId}] - Failure reason:`, resp.error);
-                                    }
-                                });
-                           }
-                        } catch (error) {
-                           console.error(`[${userId}] - Error sending multicast message:`, error);
-                        }
-                        // Update last sent time regardless of send success to avoid spamming on persistent error
-                        notificationPromises.push(db.doc(`users/${userId}`).set({ notifications: { lastNotificationSent: { [key]: todayDateStr } } }, { merge: true }));
+                        
+                        notificationPromises.push(
+                            messaging.sendEachForMulticast(message).then(response => {
+                                console.log(`[${userId}] - Successfully sent message: ${response.successCount} successes, ${response.failureCount} failures.`);
+                                if (response.failureCount > 0) {
+                                    response.responses.forEach(resp => {
+                                        if (!resp.success) {
+                                            console.error(`[${userId}] - Failure reason for a token:`, resp.error);
+                                        }
+                                    });
+                                }
+                                // Update last sent time only after attempting to send
+                                return db.doc(`users/${userId}`).set({ notifications: { lastNotificationSent: { [key]: todayDateStr } } }, { merge: true });
+                            }).catch(error => {
+                                console.error(`[${userId}] - Error sending multicast message for key '${key}':`, error);
+                            })
+                        );
                     } else {
                         console.log(`[${userId}] - Notification body is null, not sending for key: ${key}`);
                     }
@@ -127,16 +141,14 @@ export async function GET() {
             
             // --- Weekday Notifications ---
             if (isWeekday) {
-                // Daily notification 1
                 await checkAndSend('daily1', { enabled: true, time: userNotifs.dailyTime }, async () => {
                     const tasks = await getTasksForTomorrow(db, userId, zonedNow);
                     if (tasks.length > 0) {
                         return `Salut ${userData.name}! Mai ai ${tasks.length} ${tasks.length === 1 ? "temă" : "teme"} pentru mâine. Nu uita de ${tasks[0].subjectName}!`;
                     }
-                    return null;
+                    return `Salut ${userData.name}! Nicio temă pentru mâine. Zi liberă!`;
                 });
 
-                // Daily notification 2
                 await checkAndSend('daily2', { enabled: userNotifs.secondDailyTimeEnabled, time: userNotifs.secondDailyTime }, async () => {
                     const tasks = await getTasksForTomorrow(db, userId, zonedNow);
                     if (tasks.length > 0) {
@@ -145,14 +157,13 @@ export async function GET() {
                     return null;
                 });
 
-                 // --- Weekend Summary Notification Logic (Friday only) ---
                 if (todayDayOfWeek === 5) {
                     await checkAndSend('weekend_summary', { enabled: userNotifs.weekendSummaryEnabled, time: userNotifs.weekendSummaryTime }, async () => {
                         const tasks = await getTasksForNextWeek(db, userId, zonedNow);
                          if (tasks.length > 0) {
                             return `Salut ${userData.name}! Pentru weekend și săptămâna viitoare ai ${tasks.length} ${tasks.length === 1 ? "temă" : "teme noi"}. Planifică-ți timpul!`;
                         }
-                        return null;
+                        return `Salut ${userData.name}! Nicio temă pentru săptămâna viitoare. Weekend relaxant!`;
                     });
                 }
             }
@@ -170,7 +181,7 @@ export async function GET() {
                     if (allWeekendTasks.length > 0) {
                         return `Salut ${userData.name}! Ai ${allWeekendTasks.length} teme pentru săptămâna viitoare. Poți începe azi!`;
                     }
-                    return null;
+                    return `Salut ${userData.name}! Nicio temă planificată pentru weekend. Relaxare plăcută!`;
                 });
                  await checkAndSend('sat_evening', userNotifs.weekend.saturdayEvening, async () => {
                     const completedToday = allWeekendTasks.filter(t => t.completedAt && getDay(new Date(t.completedAt)) === 6);
@@ -283,14 +294,14 @@ async function getWeekendAndNextWeekTasks(db: FirebaseFirestore.Firestore, userI
     const startOfToday = startOfDay(now);
     // From today until end of next sunday
     const dayOfWeek = getDay(startOfToday); // 0=Sun, 1=Mon...
-    const daysUntilNextSunday = 7 - dayOfWeek;
+    const daysUntilNextSunday = dayOfWeek === 0 ? 7 : (7 - dayOfWeek);
     const endOfThisWeek = endOfDay(addDays(startOfToday, daysUntilNextSunday));
-
 
     const tasksSnapshot = await db
         .collection(`users/${userId}/tasks`)
         .where("dueDate", ">=", startOfToday.toISOString())
         .where("dueDate", "<=", endOfThisWeek.toISOString())
+        .where("isCompleted", "==", false)
         .get();
         
     const tasks = await Promise.all(tasksSnapshot.docs.map(async doc => {
