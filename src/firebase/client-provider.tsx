@@ -17,7 +17,9 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      const swUrl = `/firebase-messaging-sw.js?apiKey=${firebaseConfig.apiKey}&authDomain=${firebaseConfig.authDomain}&projectId=${firebaseConfig.projectId}&storageBucket=${firebaseConfig.storageBucket}&messagingSenderId=${firebaseConfig.messagingSenderId}&appId=${firebaseConfig.appId}`;
+      // Correctly encode the entire config object for the service worker URL
+      const firebaseConfigString = encodeURIComponent(JSON.stringify(firebaseConfig));
+      const swUrl = `/firebase-messaging-sw.js?firebaseConfig=${firebaseConfigString}`;
       
       navigator.serviceWorker.getRegistration().then((registration) => {
         // If there's no registration, or the existing one isn't for our SW, register it.
