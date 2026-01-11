@@ -1,42 +1,49 @@
-
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 interface FirebaseClientProviderProps {
   children: React.ReactNode;
 }
 
-export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const firebaseServices = useMemo(() => {
-    // This check is now safe because useMemo runs on the client.
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-        console.error("Firebase config is not set. Please check your environment variables.");
-        return { app: null, auth: null, firestore: null };
-    }
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    return { app, auth, firestore };
-  }, []);
+type FirebaseServices = {
+  app: FirebaseApp;
+  auth: Auth;
+  firestore: Firestore;
+} | null;
 
-  // If services couldn't be initialized (e.g., missing config),
-  // we render children without the provider to avoid crashing the app.
-  // The context will report `areServicesAvailable: false`.
-  if (!firebaseServices.app) {
+export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices>(null);
+
+  useEffect(() => {
+    // This effect runs only on the client, after the initial render.
+    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
+      setFirebaseServices({ app, auth, firestore });
+    } else {
+      console.error("Firebase config is not set. Please check your environment variables.");
+    }
+  }, []); // Empty dependency array ensures this runs only once on mount.
+
+  // If services are not yet initialized, we can render a loading state
+  // or just the children without the provider. For now, we render children
+  // without the provider, and the context will report services as unavailable.
+  if (!firebaseServices) {
       return <>{children}</>;
   }
 
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.app}
-      auth={firebaseServices.auth!}
-      firestore={firebaseServices.firestore!}
+      auth={firebaseServices.auth}
+      firestore={firebaseServices.firestore}
     >
       {children}
     </FirebaseProvider>
