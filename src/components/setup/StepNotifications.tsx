@@ -11,6 +11,7 @@ import { getMessaging, getToken } from "firebase/messaging";
 import { useFirebaseApp } from '@/firebase';
 import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
+import type { UserNotifications } from '@/lib/types';
 
 type StepProps = {
   onNext?: () => void;
@@ -42,7 +43,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     }
   }, [context?.userData?.notifications]);
 
-  const handleUpdateNotificationSettings = (updates: Partial<typeof notifications>) => {
+  const handleUpdateNotificationSettings = (updates: Partial<UserNotifications>) => {
     if (context?.userData) {
       const newNotifications = {
         ...context.userData.notifications,
@@ -86,7 +87,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
         console.error('An error occurred while retrieving token. ', err);
       }
       
-      handleUpdateNotificationSettings({ enabled: true, dailyTime: dailyTime });
+      handleUpdateNotificationSettings({ enabled: true, dailyTime });
     }
   };
   
@@ -97,12 +98,21 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     }
 
     setMasterEnabled(enabled);
-    handleUpdateNotificationSettings({ enabled: enabled, dailyTime: dailyTime });
+    // When toggling, always save the complete state
+    handleUpdateNotificationSettings({ enabled, dailyTime });
 
     if (enabled && permission === 'granted' && !context.userData?.fcmTokens?.length) {
         requestPermissionAndToken();
     }
   }
+
+  const handleTimeChange = (newTime: string) => {
+    setDailyTime(newTime);
+    // Only save if master switch is enabled
+    if (masterEnabled) {
+      handleUpdateNotificationSettings({ dailyTime: newTime });
+    }
+  };
 
   return (
     <div className={cn("flex flex-col h-full", isWizardStep ? "" : "bg-card/80 backdrop-blur-sm sm:border sm:rounded-lg sm:shadow-lg")}>
@@ -141,9 +151,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
                         id="daily-time"
                         type="time"
                         value={dailyTime}
-                        onChange={(e) => setDailyTime(e.target.value)}
-                        onBlur={(e) => handleUpdateNotificationSettings({ dailyTime: e.target.value })}
-                        className="w-48"
+                        onChange={(e) => handleTimeChange(e.target.value)}
                     />
                     <p className="text-sm text-muted-foreground">Vei primi un singur sumar zilnic cu temele pentru a doua zi.</p>
                 </div>
