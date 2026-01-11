@@ -11,7 +11,6 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { FirebaseClientProvider } from '@/components/FirebaseClientProvider';
 
 const initialUserData: UserData = {
   name: '',
@@ -48,7 +47,7 @@ type AppContextType = {
 
 export const AppContext = createContext<AppContextType | null>(null);
 
-function AppContainer({ children }: { children: ReactNode }) {
+export const AppProvider = ({ children }: { children: ReactNode }) => {
   const firebaseContext = useContext(FirebaseContext);
   const router = useRouter();
 
@@ -238,13 +237,4 @@ function AppContainer({ children }: { children: ReactNode }) {
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
-
-
-export const AppProvider = ({ children }: { children: ReactNode }) => {
-  return (
-      <AppContainer>
-        {children}
-      </AppContainer>
-  );
 }
