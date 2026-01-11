@@ -2,16 +2,7 @@
   "name": "Homework Planner",
   "short_name": "Planner",
   "description": "Planificatorul tău inteligent pentru teme.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#8a2be2",
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    },
     {
       "src": "/api/icon?size=192",
       "sizes": "192x192",
@@ -22,5 +13,10 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "start_url": "/",
+  "display": "standalone",
+  "gcm_sender_id": "103953800507"
 }

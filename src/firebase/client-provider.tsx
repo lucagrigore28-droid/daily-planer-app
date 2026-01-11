@@ -19,29 +19,12 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       const swUrl = `/firebase-messaging-sw.js?apiKey=${firebaseConfig.apiKey}&authDomain=${firebaseConfig.authDomain}&projectId=${firebaseConfig.projectId}&storageBucket=${firebaseConfig.storageBucket}&messagingSenderId=${firebaseConfig.messagingSenderId}&appId=${firebaseConfig.appId}&measurementId=${firebaseConfig.measurementId}`;
 
-      // This is a more robust registration that unregisters old service workers
-      // before registering the new one. This helps prevent caching issues.
-      const registerServiceWorker = async () => {
-        try {
-          // Find any existing registrations
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          for (const registration of registrations) {
-            // Unregister any old or incorrect service workers
-            if (registration.scope.endsWith('/')) {
-               console.log('Unregistering old service worker:', registration);
-               await registration.unregister();
-            }
-          }
-
-          // Register the new service worker
-          const registration = await navigator.serviceWorker.register(swUrl);
+      navigator.serviceWorker.register(swUrl)
+        .then((registration) => {
           console.log('Service Worker registration successful, scope is:', registration.scope);
-        } catch (err) {
+        }).catch((err) => {
           console.error('Service Worker registration failed:', err);
-        }
-      };
-
-      registerServiceWorker();
+        });
     }
   }, []);
 
