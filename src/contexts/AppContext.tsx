@@ -75,9 +75,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUser = useCallback((data: Partial<UserData>) => {
     if (userDocRef) {
-      setDocumentNonBlocking(userDocRef, data, { merge: true });
+      // Create a deep copy to avoid direct mutation of the memoized userData
+      const currentData = userData ? JSON.parse(JSON.stringify(userData)) : {};
+      
+      const newNotifications = data.notifications 
+        ? { ...currentData.notifications, ...data.notifications }
+        : currentData.notifications;
+
+      const finalData = { ...data, notifications: newNotifications };
+
+      setDocumentNonBlocking(userDocRef, finalData, { merge: true });
     }
-  }, [userDocRef]);
+  }, [userDocRef, userData]);
+
 
    const updateSubjects = useCallback((subjects: Subject[]) => {
     if (userDocRef) {

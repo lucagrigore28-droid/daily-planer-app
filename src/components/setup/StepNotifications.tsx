@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -63,7 +64,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
     setPermission(status);
 
     if (status === 'granted') {
-      setMasterEnabled(true);
+      handleUpdateNotificationSettings({ enabled: true, dailyTime });
       
       const messaging = getMessaging(firebaseApp);
       try {
@@ -86,23 +87,21 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       } catch (err) {
         console.error('An error occurred while retrieving token. ', err);
       }
-      
-      handleUpdateNotificationSettings({ enabled: true, dailyTime });
+    } else {
+      handleUpdateNotificationSettings({ enabled: false });
     }
   };
   
   const handleMasterToggle = (enabled: boolean) => {
     if (enabled && permission !== 'granted') {
         requestPermissionAndToken();
-        return;
-    }
+    } else {
+        // When toggling, always save the complete state atomically
+        handleUpdateNotificationSettings({ enabled, dailyTime });
 
-    setMasterEnabled(enabled);
-    // When toggling, always save the complete state
-    handleUpdateNotificationSettings({ enabled, dailyTime });
-
-    if (enabled && permission === 'granted' && !context.userData?.fcmTokens?.length) {
-        requestPermissionAndToken();
+        if (enabled && permission === 'granted' && !context.userData?.fcmTokens?.length) {
+            requestPermissionAndToken();
+        }
     }
   }
 
