@@ -32,5 +32,5 @@ export type UserData = {
   notifications: UserNotifications;
   theme: string;
   fcmTokens?: string[];
-  lastNotificationCheck?: any; // Can be Firebase Timestamp
+  lastNotificationSent?: string; // YYYY-MM-DD
 };

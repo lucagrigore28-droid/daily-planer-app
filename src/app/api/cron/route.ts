@@ -4,6 +4,7 @@ import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import type { HomeworkTask, UserData } from '@/lib/types';
+import { formatInTimeZone } from 'date-fns-tz';
 
 // Helper function to initialize Firebase Admin SDK
 function initializeFirebaseAdmin(): { db: ReturnType<typeof getFirestore>, messaging: ReturnType<typeof getMessaging> } | null {
@@ -42,10 +43,11 @@ export async function GET() {
     console.log("Cron job started: Checking for pending notifications...");
 
     try {
+        const timeZone = 'Europe/Bucharest';
         const now = new Date();
-        // Use Romanian time zone to match user settings
-        const nowInBucharest = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Bucharest' }));
-        const currentTime = `${nowInBucharest.getHours().toString().padStart(2, '0')}:${nowInBucharest.getMinutes().toString().padStart(2, '0')}`;
+        const currentTime = formatInTimeZone(now, timeZone, 'HH:mm');
+        const todayDateStr = formatInTimeZone(now, timeZone, 'yyyy-MM-dd');
+
 
         const usersSnapshot = await db
             .collection("users")
@@ -54,8 +56,8 @@ export async function GET() {
             .get();
 
         if (usersSnapshot.empty) {
-            console.log("No users due for notifications at this time.");
-            return NextResponse.json({ message: "No users due for notifications." });
+            console.log("No users match time-based query for notifications.");
+            return NextResponse.json({ message: "No users due for notifications based on time." });
         }
         
         console.log(`Found ${usersSnapshot.docs.length} potential users for notifications.`);
@@ -65,33 +67,28 @@ export async function GET() {
 
         for (const userDoc of usersSnapshot.docs) {
             const userId = userDoc.id;
-            const userData = userDoc.data() as UserData & { lastNotificationCheck?: Timestamp };
+            const userData = userDoc.data() as UserData;
             
-            // Check if a notification has been sent in the last 23 hours to avoid spamming
-            if (userData.lastNotificationCheck) {
-                const lastCheck = userData.lastNotificationCheck.toDate();
-                const hoursSinceLastCheck = (now.getTime() - lastCheck.getTime()) / (1000 * 60 * 60);
-                if (hoursSinceLastCheck < 23) {
-                    continue; // Skip if checked recently
-                }
+            // Check if a notification has already been sent today
+            if (userData.lastNotificationSent === todayDateStr) {
+                continue; // Skip if already notified today
             }
             
             console.log(`Processing notifications for user ${userId} (${userData.name})`);
 
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
+            // Define "tomorrow" based on the Romanian time zone
+            const tomorrow = new Date(now.toLocaleString('en-US', { timeZone }));
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
 
-            const dayAfterTomorrow = new Date(today);
-            dayAfterTomorrow.setDate(today.getDate() + 2);
+            const dayAfterTomorrow = new Date(tomorrow);
+            dayAfterTomorrow.setDate(tomorrow.getDate() + 1);
 
             const tasksSnapshot = await db
                 .collection(`users/${userId}/tasks`)
                 .where("isCompleted", "==", false)
-                .where("dueDate", ">=", tomorrow.toISOString().split('T')[0] + 'T00:00:00.000Z')
-                .where("dueDate", "<", dayAfterTomorrow.toISOString().split('T')[0] + 'T00:00:00.000Z')
+                .where("dueDate", ">=", tomorrow.toISOString())
+                .where("dueDate", "<", dayAfterTomorrow.toISOString())
                 .get();
 
             const upcomingTasks = tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
@@ -110,14 +107,10 @@ export async function GET() {
                 console.log(`Sending notification to ${userData.name} for ${upcomingTasks.length} tasks.`);
                 notificationPromises.push(messaging.sendEachForMulticast(message));
                 
-                // Mark that we've checked this user
+                // Mark that we've sent a notification for this user today
                 const userRef = db.collection('users').doc(userId);
-                batch.update(userRef, { lastNotificationCheck: Timestamp.now() });
+                batch.update(userRef, { lastNotificationSent: todayDateStr });
 
-            } else {
-                 // Even if there are no tasks, update the check time to avoid re-checking them constantly today
-                 const userRef = db.collection('users').doc(userId);
-                 batch.update(userRef, { lastNotificationCheck: Timestamp.now() });
             }
         }
         
