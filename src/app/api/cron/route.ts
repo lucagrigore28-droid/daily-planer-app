@@ -3,32 +3,7 @@ import { NextResponse } from 'next/server';
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
-
-// Define types locally
-type HomeworkTask = {
-    id: string;
-    subjectId: string;
-    subjectName: string;
-    dueDate: string; // ISO string
-    isCompleted: boolean;
-};
-
-type UserNotifications = {
-    enabled: boolean;
-    afterSchoolTime: string; // e.g. "15:00"
-    eveningTime: string; // e.g. "20:00"
-    weekendEnabled?: boolean;
-    saturdayMorningTime?: string;
-    saturdayEveningTime?: string;
-    sundayMorningTime?: string;
-    sundayEveningTime?: string;
-};
-
-type UserData = {
-    name: string;
-    notifications: UserNotifications;
-    fcmTokens?: string[];
-};
+import type { HomeworkTask, UserData } from '@/lib/types';
 
 // Initialize Firebase Admin SDK
 let adminApp: App;
