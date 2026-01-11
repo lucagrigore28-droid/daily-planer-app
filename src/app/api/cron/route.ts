@@ -4,29 +4,22 @@ import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import type { UserData } from '@/lib/types';
-import { formatInTimeZone } from 'date-fns-tz';
-import { subMinutes, set } from 'date-fns';
-
-const CRON_INTERVAL_MINUTES = 5; // The interval of our external cron job
 
 // Simplified and robust Firebase Admin initialization
 function initializeFirebaseAdmin(): App {
+    if (getApps().length) {
+        return getApps()[0]!;
+    }
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     if (!serviceAccountString) {
         console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.");
         throw new Error("Server-side Firebase credentials are not configured.");
     }
-    
-    // Check if the app is already initialized
-    if (getApps().find(app => app.name === 'firebase-admin-cron')) {
-        return getApps().find(app => app.name === 'firebase-admin-cron')!;
-    }
-    
     try {
         const serviceAccount = JSON.parse(serviceAccountString);
         return initializeApp({
             credential: cert(serviceAccount)
-        }, 'firebase-admin-cron');
+        });
     } catch (e: any) {
         console.error("Firebase Admin initialization failed:", e.message);
         throw new Error(`Firebase Admin initialization failed: ${e.message}`);
@@ -36,7 +29,7 @@ function initializeFirebaseAdmin(): App {
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    console.log("Cron job started. Initializing Firebase Admin...");
+    console.log("Cron job started.");
     let app: App;
     try {
         app = initializeFirebaseAdmin();
@@ -48,16 +41,17 @@ export async function GET() {
     const db = getFirestore(app);
     const messaging = getMessaging(app);
 
-    const timeZone = 'Europe/Bucharest'; 
+    // Use UTC time on the server, and assume user-set times are also relative to a consistent timezone (e.g., their local time)
+    // We will now compare based on the HH:mm string, which is simpler and less error-prone with timezones.
     const now = new Date();
+    // Vercel servers run on UTC. We will adjust to Romania's time (UTC+3 for EEST).
+    now.setHours(now.getUTCHours() + 3);
     
-    // Define the time window for checking notifications.
-    const endRange = set(now, { seconds: 0, milliseconds: 0 });
-    const startRange = subMinutes(endRange, CRON_INTERVAL_MINUTES);
+    const currentHour = now.getHours().toString().padStart(2, '0');
+    const currentMinute = now.getMinutes().toString().padStart(2, '0');
+    const currentTime = `${currentHour}:${currentMinute}`;
     
-    const currentTime = formatInTimeZone(endRange, timeZone, 'HH:mm');
-
-    console.log(`Cron running. Current time in ${timeZone} is ${currentTime}. Checking for users to notify.`);
+    console.log(`Cron running. Current time (assumed Romania) is ${currentTime}. Checking for users to notify.`);
     
     try {
         const usersSnapshot = await db
@@ -84,20 +78,19 @@ export async function GET() {
                  continue;
             }
             
-            // SUPER SIMPLE CHECK: Does the user's notification time fall within the last cron interval?
-            const shouldSend = userNotificationTime > formatInTimeZone(startRange, timeZone, 'HH:mm') && userNotificationTime <= currentTime;
-
-            if (shouldSend) {
-                console.log(`[${userId}] MATCH! User's time ${userNotificationTime} is within the check window. Preparing to send notification.`);
+            // SUPER SIMPLE CHECK: Does the user's notification time match the current time?
+            if (userNotificationTime === currentTime) {
+                console.log(`[${userId}] MATCH! User's time ${userNotificationTime} matches current time. Preparing to send notification.`);
                 
                 const message = {
                     notification: { 
-                        title: "Verificare Notificare Temă", 
-                        body: `Salut ${userData.name}! Acesta este un test. Dacă primești asta, funcționează.` 
+                        title: "Planificator Teme", 
+                        body: `Salut ${userData.name}! Ai teme de verificat.` 
                     },
                     tokens: userData.fcmTokens!,
                 };
                 
+                // This sends the notification and handles logging for success/failure
                 const promise = messaging.sendEachForMulticast(message)
                     .then(response => {
                         console.log(`[${userId}] Successfully sent multicast message: ${response.successCount} successes, ${response.failureCount} failures.`);
@@ -118,12 +111,12 @@ export async function GET() {
         
         if (notificationPromises.length > 0) {
             await Promise.all(notificationPromises);
-            console.log(`Finished sending ${notificationPromises.length} batches of notifications.`);
+            console.log(`Finished sending notifications to ${notificationPromises.length} users.`);
         } else {
             console.log("No users matched the time criteria in this run.");
         }
 
-        const finalMessage = `Cron job finished. Checked ${usersSnapshot.docs.length} users. Sent ${notificationPromises.length} notification batches.`;
+        const finalMessage = `Cron job finished. Checked ${usersSnapshot.docs.length} users. Sent notifications to ${notificationPromises.length} users.`;
         console.log(finalMessage);
         return NextResponse.json({ message: finalMessage });
 
