@@ -20,17 +20,6 @@ const initialUserData: UserData = {
   notifications: {
     enabled: false,
     dailyTime: '19:00',
-    secondDailyTimeEnabled: false,
-    secondDailyTime: '08:00',
-    weekendSummaryEnabled: true,
-    weekendSummaryTime: '20:00',
-    weekend: {
-        saturdayMorning: { enabled: true, time: '10:00' },
-        saturdayEvening: { enabled: true, time: '20:00' },
-        sundayMorning: { enabled: true, time: '10:00' },
-        sundayEvening: { enabled: true, time: '20:00' },
-    },
-    lastNotificationSent: {},
   },
   theme: 'purple',
   fcmTokens: [],
@@ -213,10 +202,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const mergedNotifications = {
       ...initialUserData.notifications,
       ...(userData?.notifications || {}),
-      weekend: {
-        ...initialUserData.notifications.weekend,
-        ...(userData?.notifications?.weekend || {})
-      }
     };
     if (userData === null) return initialUserData;
 
