@@ -11,6 +11,7 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { triggerNotificationChecks } from '@/app/actions/trigger-notifications';
 
 const initialUserData: UserData = {
   name: '',
@@ -62,6 +63,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [currentDate] = useState(new Date());
   
   const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
+
+  useEffect(() => {
+    if (isDataLoaded && userData?.setupComplete) {
+      // Don't await this, let it run in the background
+      triggerNotificationChecks();
+    }
+  }, [isDataLoaded, userData?.setupComplete]);
 
   useEffect(() => {
     const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : initialUserData.theme;

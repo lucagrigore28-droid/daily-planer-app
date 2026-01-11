@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -11,43 +10,25 @@ import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
 import { getMessaging, getToken } from "firebase/messaging";
 import { useFirebaseApp } from '@/firebase';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Input } from '../ui/input';
 
 type StepProps = {
   onNext?: () => void;
   onBack?: () => void;
 };
 
-const generateTimeSlots = () => {
-    const slots = [];
-    for (let h = 7; h < 23; h++) {
-        const hour = h.toString().padStart(2, '0');
-        slots.push(`${hour}:00`);
-    }
-    return slots;
-};
-
-const timeSlots = generateTimeSlots();
 
 const TimeSelector = ({ id, label, value, onChange, onBlur, description }: { id: string, label: string, value: string, onChange: (value: string) => void, onBlur: (value: string) => void, description?: string }) => (
     <div className="grid gap-2">
         <Label htmlFor={id}>{label}</Label>
-        <Select
+        <Input
+            id={id}
+            type="time"
             value={value}
-            onValueChange={(newValue) => {
-                onChange(newValue);
-                onBlur(newValue);
-            }}
-        >
-            <SelectTrigger id={id} className="w-48">
-                <SelectValue placeholder="Alege ora" />
-            </SelectTrigger>
-            <SelectContent>
-                {timeSlots.map(slot => (
-                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={(e) => onBlur(e.target.value)}
+            className="w-48"
+        />
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
     </div>
 );
