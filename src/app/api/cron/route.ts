@@ -7,39 +7,53 @@ import type { HomeworkTask, UserData, NotificationTime } from '@/lib/types';
 import { formatInTimeZone } from 'date-fns-tz';
 import { addDays, getDay, startOfDay, endOfDay } from 'date-fns';
 
-// Helper function to initialize Firebase Admin SDK
-function initializeFirebaseAdmin(): { db: ReturnType<typeof getFirestore>, messaging: ReturnType<typeof getMessaging> } | null {
-    if (getApps().length > 0) {
-        const adminApp = getApps()[0];
+let adminApp: App | null = null;
+
+// A more robust way to initialize admin app in a serverless environment
+function initializeFirebaseAdmin() {
+    if (adminApp) {
         return { db: getFirestore(adminApp), messaging: getMessaging(adminApp) };
     }
-
+    
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (!serviceAccountString) {
+        console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY is not set.");
+        throw new Error("Server-side Firebase credentials are not configured.");
+    }
+    
     try {
-        const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-        if (serviceAccountString) {
-            const serviceAccount = JSON.parse(serviceAccountString);
-            const adminApp = initializeApp({
-                credential: cert(serviceAccount)
-            });
-            return { db: getFirestore(adminApp), messaging: getMessaging(adminApp) };
-        } else {
-            console.warn("FIREBASE_SERVICE_ACCOUNT_KEY is not set. Server-side Firebase operations will not be authenticated.");
-            return null;
+        const serviceAccount = JSON.parse(serviceAccountString);
+        adminApp = initializeApp({
+            credential: cert(serviceAccount)
+        }, 'firebase-admin-app-notifications'); // Use a unique name
+        return { db: getFirestore(adminApp), messaging: getMessaging(adminApp) };
+    } catch (e: any) {
+         if (e.code === 'app/duplicate-app') {
+            const existingApp = getApps().find(app => app.name === 'firebase-admin-app-notifications')!;
+            adminApp = existingApp;
+            return { db: getFirestore(existingApp), messaging: getMessaging(existingApp) };
         }
-    } catch (e) {
         console.error("Firebase Admin initialization failed:", e);
-        return null;
+        throw new Error(`Firebase Admin initialization failed: ${e.message}`);
     }
 }
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    const admin = initializeFirebaseAdmin();
-    if (!admin) {
+    console.log("Cron job started.");
+    
+    let db: FirebaseFirestore.Firestore;
+    let messaging: ReturnType<typeof getMessaging>;
+    
+    try {
+        const adminServices = initializeFirebaseAdmin();
+        db = adminServices.db;
+        messaging = adminServices.messaging;
+    } catch (error: any) {
+        console.error("Failed to initialize Firebase Admin:", error.message);
         return NextResponse.json({ message: "Error: Firebase Admin SDK not properly initialized." }, { status: 500 });
     }
-    const { db, messaging } = admin;
 
     const timeZone = 'Europe/Bucharest';
     const now = new Date();
@@ -54,7 +68,7 @@ export async function GET() {
     const isSaturday = todayDayOfWeek === 6;
     const isSunday = todayDayOfWeek === 0;
 
-    console.log(`Cron job started at ${currentTime} in ${timeZone}. Day of week: ${todayDayOfWeek}`);
+    console.log(`Cron job running at ${currentTime} in ${timeZone}. Day of week: ${todayDayOfWeek}`);
 
     try {
         const usersSnapshot = await db
@@ -63,6 +77,7 @@ export async function GET() {
             .get();
 
         if (usersSnapshot.empty) {
+            console.log("No users have notifications enabled.");
             return NextResponse.json({ message: "No users have notifications enabled." });
         }
         
@@ -74,15 +89,38 @@ export async function GET() {
             const userData = userDoc.data() as UserData;
             const userNotifs = userData.notifications;
 
-            if (!userNotifs || !userData.fcmTokens?.length) continue;
+            if (!userNotifs || !userData.fcmTokens?.length || userData.fcmTokens.length === 0) {
+                 console.log(`Skipping user ${userId} (no notification settings or no tokens).`);
+                 continue;
+            }
 
             const checkAndSend = async (key: string, config: NotificationTime, bodyFn: () => Promise<string | null>) => {
                 if (config.enabled && config.time === currentTime && userNotifs.lastNotificationSent?.[key] !== todayDateStr) {
+                    console.log(`[${userId}] - Condition met for notification key: ${key}`);
                     const body = await bodyFn();
                     if (body) {
-                        console.log(`[${key}] Sending notification to ${userData.name}`);
-                        notificationPromises.push(messaging.sendEachForMulticast({ notification: { title: "Memento teme", body }, tokens: userData.fcmTokens! }));
-                        notificationPromises.push(db.collection('users').doc(userId).set({ notifications: { lastNotificationSent: { [key]: todayDateStr } } }, { merge: true }));
+                        console.log(`[${userId}] - Sending notification to ${userData.name}`);
+                        const message = {
+                            notification: { title: "Memento Teme", body },
+                            tokens: userData.fcmTokens!,
+                        };
+                        try {
+                           const response = await messaging.sendEachForMulticast(message);
+                           console.log(`[${userId}] - Successfully sent message: ${response.successCount} successes, ${response.failureCount} failures.`);
+                           if (response.failureCount > 0) {
+                                response.responses.forEach(resp => {
+                                    if (!resp.success) {
+                                        console.error(`[${userId}] - Failure reason:`, resp.error);
+                                    }
+                                });
+                           }
+                        } catch (error) {
+                           console.error(`[${userId}] - Error sending multicast message:`, error);
+                        }
+                        // Update last sent time regardless of send success to avoid spamming on persistent error
+                        notificationPromises.push(db.doc(`users/${userId}`).set({ notifications: { lastNotificationSent: { [key]: todayDateStr } } }, { merge: true }));
+                    } else {
+                        console.log(`[${userId}] - Notification body is null, not sending for key: ${key}`);
                     }
                 }
             };
@@ -186,11 +224,12 @@ export async function GET() {
         await Promise.all(notificationPromises);
 
         const message = "Finished checking for pending notifications.";
+        console.log(message);
         return NextResponse.json({ message });
 
     } catch (error) {
-        console.error("Error in cron job:", error);
-        return NextResponse.json({ message: `Error triggering notifications: ${error}` }, { status: 500 });
+        console.error("Error in cron job main try-catch block:", error);
+        return NextResponse.json({ message: `Error triggering notifications: ${error instanceof Error ? error.message : String(error)}` }, { status: 500 });
     }
 }
 
