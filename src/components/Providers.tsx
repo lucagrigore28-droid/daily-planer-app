@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import { AppProvider } from '@/contexts/AppContext';
@@ -13,13 +14,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         defaultTheme="dark"
         enableSystem
     >
-      <AppProvider>
-        <FirebaseClientProvider>
-            {children}
-            <Toaster />
-            <ServiceWorkerRegistrar />
-        </FirebaseClientProvider>
-      </AppProvider>
+        <AppProvider>
+          <FirebaseClientProvider>
+              {children}
+              <Toaster />
+              <ServiceWorkerRegistrar />
+          </FirebaseClientProvider>
+        </AppProvider>
     </ThemeProvider>
   );
 }

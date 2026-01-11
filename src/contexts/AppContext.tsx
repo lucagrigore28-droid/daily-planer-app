@@ -6,10 +6,10 @@ import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { FirebaseContext, useMemoFirebase } from '@/firebase/provider';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, arrayUnion, deleteField } from 'firebase/firestore';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useDoc } from '@/firebase/firestore/use-doc';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const initialUserData: UserData = {
@@ -237,4 +237,4 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
+};
