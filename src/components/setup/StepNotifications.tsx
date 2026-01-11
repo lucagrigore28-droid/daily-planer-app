@@ -8,16 +8,54 @@ import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
 import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '../ui/input';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { getMessaging, getToken } from "firebase/messaging";
 import { useFirebaseApp } from '@/firebase';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type StepProps = {
   onNext?: () => void;
   onBack?: () => void;
 };
+
+const generateTimeSlots = () => {
+    const slots = [];
+    for (let h = 0; h < 24; h++) {
+        for (let m = 0; m < 60; m += 30) {
+            const hour = h.toString().padStart(2, '0');
+            const minute = m.toString().padStart(2, '0');
+            slots.push(`${hour}:${minute}`);
+        }
+    }
+    return slots;
+};
+
+const timeSlots = generateTimeSlots();
+
+const TimeSelector = ({ id, label, value, onChange, onBlur, description }: { id: string, label: string, value: string, onChange: (value: string) => void, onBlur: (value: string) => void, description?: string }) => (
+    <div className="grid gap-2">
+        <Label htmlFor={id}>{label}</Label>
+        <Select
+            value={value}
+            onValueChange={(newValue) => {
+                onChange(newValue);
+                onBlur(newValue);
+            }}
+        >
+            <SelectTrigger id={id} className="w-48">
+                <SelectValue placeholder="Alege ora" />
+            </SelectTrigger>
+            <SelectContent>
+                {timeSlots.map(slot => (
+                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    </div>
+);
+
 
 export default function StepNotifications({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
@@ -29,7 +67,7 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(notifications?.enabled || false);
   const [afterSchoolTime, setAfterSchoolTime] = useState(notifications?.afterSchoolTime || '15:00');
   const [eveningTime, setEveningTime] = useState(notifications?.eveningTime || '20:00');
-  const [weekendEnabled, setWeekendEnabled] = useState(notifications?.weekendEnabled || true);
+  const [weekendEnabled, setWeekendEnabled] = useState(notifications?.weekendEnabled ?? true);
   const [saturdayMorningTime, setSaturdayMorningTime] = useState(notifications?.saturdayMorningTime || '10:00');
   const [saturdayEveningTime, setSaturdayEveningTime] = useState(notifications?.saturdayEveningTime || '20:00');
   const [sundayMorningTime, setSundayMorningTime] = useState(notifications?.sundayMorningTime || '11:00');
@@ -179,31 +217,22 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
                      <div>
                         <h4 className="font-semibold text-lg mb-4">Notificări în timpul săptămânii</h4>
                         <div className="space-y-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="after-school-time">Prima notificare (după școală)</Label>
-                                <Input
-                                    id="after-school-time"
-                                    type="time"
-                                    value={afterSchoolTime}
-                                    onChange={(e) => setAfterSchoolTime(e.target.value)}
-                                    onBlur={(e) => handleUpdateNotificationSettings('afterSchoolTime', e.target.value)}
-                                    className="w-48"
-                                />
-                                <p className="text-sm text-muted-foreground">O alertă când ajungi acasă, ca să știi ce ai de făcut.</p>
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="evening-time">A doua notificare (seara)</Label>
-                                <Input
-                                    id="evening-time"
-                                    type="time"
-                                    value={eveningTime}
-                                    onChange={(e) => setEveningTime(e.target.value)}
-                                    onBlur={(e) => handleUpdateNotificationSettings('eveningTime', e.target.value)}
-                                    className="w-48"
-                                />
-                                <p className="text-sm text-muted-foreground">Un ultim memento, în caz că ai uitat ceva.</p>
-                            </div>
+                            <TimeSelector 
+                                id="after-school-time"
+                                label="Prima notificare (după școală)"
+                                value={afterSchoolTime}
+                                onChange={setAfterSchoolTime}
+                                onBlur={(value) => handleUpdateNotificationSettings('afterSchoolTime', value)}
+                                description="O alertă când ajungi acasă, ca să știi ce ai de făcut."
+                            />
+                            <TimeSelector 
+                                id="evening-time"
+                                label="A doua notificare (seara)"
+                                value={eveningTime}
+                                onChange={setEveningTime}
+                                onBlur={(value) => handleUpdateNotificationSettings('eveningTime', value)}
+                                description="Un ultim memento, în caz că ai uitat ceva."
+                            />
                         </div>
                     </div>
 
@@ -222,50 +251,34 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
                         </div>
                         {weekendEnabled && (
                             <div className="space-y-6 pl-4 border-l-2 border-primary/50 fade-in-up">
-                                 <div className="grid gap-2">
-                                    <Label htmlFor="saturday-morning-time">Sâmbătă dimineața</Label>
-                                    <Input
-                                        id="saturday-morning-time"
-                                        type="time"
-                                        value={saturdayMorningTime}
-                                        onChange={(e) => setSaturdayMorningTime(e.target.value)}
-                                        onBlur={(e) => handleUpdateNotificationSettings('saturdayMorningTime', e.target.value)}
-                                        className="w-48"
-                                    />
-                                </div>
-                                 <div className="grid gap-2">
-                                    <Label htmlFor="saturday-evening-time">Sâmbătă seara</Label>
-                                    <Input
-                                        id="saturday-evening-time"
-                                        type="time"
-                                        value={saturdayEveningTime}
-                                        onChange={(e) => setSaturdayEveningTime(e.target.value)}
-                                         onBlur={(e) => handleUpdateNotificationSettings('saturdayEveningTime', e.target.value)}
-                                        className="w-48"
-                                    />
-                                </div>
-                                 <div className="grid gap-2">
-                                    <Label htmlFor="sunday-morning-time">Duminică dimineața</Label>
-                                    <Input
-                                        id="sunday-morning-time"
-                                        type="time"
-                                        value={sundayMorningTime}
-                                        onChange={(e) => setSundayMorningTime(e.target.value)}
-                                         onBlur={(e) => handleUpdateNotificationSettings('sundayMorningTime', e.target.value)}
-                                        className="w-48"
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="sunday-evening-time">Duminică seara</Label>
-                                    <Input
-                                        id="sunday-evening-time"
-                                        type="time"
-                                        value={sundayEveningTime}
-                                        onChange={(e) => setSundayEveningTime(e.target.value)}
-                                        onBlur={(e) => handleUpdateNotificationSettings('sundayEveningTime', e.target.value)}
-                                        className="w-48"
-                                    />
-                                </div>
+                                 <TimeSelector 
+                                    id="saturday-morning-time"
+                                    label="Sâmbătă dimineața"
+                                    value={saturdayMorningTime}
+                                    onChange={setSaturdayMorningTime}
+                                    onBlur={(value) => handleUpdateNotificationSettings('saturdayMorningTime', value)}
+                                />
+                                 <TimeSelector 
+                                    id="saturday-evening-time"
+                                    label="Sâmbătă seara"
+                                    value={saturdayEveningTime}
+                                    onChange={setSaturdayEveningTime}
+                                    onBlur={(value) => handleUpdateNotificationSettings('saturdayEveningTime', value)}
+                                />
+                                 <TimeSelector 
+                                    id="sunday-morning-time"
+                                    label="Duminică dimineața"
+                                    value={sundayMorningTime}
+                                    onChange={setSundayMorningTime}
+                                    onBlur={(value) => handleUpdateNotificationSettings('sundayMorningTime', value)}
+                                />
+                                <TimeSelector 
+                                    id="sunday-evening-time"
+                                    label="Duminică seara"
+                                    value={sundayEveningTime}
+                                    onChange={setSundayEveningTime}
+                                    onBlur={(value) => handleUpdateNotificationSettings('sundayEveningTime', value)}
+                                />
                             </div>
                         )}
                     </div>

@@ -36,10 +36,14 @@ let adminApp: App;
 if (!getApps().length) {
     try {
         // This will only work in a Vercel environment where the env var is set
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string);
-        adminApp = initializeApp({
-            credential: cert(serviceAccount)
-        });
+        if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string);
+            adminApp = initializeApp({
+                credential: cert(serviceAccount)
+            });
+        } else {
+            console.warn("FIREBASE_SERVICE_ACCOUNT_KEY is not set. Cron job will not be able to authenticate with Firebase.");
+        }
     } catch (e) {
         console.error("Firebase Admin initialization failed:", e);
     }
@@ -48,17 +52,13 @@ if (!getApps().length) {
 }
 
 
-const db = getFirestore(adminApp);
-const messaging = getMessaging(adminApp);
+const db = adminApp ? getFirestore(adminApp) : null;
+const messaging = adminApp ? getMessaging(adminApp) : null;
 
-const timeStringToMinutes = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-}
 
 export async function GET(request: Request) {
-    if (!adminApp) {
-        console.error("Cron job failed: Firebase Admin SDK not initialized.");
+    if (!db || !messaging) {
+        console.error("Cron job failed: Firebase Admin SDK not properly initialized.");
         return new NextResponse('Firebase Admin SDK not initialized', { status: 500 });
     }
 
@@ -67,14 +67,8 @@ export async function GET(request: Request) {
     try {
         const now = new Date();
         const nowInBucharest = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Bucharest' }));
+        const currentTime = nowInBucharest.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
         
-        const currentDayOfWeek = (nowInBucharest.getDay() + 6) % 7; // Monday = 0, Sunday = 6
-        const currentMinutes = nowInBucharest.getHours() * 60 + nowInBucharest.getMinutes();
-
-        // Check for times within the last 30 minutes
-        const startMinutes = currentMinutes - 30;
-        const endMinutes = currentMinutes;
-
         const usersSnapshot = await db
             .collection("users")
             .where("notifications.enabled", "==", true)
@@ -89,22 +83,15 @@ export async function GET(request: Request) {
         usersSnapshot.forEach(doc => {
             const userData = doc.data() as UserData;
             
-            const notificationTimes = [];
-            if (currentDayOfWeek < 5) { // Weekdays
-                notificationTimes.push(userData.notifications.afterSchoolTime, userData.notifications.eveningTime);
-            } else if (userData.notifications.weekendEnabled) { // Weekends
-                if (currentDayOfWeek === 5) { // Saturday
-                     notificationTimes.push(userData.notifications.saturdayMorningTime, userData.notifications.saturdayEveningTime);
-                } else if (currentDayOfWeek === 6) { // Sunday
-                     notificationTimes.push(userData.notifications.sundayMorningTime, userData.notifications.sundayEveningTime);
-                }
-            }
-
-            const isTimeMatch = notificationTimes.some(timeStr => {
-                if (!timeStr) return false;
-                const userTimeInMinutes = timeStringToMinutes(timeStr);
-                return userTimeInMinutes > startMinutes && userTimeInMinutes <= endMinutes;
-            });
+             const isTimeMatch =
+                userData.notifications.afterSchoolTime === currentTime ||
+                userData.notifications.eveningTime === currentTime ||
+                (userData.notifications.weekendEnabled && (
+                    userData.notifications.saturdayMorningTime === currentTime ||
+                    userData.notifications.saturdayEveningTime === currentTime ||
+                    userData.notifications.sundayMorningTime === currentTime ||
+                    userData.notifications.sundayEveningTime === currentTime
+                ));
 
             if (isTimeMatch) {
                 usersToNotify.push({ id: doc.id, data: userData });
@@ -112,7 +99,7 @@ export async function GET(request: Request) {
         });
 
         if (usersToNotify.length === 0) {
-            console.log("No users to notify in this interval.", { start: startMinutes, end: endMinutes });
+            console.log("No users to notify at this time.", { time: currentTime });
             return NextResponse.json({ message: "No users to notify at this time." });
         }
 
