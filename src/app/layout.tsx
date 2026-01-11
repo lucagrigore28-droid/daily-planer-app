@@ -53,11 +53,9 @@ export default function RootLayout({
           enableSystem
         >
           <AppProvider>
-            <FirebaseClientProvider>
               {children}
               <Toaster />
               <ServiceWorkerRegistrar />
-            </FirebaseClientProvider>
           </AppProvider>
         </ThemeProvider>
       </body>
