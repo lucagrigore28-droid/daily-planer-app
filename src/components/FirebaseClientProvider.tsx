@@ -25,6 +25,8 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   }, []);
 
   if (!firebaseServices.app) {
+      // Render children without Firebase context if config is missing.
+      // This allows the app to run without crashing, though Firebase features will be disabled.
       return <>{children}</>;
   }
 

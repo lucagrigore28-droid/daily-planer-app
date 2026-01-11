@@ -8,7 +8,8 @@ import { AppContext } from '@/contexts/AppContext';
 import { BellRing, BellOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { getToken, getMessaging } from "firebase/messaging";
-import firebaseApp from '@/firebase/config';
+import { initializeApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 import { Input } from '../ui/input';
 import { cn } from '@/lib/utils';
 import type { UserNotifications } from '@/lib/types';
@@ -39,7 +40,9 @@ export async function requestPermissionAndGetToken(addFcmToken: (token: string) 
       return null;
     }
     
-    const messaging = getMessaging(firebaseApp);
+    // Initialize Firebase app on demand, only on the client
+    const app = initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
     
     const currentToken = await getToken(messaging, { vapidKey: VAPID_KEY });
     
