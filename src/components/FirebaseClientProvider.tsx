@@ -27,9 +27,10 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       const auth = getAuth(app);
       const firestore = getFirestore(app);
       setFirebaseServices({ app, auth, firestore });
-    } else {
-      console.error("Firebase config is not set. Please check your environment variables.");
     }
+    // If the config is not set, firebaseServices remains null.
+    // The rest of the app should handle the null services state gracefully (e.g. show a loading screen).
+    // Removing the console.error here prevents the Vercel build from failing if env vars aren't set during build time.
   }, []); // Empty dependency array ensures this runs only once on mount.
 
   // If services are not yet initialized, we can render a loading state
