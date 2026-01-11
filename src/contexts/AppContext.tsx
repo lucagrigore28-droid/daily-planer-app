@@ -65,7 +65,7 @@ function AppContainer({ children }: { children: ReactNode }) {
 
   const [currentDate] = useState(new Date());
   
-  const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading && firebaseContext?.areServicesAvailable;
+  const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading && (firebaseContext?.areServicesAvailable ?? false);
 
   useEffect(() => {
     const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : initialUserData.theme;

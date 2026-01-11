@@ -14,6 +14,7 @@ interface FirebaseClientProviderProps {
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const firebaseServices = useMemo(() => {
+    // This check is now safe because useMemo runs on the client.
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
         console.error("Firebase config is not set. Please check your environment variables.");
         return { app: null, auth: null, firestore: null };
@@ -24,9 +25,10 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return { app, auth, firestore };
   }, []);
 
+  // If services couldn't be initialized (e.g., missing config),
+  // we render children without the provider to avoid crashing the app.
+  // The context will report `areServicesAvailable: false`.
   if (!firebaseServices.app) {
-      // Render children without Firebase context if config is missing.
-      // This allows the app to run without crashing, though Firebase features will be disabled.
       return <>{children}</>;
   }
 
