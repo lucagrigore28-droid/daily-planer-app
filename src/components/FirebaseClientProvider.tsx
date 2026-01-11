@@ -13,10 +13,8 @@ interface FirebaseClientProviderProps {
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const firebaseServices = useMemo(() => {
-    // This logic now runs only on the client, inside useMemo
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
         console.error("Firebase config is not set. Please check your environment variables.");
-        // Return null or mock services if config is not set
         return { app: null, auth: null, firestore: null };
     }
     const app = initializeApp(firebaseConfig);
@@ -25,17 +23,15 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return { app, auth, firestore };
   }, []);
 
-  // Do not render the provider if the services could not be initialized
-  if (!firebaseServices.app || !firebaseServices.auth || !firebaseServices.firestore) {
-      // You might want to render a loading indicator or an error message here
+  if (!firebaseServices.app) {
       return <>{children}</>;
   }
 
   return (
     <FirebaseProvider
       firebaseApp={firebaseServices.app}
-      auth={firebaseServices.auth}
-      firestore={firebaseServices.firestore}
+      auth={firebaseServices.auth!}
+      firestore={firebaseServices.firestore!}
     >
       {children}
     </FirebaseProvider>
