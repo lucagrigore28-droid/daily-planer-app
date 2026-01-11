@@ -73,7 +73,8 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
       try {
         const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
         if (!vapidKey) {
-            console.error('VAPID key is not configured. Make sure NEXT_PUBLIC_VAPID_KEY is set in your .env file.');
+            console.error('VAPID key is not configured. Make sure NEXT_PUBLIC_VAPID_KEY is set in your .env or environment variables.');
+            alert('Configurare incompletă: Cheia VAPID pentru notificări lipsește.');
             return;
         }
         const currentToken = await getToken(messaging, { 
