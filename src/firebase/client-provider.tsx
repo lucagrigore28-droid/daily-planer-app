@@ -17,8 +17,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      const firebaseConfigString = encodeURIComponent(JSON.stringify(firebaseConfig));
-      const swUrl = `/firebase-messaging-sw.js?firebaseConfig=${firebaseConfigString}`;
+      const swUrl = `/firebase-messaging-sw.js?apiKey=${firebaseConfig.apiKey}&authDomain=${firebaseConfig.authDomain}&projectId=${firebaseConfig.projectId}&storageBucket=${firebaseConfig.storageBucket}&messagingSenderId=${firebaseConfig.messagingSenderId}&appId=${firebaseConfig.appId}&measurementId=${firebaseConfig.measurementId}`;
 
       // This is a more robust registration that unregisters old service workers
       // before registering the new one. This helps prevent caching issues.
@@ -28,7 +27,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
           const registrations = await navigator.serviceWorker.getRegistrations();
           for (const registration of registrations) {
             // Unregister any old or incorrect service workers
-            if (registration.scope === new URL('/', location.href).toString()) {
+            if (registration.scope.endsWith('/')) {
                console.log('Unregistering old service worker:', registration);
                await registration.unregister();
             }
