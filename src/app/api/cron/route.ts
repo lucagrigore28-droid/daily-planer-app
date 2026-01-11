@@ -41,10 +41,8 @@ export async function GET() {
     const db = getFirestore(app);
     const messaging = getMessaging(app);
 
-    // Use UTC time on the server, and assume user-set times are also relative to a consistent timezone (e.g., their local time)
-    // We will now compare based on the HH:mm string, which is simpler and less error-prone with timezones.
-    const now = new Date();
     // Vercel servers run on UTC. We will adjust to Romania's time (UTC+3 for EEST).
+    const now = new Date();
     now.setHours(now.getUTCHours() + 3);
     
     const currentHour = now.getHours().toString().padStart(2, '0');
