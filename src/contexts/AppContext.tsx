@@ -5,7 +5,7 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback, useM
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { useUser, useFirestore, useAuth, useMemoFirebase } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, arrayUnion } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, arrayUnion, deleteField } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
@@ -105,9 +105,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
     if (user) {
       const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-      const finalUpdates = { ...updates };
+      const finalUpdates: any = { ...updates }; // Use 'any' to allow for deleteField()
       if (updates.isCompleted !== undefined) {
-        finalUpdates.completedAt = updates.isCompleted ? new Date().toISOString() : undefined;
+        if (updates.isCompleted) {
+          finalUpdates.completedAt = new Date().toISOString();
+        } else {
+          finalUpdates.completedAt = deleteField();
+        }
       }
       setDocumentNonBlocking(taskDocRef, finalUpdates, { merge: true });
     }
