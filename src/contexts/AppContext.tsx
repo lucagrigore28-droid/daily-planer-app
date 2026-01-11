@@ -20,6 +20,11 @@ const initialUserData: UserData = {
   notifications: {
     enabled: false,
     dailyTime: '19:00',
+    secondDailyTimeEnabled: false,
+    secondDailyTime: '08:00',
+    weekendSummaryEnabled: true,
+    weekendSummaryTime: '20:00',
+    lastNotificationSent: {},
   },
   theme: 'purple',
   fcmTokens: [],
@@ -190,8 +195,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const memoizedUserData = useMemo(() => {
     if (isUserDataLoading || userData === undefined) return null;
+    // Deep merge to ensure nested objects like 'notifications' have default values.
+    const mergedNotifications = {
+      ...initialUserData.notifications,
+      ...(userData?.notifications || {})
+    };
     if (userData === null) return initialUserData;
-    return { ...initialUserData, ...userData };
+
+    return { ...initialUserData, ...userData, notifications: mergedNotifications };
   }, [userData, isUserDataLoading]);
   
   const value = {

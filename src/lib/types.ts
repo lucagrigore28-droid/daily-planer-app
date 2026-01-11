@@ -20,8 +20,17 @@ export type HomeworkTask = {
 };
 
 export type UserNotifications = {
-  enabled: boolean;
+  enabled: boolean; // Master switch
   dailyTime: string; // e.g. "19:00"
+  
+  // Advanced notifications
+  secondDailyTimeEnabled: boolean;
+  secondDailyTime: string; // e.g. "08:00"
+  
+  weekendSummaryEnabled: boolean;
+  weekendSummaryTime: string; // e.g. "20:00" on Friday
+
+  lastNotificationSent?: Record<string, string>; // e.g. { daily: "2024-07-31", weekend: "2024-07-26" }
 };
 
 export type UserData = {
@@ -32,5 +41,5 @@ export type UserData = {
   notifications: UserNotifications;
   theme: string;
   fcmTokens?: string[];
-  lastNotificationSent?: string; // YYYY-MM-DD
+  lastNotificationSent?: string; // YYYY-MM-DD - DEPRECATED
 };
