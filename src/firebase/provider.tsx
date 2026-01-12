@@ -1,55 +1,10 @@
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
-import { FirebaseApp, initializeApp } from 'firebase/app';
-import { Firestore, getFirestore } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged, getAuth } from 'firebase/auth';
+import { FirebaseApp } from 'firebase/app';
+import { Firestore } from 'firebase/firestore';
+import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { firebaseConfig } from '@/firebase/config';
-
-// --- Start of old FirebaseClientProvider logic ---
-
-interface FirebaseClientProviderProps {
-  children: React.ReactNode;
-}
-
-type FirebaseServices = {
-  app: FirebaseApp;
-  auth: Auth;
-  firestore: Firestore;
-} | null;
-
-export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices>(null);
-
-  useEffect(() => {
-    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const firestore = getFirestore(app);
-      setFirebaseServices({ app, auth, firestore });
-    }
-  }, []);
-
-  if (!firebaseServices) {
-      // Render children without provider, context will report services as unavailable.
-      // Or show a global loading screen.
-      return <>{children}</>;
-  }
-
-  return (
-    <FirebaseProvider
-      firebaseApp={firebaseServices.app}
-      auth={firebaseServices.auth}
-      firestore={firebaseServices.firestore}
-    >
-      {children}
-    </FirebaseProvider>
-  );
-}
-
-// --- End of old FirebaseClientProvider logic ---
-
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -100,6 +55,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [userAuthState, setUserAuthState] = useState<UserAuthState>({
     user: null,
     isUserLoading: true,
+    userError: null,
   });
 
   useEffect(() => {
@@ -108,7 +64,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null });
+    setUserAuthState({ user: auth.currentUser, isUserLoading: true, userError: null });
 
     const unsubscribe = onAuthStateChanged(
       auth,
@@ -152,8 +108,6 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   }
 
   if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
-    // This case is now handled by the logic in FirebaseClientProvider, which won't render
-    // FirebaseProvider until services are ready. If it still happens, it's a critical setup error.
     throw new Error('Firebase core services not available. Check FirebaseProvider setup.');
   }
 

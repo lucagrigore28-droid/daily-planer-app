@@ -5,7 +5,7 @@ import { AppProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { FirebaseClientProvider } from '@/firebase/provider';
+import { FirebaseClientProvider } from './FirebaseClientProvider';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
