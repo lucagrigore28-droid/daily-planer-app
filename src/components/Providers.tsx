@@ -5,7 +5,7 @@ import { AppProvider } from '@/contexts/AppContext';
 import { Toaster } from '@/components/ui/toaster';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { FirebaseClientProvider } from '@/components/FirebaseClientProvider';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -14,13 +14,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         defaultTheme="dark"
         enableSystem
     >
+      <FirebaseClientProvider>
         <AppProvider>
-          <FirebaseClientProvider>
-              {children}
-              <Toaster />
-              <ServiceWorkerRegistrar />
-          </FirebaseClientProvider>
+          {children}
+          <Toaster />
+          <ServiceWorkerRegistrar />
         </AppProvider>
+      </FirebaseClientProvider>
     </ThemeProvider>
   );
 }
