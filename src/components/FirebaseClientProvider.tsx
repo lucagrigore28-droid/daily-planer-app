@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,6 +7,7 @@ import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
+import { Skeleton } from './ui/skeleton';
 
 interface FirebaseClientProviderProps {
   children: React.ReactNode;
@@ -15,41 +17,43 @@ type FirebaseServices = {
   app: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
-} | null;
+};
+
+function FullscreenLoader() {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center p-4 bg-background">
+        <div className="w-full max-w-md space-y-4">
+          <Skeleton className="h-12 w-1/2" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-10 w-1/3 ml-auto" />
+        </div>
+      </div>
+    );
+}
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
-  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices>(null);
-  const [initAttempted, setInitAttempted] = useState(false);
+  const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
 
   useEffect(() => {
-    // If config is missing we log and don't try to initialize.
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-      console.error(
-        'Firebase config is not set. Please check your environment variables (NEXT_PUBLIC_FIREBASE_...).'
-      );
-      setInitAttempted(true);
-      return;
-    }
-
-    try {
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const firestore = getFirestore(app);
-      setFirebaseServices({ app, auth, firestore });
-      setInitAttempted(true);
-    } catch (err) {
-      console.error('Error initializing Firebase client:', err);
-      setInitAttempted(true);
+    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+      try {
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const firestore = getFirestore(app);
+        setFirebaseServices({ app, auth, firestore });
+      } catch (err) {
+        console.error('Error initializing Firebase client:', err);
+      }
+    } else {
+        console.error(
+          'Firebase config is not set. Please check your environment variables (NEXT_PUBLIC_FIREBASE_...).'
+        );
     }
   }, []);
 
-  // Important: do NOT render children that expect FirebaseContext
-  // until firebaseServices is available. Return null or a small loader.
-  // This prevents useUser/useContext from running before the provider exists.
   if (!firebaseServices) {
-    // If we attempted init and failed, you might render a fallback UI here.
-    // For now we render nothing to avoid splash of broken UI.
-    return null;
+    return <FullscreenLoader />;
   }
 
   return (

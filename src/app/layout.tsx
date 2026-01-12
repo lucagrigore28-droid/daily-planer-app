@@ -5,7 +5,6 @@ import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Providers from '@/components/Providers';
 
-
 export const metadata: Metadata = {
   title: 'Homework Planner',
   description: 'Planificatorul tău inteligent pentru teme.',

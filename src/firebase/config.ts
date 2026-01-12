@@ -1,3 +1,4 @@
+
 // src/firebase/config.ts
 import type { FirebaseOptions } from "firebase/app";
 

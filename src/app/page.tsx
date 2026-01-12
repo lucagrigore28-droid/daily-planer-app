@@ -28,15 +28,28 @@ export default function Home() {
   const [showWelcomeBack, setShowWelcomeBack] = useState(true);
   const [isNewSetup, setIsNewSetup] = useState(false);
 
-  const { isUserLoading, user, userData, isDataLoaded } = context || { isUserLoading: true, user: null, userData: null, isDataLoaded: false };
+  // Use a loading state that combines both user loading and data loading from context
+  const { isUserLoading, user, userData, isDataLoaded } = context || { 
+      isUserLoading: true, 
+      user: null, 
+      userData: null, 
+      isDataLoaded: false 
+  };
 
   useEffect(() => {
+    // Redirect only when we are sure the user is not logged in
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user || !context || !isDataLoaded) {
+  // Show loading screen if either user or their data is still loading
+  if (isUserLoading || !isDataLoaded) {
+    return <LoadingScreen />;
+  }
+
+  // Once loaded, if user is somehow null, redirect (defensive coding)
+  if (!user) {
     return <LoadingScreen />;
   }
 

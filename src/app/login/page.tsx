@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Logo from '@/components/Logo';
-import { useUser } from '@/firebase/auth/use-user';
+import { useUser } from '@/hooks/use-user';
 import { signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, getAuth } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Eye, EyeOff } from 'lucide-react';
+import { useFirebaseApp } from '@/firebase/provider';
 
 const FormSchema = z.object({
   email: z.string().email({ message: 'Te rog introdu o adresă de email validă.' }),
@@ -26,7 +28,8 @@ type FormValues = z.infer<typeof FormSchema>;
 
 export default function LoginPage() {
   const { user, isUserLoading } = useUser();
-  const auth = getAuth();
+  const app = useFirebaseApp();
+  const auth = getAuth(app);
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,9 +52,7 @@ export default function LoginPage() {
   });
 
   const handleAnonymousSignIn = () => {
-    signInAnonymously(auth).then(() => {
-      router.push('/');
-    }).catch((error) => {
+    signInAnonymously(auth).catch((error) => {
       console.error("Anonymous sign-in failed", error);
       toast({
         title: "Eroare de autentificare",
@@ -97,7 +98,6 @@ export default function LoginPage() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      router.push('/');
     } catch (error: any) {
       console.error(`${mode} failed`, error);
       let description = "A apărut o eroare. Te rog încearcă din nou.";

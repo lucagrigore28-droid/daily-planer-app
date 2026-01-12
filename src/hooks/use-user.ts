@@ -1,7 +1,9 @@
+
 'use client';
-import { FirebaseContext } from '@/firebase/provider';
-import type { UserHookResult } from '@/firebase/provider';
+import { FirebaseContext, type FirebaseContextState } from '@/firebase/provider';
 import { useContext } from 'react';
+
+export type UserHookResult = Pick<FirebaseContextState, 'user' | 'isUserLoading' | 'userError'>;
 
 /**
  * Hook specifically for accessing the authenticated user's state.

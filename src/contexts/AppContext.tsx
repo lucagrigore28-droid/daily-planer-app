@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, startOfWeek, endOfWeek } from 'date-fns';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, arrayUnion, deleteField } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, getDocs, writeBatch, arrayUnion, deleteField } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -55,24 +56,39 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const auth = useAuth();
 
   const userDocRef = useMemoFirebase(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
-  const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
+  const { data: userDataFromHook, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
   
   const tasksCollectionRef = useMemoFirebase(() => (user && firestore ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
   const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
   const [currentDate] = useState(new Date());
   
-  const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading && !!firestore;
+  const isDataLoaded = !isUserDataLoading && !areTasksLoading && user !== undefined;
+
+  const userData = useMemo(() => {
+    if (isUserDataLoading || userDataFromHook === undefined) return null;
+    if (userDataFromHook === null) {
+      if (user) {
+        setDocumentNonBlocking(userDocRef!, { ...initialUserData, name: user.displayName || user.email?.split('@')[0] || 'Utilizator' }, { merge: false });
+      }
+      return initialUserData;
+    }
+    const mergedNotifications = {
+      ...initialUserData.notifications,
+      ...(userDataFromHook?.notifications || {}),
+    };
+    return { ...initialUserData, ...userDataFromHook, notifications: mergedNotifications };
+  }, [userDataFromHook, isUserDataLoading, user, userDocRef]);
+
 
   useEffect(() => {
-    const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : initialUserData.theme;
+    const themeToApply = userData?.theme || initialUserData.theme;
     if (themeToApply) {
         const root = window.document.documentElement;
-        
         root.classList.remove(...Array.from(root.classList).filter(c => c.startsWith('theme-')));
         root.classList.add(`theme-${themeToApply}`);
     }
-  }, [userData?.theme, isDataLoaded]);
+  }, [userData?.theme]);
 
   const updateUser = useCallback((data: Partial<UserData>) => {
     if (userDocRef) {
@@ -140,7 +156,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const addFcmToken = useCallback(async (token: string) => {
     if (!userDocRef || !userData) return;
     if (userData.fcmTokens && userData.fcmTokens.includes(token)) return;
-
     updateUser({ fcmTokens: arrayUnion(token) });
   }, [userDocRef, userData, updateUser]);
 
@@ -152,9 +167,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const resetData = useCallback(async () => {
     if (!user || !userDocRef || !auth) return;
-
     await deleteAllTasks();
-
     if (user.isAnonymous) {
         await deleteDoc(userDocRef);
         await user.delete();
@@ -170,15 +183,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const getNextSchoolDayWithTasks = useCallback(() => {
     if (!tasks || !userData) return null;
     const today = startOfDay(currentDate);
-    
     const incompleteTasks = tasks.filter(task => !task.isCompleted);
     const futureTasks = incompleteTasks.filter(task => startOfDay(new Date(task.dueDate)) >= today);
-
     if (futureTasks.length > 0) {
       futureTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
       return startOfDay(new Date(futureTasks[0].dueDate));
     }
-  
     return today;
   }, [currentDate, tasks, userData]);
 
@@ -201,21 +211,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     return Array.from(firstOccurrenceMap.values());
   }, [tasks, currentDate]);
-
-  const memoizedUserData = useMemo(() => {
-    if (isUserDataLoading || userData === undefined) return null;
-    if (userData === null) return initialUserData;
-
-    const mergedNotifications = {
-      ...initialUserData.notifications,
-      ...(userData?.notifications || {}),
-    };
-
-    return { ...initialUserData, ...userData, notifications: mergedNotifications };
-  }, [userData, isUserDataLoading]);
   
   const value: AppContextType = {
-    userData: memoizedUserData,
+    userData,
     tasks: tasks || [],
     updateUser,
     updateSubjects,
