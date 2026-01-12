@@ -1,17 +1,16 @@
-
 "use client";
 
-import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useContext } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
-import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
-import { FirebaseContext } from '@/firebase/provider';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, arrayUnion, deleteField } from 'firebase/firestore';
+import { addDays, getDay, startOfDay, startOfWeek, endOfWeek } from 'date-fns';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, arrayUnion, deleteField } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useUser } from '@/firebase/auth/use-user';
+import { useAuth, useFirestore, useMemoFirebase } from '@/firebase/provider';
 
 const initialUserData: UserData = {
   name: '',
@@ -49,22 +48,21 @@ type AppContextType = {
 export const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const firebaseContext = useContext(FirebaseContext);
   const router = useRouter();
 
   const { user, isUserLoading } = useUser();
-  const firestore = firebaseContext?.firestore;
-  const auth = firebaseContext?.auth;
+  const firestore = useFirestore();
+  const auth = useAuth();
 
-  const userDocRef = useMemo(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const userDocRef = useMemoFirebase(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
   
-  const tasksCollectionRef = useMemo(() => (user && firestore ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
+  const tasksCollectionRef = useMemoFirebase(() => (user && firestore ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
   const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
   const [currentDate] = useState(new Date());
   
-  const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
+  const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading && !!firestore;
 
   useEffect(() => {
     const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : initialUserData.theme;
