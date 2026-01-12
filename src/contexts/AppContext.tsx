@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
