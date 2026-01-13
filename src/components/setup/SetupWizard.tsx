@@ -19,8 +19,8 @@ export default function SetupWizard({ onFinish }: SetupWizardProps) {
   const [step, setStep] = useState(1);
   const context = useContext(AppContext);
 
-  const handleFinishSetup = () => {
-    context?.updateUser({ setupComplete: true });
+  const handleFinishSetup = async () => {
+    await context?.updateUser({ setupComplete: true });
     onFinish();
   };
   

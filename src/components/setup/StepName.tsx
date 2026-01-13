@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -25,15 +26,21 @@ export default function StepName({ onNext, onBack }: StepProps) {
     }
   }, [context?.userData?.name]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (name.trim()) {
-      context?.updateUser({ name: name.trim() });
+      await context?.updateUser({ name: name.trim() });
       if(onNext) onNext();
     }
   };
   
   const handleLogout = () => {
     context?.logout();
+  };
+
+  const handleBlur = () => {
+    if (!isWizardStep && name.trim() && name.trim() !== context?.userData?.name) {
+        context?.updateUser({ name: name.trim() });
+    }
   };
 
   const isWizardStep = !!onNext;
@@ -57,7 +64,7 @@ export default function StepName({ onNext, onBack }: StepProps) {
               onChange={(e) => setName(e.target.value)}
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && isWizardStep && name.trim() && handleContinue()}
-              onBlur={() => !isWizardStep && context?.updateUser({ name: name.trim() })}
+              onBlur={handleBlur}
             />
           </div>
         </CardContent>

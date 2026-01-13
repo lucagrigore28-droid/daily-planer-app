@@ -3,7 +3,7 @@
 
 import React, { useContext, useMemo, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
 import { CheckCircle2, ClipboardList } from 'lucide-react';
 import { format, nextFriday, nextSaturday, nextSunday, startOfDay } from 'date-fns';
@@ -16,14 +16,13 @@ import { Progress } from '../ui/progress';
 
 type PlanningColumnProps = {
   title: string;
-  date: Date;
   tasks: HomeworkTask[];
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   isDragging: boolean;
 };
 
-function PlanningColumn({ title, date, tasks, onDragOver, onDrop, isDragging }: PlanningColumnProps) {
+function PlanningColumn({ title, tasks, onDragOver, onDrop, isDragging }: PlanningColumnProps) {
   const [isOver, setIsOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -32,7 +31,7 @@ function PlanningColumn({ title, date, tasks, onDragOver, onDrop, isDragging }: 
     onDragOver(e);
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = () => {
     setIsOver(false);
   };
 
@@ -89,7 +88,6 @@ function DraggableHomeworkItem({ task }: {task: HomeworkTask}) {
 export default function WeekendView() {
   const context = useContext(AppContext);
   const [isPlanningMode, setIsPlanningMode] = useState(false);
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
 
@@ -165,25 +163,23 @@ export default function WeekendView() {
   }
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    const taskId = e.dataTransfer.getData("taskId");
-    if(taskId) {
-        setDraggedTaskId(taskId);
+    const taskId = e.currentTarget.querySelector('[draggable]')?.id;
+    if (e.dataTransfer.getData("taskId")) {
         setIsDragging(true);
     }
   };
 
   const handleDragEnd = () => {
-    setDraggedTaskId(null);
     setIsDragging(false);
   };
   
-  const handleDrop = (targetDate: Date | null) => (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (targetDate: Date | null) => async (e: React.DragEvent<HTMLDivElement>) => {
     const taskId = e.dataTransfer.getData("taskId");
     if (taskId) {
         const updates: Partial<HomeworkTask> = {
-            plannedDate: targetDate ? targetDate.toISOString() : null,
+            plannedDate: targetDate ? targetDate.toISOString() : undefined,
         };
-        updateTask(taskId, updates);
+        await updateTask(taskId, updates);
     }
     setIsDragging(false);
   };
@@ -268,15 +264,12 @@ export default function WeekendView() {
                 </div>
                 {/* Planning Columns */}
                 <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <PlanningColumn title="Vineri" date={friday} tasks={plannedTasks.fridayTasks} onDragOver={handleDragOver} onDrop={handleDrop(friday)} isDragging={isDragging} />
-                    <PlanningColumn title="Sâmbătă" date={saturday} tasks={plannedTasks.saturdayTasks} onDragOver={handleDragOver} onDrop={handleDrop(saturday)} isDragging={isDragging} />
-                    <PlanningColumn title="Duminică" date={sunday} tasks={plannedTasks.sundayTasks} onDragOver={handleDragOver} onDrop={handleDrop(sunday)} isDragging={isDragging} />
+                    <PlanningColumn title="Vineri" tasks={plannedTasks.fridayTasks} onDragOver={handleDragOver} onDrop={handleDrop(friday)} isDragging={isDragging} />
+                    <PlanningColumn title="Sâmbătă" tasks={plannedTasks.saturdayTasks} onDragOver={handleDragOver} onDrop={handleDrop(saturday)} isDragging={isDragging} />
+                    <PlanningColumn title="Duminică" tasks={plannedTasks.sundayTasks} onDragOver={handleDragOver} onDrop={handleDrop(sunday)} isDragging={isDragging} />
                 </div>
             </div>
         )}
     </div>
   );
 }
-
-    
-

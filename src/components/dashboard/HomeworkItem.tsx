@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { CornerDownLeft, Trash2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -40,17 +39,17 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     context?.updateTask(task.id, { isCompleted: checked });
   };
   
-  const handleSaveDetails = () => {
+  const handleSaveDetails = async () => {
     setIsSaving(true);
-    context?.updateTask(task.id, { 
+    await context?.updateTask(task.id, { 
         description,
         estimatedTime: estimatedTime > 0 ? estimatedTime : undefined,
     });
     setTimeout(() => setIsSaving(false), 1000);
   };
 
-  const handleDelete = () => {
-    context?.deleteTask(task.id);
+  const handleDelete = async () => {
+    await context?.deleteTask(task.id);
     setIsDeleteDialogOpen(false);
   }
   

@@ -19,8 +19,8 @@ type StepProps = {
 export default function StepTheme({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
 
-  const handleThemeChange = (themeName: string) => {
-    context?.updateUser({ theme: themeName });
+  const handleThemeChange = async (themeName: string) => {
+    await context?.updateUser({ theme: themeName });
   };
   
   const showNavButtons = !!onNext;

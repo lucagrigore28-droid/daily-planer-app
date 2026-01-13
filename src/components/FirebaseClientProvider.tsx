@@ -34,25 +34,42 @@ function FullscreenLoader() {
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
+  const [initAttempted, setInitAttempted] = useState(false);
 
   useEffect(() => {
-    if (firebaseConfig.apiKey && firebaseConfig.projectId) {
-      try {
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const firestore = getFirestore(app);
-        setFirebaseServices({ app, auth, firestore });
-      } catch (err) {
-        console.error('Error initializing Firebase client:', err);
-      }
-    } else {
-        console.error(
-          'Firebase config is not set. Please check your environment variables (NEXT_PUBLIC_FIREBASE_...).'
-        );
+    // If config is missing we log and don't try to initialize.
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+      console.error(
+        'Firebase config is not set. Please check your environment variables (NEXT_PUBLIC_FIREBASE_...).'
+      );
+      setInitAttempted(true);
+      return;
     }
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
+      setFirebaseServices({ app, auth, firestore });
+    } catch (err) {
+      console.error('Error initializing Firebase client:', err);
+    }
+    setInitAttempted(true);
   }, []);
 
   if (!firebaseServices) {
+    if(initAttempted) {
+        // If we tried to init but failed (e.g. missing config), show an error message.
+        return (
+            <div className="flex h-screen w-screen items-center justify-center p-4">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-destructive">Eroare de Configurare Firebase</h1>
+                    <p className="text-muted-foreground">Verifică consola browser-ului pentru detalii.</p>
+                </div>
+            </div>
+        );
+    }
+    // Still initializing...
     return <FullscreenLoader />;
   }
 

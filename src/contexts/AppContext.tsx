@@ -4,12 +4,11 @@
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, startOfDay, startOfWeek, endOfWeek } from 'date-fns';
-import { doc, collection, setDoc, deleteDoc, query, getDocs, writeBatch, deleteField } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, getDocs, writeBatch, updateDoc, addDoc, deleteField } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useUser } from '@/hooks/use-user';
 import { useAuth, useFirestore, useMemoFirebase } from '@/firebase/provider';
 
@@ -24,11 +23,11 @@ const initialUserData: UserData = {
 type AppContextType = {
   userData: UserData | null;
   tasks: HomeworkTask[];
-  updateUser: (data: Partial<UserData>) => void;
-  updateSubjects: (subjects: Subject[]) => void;
-  addTask: (task: Omit<HomeworkTask, 'id'>) => void;
-  updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
-  deleteTask: (taskId: string) => void;
+  updateUser: (data: Partial<UserData>) => Promise<void>;
+  updateSubjects: (subjects: Subject[]) => Promise<void>;
+  addTask: (task: Omit<HomeworkTask, 'id'>) => Promise<void>;
+  updateTask: (taskId: string, updates: Partial<HomeworkTask>) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
   deleteAllTasks: () => Promise<void>;
   resetData: () => Promise<void>;
   logout: () => Promise<void>;
@@ -57,17 +56,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [currentDate] = useState(new Date());
   
-  const isDataLoaded = !isUserDataLoading && !areTasksLoading && user !== undefined;
+  const isDataLoaded = !isUserLoading && !isUserDataLoading && !areTasksLoading && user !== undefined;
 
   const userData = useMemo(() => {
     if (isUserDataLoading || userDataFromHook === undefined) return null;
-    if (userDataFromHook === null) {
-      if (user) {
-        setDocumentNonBlocking(userDocRef!, { ...initialUserData, name: user.displayName || user.email?.split('@')[0] || 'Utilizator' }, { merge: false });
-      }
-      return initialUserData;
+    // If user exists but has no document, create one.
+    if (userDataFromHook === null && user) {
+        const initialName = user.displayName || user.email?.split('@')[0] || 'Utilizator';
+        setDoc(userDocRef!, { ...initialUserData, name: initialName }, { merge: false });
     }
-    return { ...initialUserData, ...userDataFromHook };
+    return userDataFromHook ? { ...initialUserData, ...userDataFromHook } : initialUserData;
   }, [userDataFromHook, isUserDataLoading, user, userDocRef]);
 
 
@@ -80,26 +78,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [userData?.theme]);
 
-  const updateUser = useCallback((data: Partial<UserData>) => {
+  const updateUser = useCallback(async (data: Partial<UserData>) => {
     if (userDocRef) {
-      setDocumentNonBlocking(userDocRef, data, { merge: true });
+      await setDoc(userDocRef, data, { merge: true });
     }
   }, [userDocRef]);
 
 
-   const updateSubjects = useCallback((subjects: Subject[]) => {
+   const updateSubjects = useCallback(async (subjects: Subject[]) => {
     if (userDocRef) {
-        setDocumentNonBlocking(userDocRef, { subjects }, { merge: true });
+        await setDoc(userDocRef, { subjects }, { merge: true });
     }
    }, [userDocRef]);
 
-  const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
+  const addTask = useCallback(async (task: Omit<HomeworkTask, 'id'>) => {
       if (tasksCollectionRef) {
-        addDocumentNonBlocking(tasksCollectionRef, task);
+        const newDocRef = doc(collection(firestore, tasksCollectionRef.path));
+        await setDoc(newDocRef, { ...task, id: newDocRef.id });
       }
-  }, [tasksCollectionRef]);
+  }, [tasksCollectionRef, firestore]);
 
-  const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
+  const updateTask = useCallback(async (taskId: string, updates: Partial<HomeworkTask>) => {
     if (user && firestore) {
       const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
       const finalUpdates: any = { ...updates };
@@ -110,15 +109,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           finalUpdates.completedAt = deleteField();
         }
       }
-      setDocumentNonBlocking(taskDocRef, finalUpdates, { merge: true });
+      await updateDoc(taskDocRef, finalUpdates);
     }
   }, [firestore, user]);
 
 
-  const deleteTask = useCallback((taskId: string) => {
+  const deleteTask = useCallback(async (taskId: string) => {
     if (user && firestore) {
         const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-        deleteDocumentNonBlocking(taskDocRef);
+        await deleteDoc(taskDocRef);
     }
   }, [firestore, user]);
 
@@ -145,13 +144,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !userDocRef || !auth) return;
     await deleteAllTasks();
     if (user.isAnonymous) {
-        await deleteDoc(userDocRef);
         await user.delete();
     } else {
         await setDoc(userDocRef, {
             ...initialUserData,
             name: userData?.name || '', 
             theme: userData?.theme || initialUserData.theme,
+            subjects: [],
+            schedule: {},
+            setupComplete: false,
         }, { merge: false });
     }
   }, [user, userDocRef, userData, deleteAllTasks, auth]);

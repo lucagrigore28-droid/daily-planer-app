@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Clock } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { AppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -41,7 +41,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
     }
   }, [open]);
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (!selectedSubject) {
       toast({
         title: 'Câmpuri incomplete',
@@ -51,7 +51,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
       return;
     }
 
-    context?.addTask({
+    await context?.addTask({
       subjectId: selectedSubject.id,
       subjectName: selectedSubject.name,
       description: description.trim(),

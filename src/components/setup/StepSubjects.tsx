@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, useEffect, useMemo } from 'react';
@@ -45,6 +46,9 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     }
     
     setLocalSubjects(updatedSubjects);
+    if (!isWizardStep) {
+        context?.updateSubjects(updatedSubjects);
+    }
   };
 
   const handleAddCustomSubject = () => {
@@ -53,16 +57,22 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       const newSubjects = [...localSubjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
       setLocalSubjects(newSubjects);
       setCustomSubject('');
+      if (!isWizardStep) {
+        context?.updateSubjects(newSubjects);
+      }
     }
   };
   
   const handleRemoveCustomSubject = (subjectName: string) => {
       const updatedSubjects = localSubjects.filter(s => s.name !== subjectName);
       setLocalSubjects(updatedSubjects);
+      if (!isWizardStep) {
+        context?.updateSubjects(updatedSubjects);
+      }
   };
 
-  const handleNext = () => {
-    context?.updateSubjects(localSubjects);
+  const handleNext = async () => {
+    await context?.updateSubjects(localSubjects);
     if (onNext) onNext();
   };
 

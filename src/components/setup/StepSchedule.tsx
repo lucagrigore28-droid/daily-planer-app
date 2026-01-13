@@ -28,8 +28,8 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     }
   }, [context?.userData?.schedule]);
 
-  const handleNext = () => {
-    context?.updateUser({ schedule });
+  const handleNext = async () => {
+    await context?.updateUser({ schedule });
     if(onNext) onNext();
   };
 
