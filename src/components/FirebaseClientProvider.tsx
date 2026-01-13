@@ -38,32 +38,39 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   useEffect(() => {
     // Define the config directly in the client component
     const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-
-    const firebaseConfig = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: projectId ? `${projectId}.firebaseapp.com` : undefined,
-      projectId: projectId,
-      storageBucket: projectId ? `${projectId}.appspot.com` : undefined,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-    };
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
+    const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
+    const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID;
 
     // A more robust check for all required public Firebase environment variables.
-    const allKeysPresent =
-      firebaseConfig.apiKey &&
-      firebaseConfig.authDomain &&
-      firebaseConfig.projectId &&
-      firebaseConfig.storageBucket &&
-      firebaseConfig.messagingSenderId &&
-      firebaseConfig.appId;
+    const requiredKeys = {
+      apiKey,
+      projectId,
+      appId,
+      messagingSenderId,
+    };
 
-    if (!allKeysPresent) {
-      const errorMsg = 'Firebase config is not set. Please check your environment variables (NEXT_PUBLIC_FIREBASE_...).';
+    const missingKeys = Object.entries(requiredKeys)
+        .filter(([, value]) => !value)
+        .map(([key]) => `NEXT_PUBLIC_FIREBASE_${key.replace('Id', '_ID').toUpperCase()}`);
+
+    if (missingKeys.length > 0) {
+      const errorMsg = `Configurare Firebase incompletă. Următoarele variabile de mediu lipsesc din fișierul .env: ${missingKeys.join(', ')}`;
       console.error(errorMsg);
       setInitError(errorMsg);
       return;
     }
+
+    const firebaseConfig = {
+      apiKey: apiKey,
+      authDomain: `${projectId}.firebaseapp.com`,
+      projectId: projectId,
+      storageBucket: `${projectId}.appspot.com`,
+      messagingSenderId: messagingSenderId,
+      appId: appId,
+      measurementId: measurementId || undefined, // measurementId is optional
+    };
 
     try {
       // Check if Firebase app is already initialized to avoid re-initialization error
