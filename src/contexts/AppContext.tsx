@@ -59,13 +59,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserLoading && !isUserDataLoading && !areTasksLoading && user !== undefined;
 
   const userData = useMemo(() => {
-    if (isUserDataLoading || userDataFromHook === undefined) return null;
-    // If user exists but has no document, create one.
-    if (userDataFromHook === null && user) {
+    // While loading, return null to signify data is not ready.
+    if (isUserDataLoading) return null;
+    
+    // If the user exists but there's no document for them in Firestore yet.
+    if (user && userDataFromHook === null) {
+        // We'll create the document, but for now, return a default state.
         const initialName = user.displayName || user.email?.split('@')[0] || 'Utilizator';
-        setDoc(userDocRef!, { ...initialUserData, name: initialName }, { merge: false });
+        const defaultData = { ...initialUserData, name: initialName };
+        setDoc(userDocRef!, defaultData, { merge: false });
+        return defaultData;
     }
-    return userDataFromHook ? { ...initialUserData, ...userDataFromHook } : initialUserData;
+
+    // If data is loaded from the hook, merge it with defaults to ensure all fields are present.
+    // The properties from userDataFromHook will overwrite the initialUserData properties.
+    return userDataFromHook ? { ...initialUserData, ...userDataFromHook } : null;
+
   }, [userDataFromHook, isUserDataLoading, user, userDocRef]);
 
 
