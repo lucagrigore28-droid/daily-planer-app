@@ -6,7 +6,6 @@ import { FirebaseProvider } from '@/firebase/provider';
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { firebaseConfig } from '@/firebase/config';
 import { Skeleton } from './ui/skeleton';
 
 interface FirebaseClientProviderProps {
@@ -18,6 +17,18 @@ type FirebaseServices = {
   auth: Auth;
   firestore: Firestore;
 };
+
+// Define the config directly in the client component
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+};
+
 
 function FullscreenLoader() {
     return (
@@ -34,42 +45,50 @@ function FullscreenLoader() {
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
-  const [initAttempted, setInitAttempted] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
-    // If config is missing we log and don't try to initialize.
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-      console.error(
-        'Firebase config is not set. Please check your environment variables (NEXT_PUBLIC_FIREBASE_...).'
-      );
-      setInitAttempted(true);
+    // A more robust check for all required public Firebase environment variables.
+    const allKeysPresent =
+      firebaseConfig.apiKey &&
+      firebaseConfig.authDomain &&
+      firebaseConfig.projectId &&
+      firebaseConfig.storageBucket &&
+      firebaseConfig.messagingSenderId &&
+      firebaseConfig.appId;
+
+    if (!allKeysPresent) {
+      const errorMsg = 'Firebase config is not set. Please check your environment variables (NEXT_PUBLIC_FIREBASE_...).';
+      console.error(errorMsg);
+      setInitError(errorMsg);
       return;
     }
 
     try {
+      // Check if Firebase app is already initialized to avoid re-initialization error
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const firestore = getFirestore(app);
       setFirebaseServices({ app, auth, firestore });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error initializing Firebase client:', err);
+      setInitError(err.message || 'Failed to initialize Firebase.');
     }
-    setInitAttempted(true);
   }, []);
 
-  if (!firebaseServices) {
-    if(initAttempted) {
-        // If we tried to init but failed (e.g. missing config), show an error message.
-        return (
-            <div className="flex h-screen w-screen items-center justify-center p-4">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold text-destructive">Eroare de Configurare Firebase</h1>
-                    <p className="text-muted-foreground">Verifică consola browser-ului pentru detalii.</p>
-                </div>
+  if (initError) {
+    return (
+        <div className="flex h-screen w-screen items-center justify-center p-4">
+            <div className="text-center">
+                <h1 className="text-2xl font-bold text-destructive">Eroare de Configurare Firebase</h1>
+                <p className="text-muted-foreground">Verifică consola browser-ului pentru detalii.</p>
+                <pre className="mt-4 text-xs text-left bg-muted p-2 rounded-md">{initError}</pre>
             </div>
-        );
-    }
-    // Still initializing...
+        </div>
+    );
+  }
+
+  if (!firebaseServices) {
     return <FullscreenLoader />;
   }
 
