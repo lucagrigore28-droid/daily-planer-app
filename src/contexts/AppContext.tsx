@@ -1,11 +1,11 @@
 
 "use client";
 
-import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
-import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
+import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, isBefore } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
@@ -27,6 +27,7 @@ const initialUserData: UserData = {
     sundayEveningTime: '20:00',
   },
   theme: 'purple',
+  lastTaskGeneration: null,
 };
 
 type AppContextType = {
@@ -50,25 +51,12 @@ type AppContextType = {
 
 export const AppContext = createContext<AppContextType | null>(null);
 
-function useTasksForUser() {
-    const firestore = useFirestore();
-    const { user } = useUser();
-    
-    const tasksQuery = useMemo(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'users', user.uid, 'tasks'));
-    }, [firestore, user]);
-
-    const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksQuery);
-    
-    return { tasks: tasks || [], areTasksLoading };
-}
-
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
   const router = useRouter();
+  const taskGenRef = useRef(false); // Ref to prevent multiple runs
 
   const userDocRef = useMemo(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
@@ -151,45 +139,60 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       await deleteAllTasks();
       await deleteDoc(userDocRef); // Delete the guest user document
       await user.delete(); // Delete the anonymous user account
-      router.push('/login'); // Redirect to login
+      router.push('/login');
       return;
     }
     
-    // For authenticated users
+    // For authenticated users, fetch current data one last time to preserve name/theme
+    const currentUserDataSnap = await getDoc(userDocRef);
+    const currentUserData = currentUserDataSnap.data() as UserData | undefined;
+
     await deleteAllTasks();
     await setDoc(userDocRef, {
-        ...initialUserData,
-        name: userData?.name || '', // Keep the name if it exists
-        theme: userData?.theme || initialUserData.theme, // Keep the theme
+      ...initialUserData,
+      name: currentUserData?.name || '', // Keep the name
+      theme: currentUserData?.theme || initialUserData.theme, // Keep the theme
     }, { merge: false });
-    // No reload, the app will reactively show the setup wizard
-  }, [user, userDocRef, userData, deleteAllTasks, router]);
+    
+  }, [user, userDocRef, deleteAllTasks, router]);
 
   useEffect(() => {
-    if (!isDataLoaded || !userData || !userData.setupComplete || userData.subjects.length === 0 || !tasksCollectionRef) {
+    // Ensure this runs only once after all data is loaded and conditions are met
+    if (!isDataLoaded || !userData?.setupComplete || (userData.subjects?.length ?? 0) === 0 || !tasksCollectionRef || taskGenRef.current) {
       return;
     }
 
     const checkAndCreateTasks = async () => {
+      taskGenRef.current = true; // Mark as running
       const today = startOfDay(new Date());
+      const lastGenDate = userData.lastTaskGeneration ? startOfDay(new Date(userData.lastTaskGeneration)) : null;
+
+      // If tasks were already generated for today or a future date, don't run again.
+      if (lastGenDate && !isBefore(lastGenDate, today)) {
+        return;
+      }
+
       const batch = writeBatch(firestore);
       let writes = 0;
+      
+      const allTasksSnap = await getDocs(query(tasksCollectionRef));
+      const existingTasks = new Set(
+          allTasksSnap.docs.map(d => {
+              const task = d.data();
+              if (task.isManual) return null;
+              return `${task.subjectId}_${format(new Date(task.dueDate), 'yyyy-MM-dd')}`;
+          }).filter(Boolean)
+      );
 
-      for (let i = -7; i < 14; i++) {
+      for (let i = 0; i < 14; i++) {
         const dateToCheck = addDays(today, i);
         const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
 
         if (dayIndex >= 1 && dayIndex <= 5) {
           for (const subject of userData.subjects) {
-            if (userData.schedule[subject.id]?.includes(dayIndex)) {
-              
-              const taskExists = tasks.some(t => 
-                !t.isManual &&
-                t.subjectId === subject.id && 
-                startOfDay(new Date(t.dueDate)).getTime() === dateToCheck.getTime()
-              );
-
-              if (!taskExists) {
+            if (userData.schedule?.[subject.id]?.includes(dayIndex)) {
+              const taskKey = `${subject.id}_${format(dateToCheck, 'yyyy-MM-dd')}`;
+              if (!existingTasks.has(taskKey)) {
                 const newTaskRef = doc(tasksCollectionRef);
                 batch.set(newTaskRef, {
                   subjectId: subject.id,
@@ -213,24 +216,37 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           console.error("Silently failed to create tasks in batch", err);
         }
       }
+      
+      // Update last generation timestamp
+      if (userDocRef) {
+        await setDoc(userDocRef, { lastTaskGeneration: new Date().toISOString() }, { merge: true });
+      }
     };
 
     checkAndCreateTasks();
-  }, [isDataLoaded, userData, tasks, tasksCollectionRef, firestore]);
+  }, [isDataLoaded, userData, tasks, tasksCollectionRef, firestore, userDocRef]);
   
   const getNextSchoolDayWithTasks = useCallback(() => {
     if (!tasks || !userData) return null;
-    const today = startOfDay(currentDate);
     
+    const today = startOfDay(currentDate);
     const incompleteTasks = tasks.filter(task => !task.isCompleted);
-    const futureTasks = incompleteTasks.filter(task => startOfDay(new Date(task.dueDate)) >= today);
-
-    if (futureTasks.length > 0) {
-      futureTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-      return startOfDay(new Date(futureTasks[0].dueDate));
+    
+    if (incompleteTasks.length === 0) {
+      return null;
     }
-  
-    return today;
+
+    // Find the earliest due date among incomplete tasks
+    const sortedTasks = incompleteTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    const earliestDueDate = startOfDay(new Date(sortedTasks[0].dueDate));
+
+    // If there are past due tasks, show the earliest one. Otherwise, show the next future one.
+    const tasksDueTodayOrLater = sortedTasks.filter(task => startOfDay(new Date(task.dueDate)) >= today);
+    if (tasksDueTodayOrLater.length > 0) {
+        return startOfDay(new Date(tasksDueTodayOrLater[0].dueDate));
+    }
+    
+    return earliestDueDate;
   }, [currentDate, tasks, userData]);
 
   const getWeekendTasks = useCallback(() => {
@@ -245,6 +261,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     const firstOccurrenceMap = new Map<string, HomeworkTask>();
+    // Sort tasks by due date to ensure the "first" occurrence is correct chronologically
+    upcomingTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
     for (const task of upcomingTasks) {
         if (!firstOccurrenceMap.has(task.subjectId)) {
             firstOccurrenceMap.set(task.subjectId, task);

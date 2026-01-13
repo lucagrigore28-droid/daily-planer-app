@@ -1,4 +1,5 @@
 
+
 export type Subject = {
   id: string;
   name: string;
@@ -37,4 +38,5 @@ export type UserData = {
   setupComplete: boolean;
   notifications: UserNotifications;
   theme: string;
+  lastTaskGeneration: string | null; // ISO string
 };

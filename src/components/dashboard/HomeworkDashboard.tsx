@@ -25,7 +25,7 @@ export default function HomeworkDashboard() {
 
   const nextDayWithTasks = useMemo(() => {
     return context?.getNextSchoolDayWithTasks();
-  }, [context?.tasks, context?.currentDate, context?.userData?.schedule]);
+  }, [context?.tasks, context?.currentDate, context?.userData]);
 
   useEffect(() => {
     if (!displayedDay && nextDayWithTasks) {
@@ -110,7 +110,6 @@ export default function HomeworkDashboard() {
                                       variant="ghost" 
                                       size="icon" 
                                       onClick={handlePrevDay}
-                                      disabled={isSameDay(displayedDay, new Date())}
                                     >
                                         <ChevronLeft className="h-6 w-6" />
                                     </Button>
