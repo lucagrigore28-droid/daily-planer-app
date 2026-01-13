@@ -46,6 +46,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     }
     
     setLocalSubjects(updatedSubjects);
+    context?.updateSubjects(updatedSubjects);
   };
 
   const handleAddCustomSubject = () => {
@@ -53,6 +54,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     if (trimmedName && !localSubjects.some(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
       const newSubjects = [...localSubjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
       setLocalSubjects(newSubjects);
+      context?.updateSubjects(newSubjects);
       setCustomSubject('');
     }
   };
@@ -60,6 +62,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   const handleRemoveCustomSubject = (subjectName: string) => {
       const updatedSubjects = localSubjects.filter(s => s.name !== subjectName);
       setLocalSubjects(updatedSubjects);
+      context?.updateSubjects(updatedSubjects);
   };
 
   const handleNext = () => {
