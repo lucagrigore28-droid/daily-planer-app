@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext } from 'react';
@@ -5,11 +6,10 @@ import StepName from './StepName';
 import StepTheme from './StepTheme';
 import StepSubjects from './StepSubjects';
 import StepSchedule from './StepSchedule';
-import StepNotifications from './StepNotifications';
 import { Progress } from '@/components/ui/progress';
 import { AppContext } from '@/contexts/AppContext';
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 
 type SetupWizardProps = {
   onFinish: () => void;
@@ -38,9 +38,7 @@ export default function SetupWizard({ onFinish }: SetupWizardProps) {
       case 3:
         return <StepSubjects onNext={nextStep} onBack={prevStep} />;
       case 4:
-        return <StepSchedule onNext={nextStep} onBack={prevStep} />;
-      case 5:
-        return <StepNotifications onNext={handleFinishSetup} onBack={prevStep} />;
+        return <StepSchedule onNext={handleFinishSetup} onBack={prevStep} />;
       default:
         return null;
     }

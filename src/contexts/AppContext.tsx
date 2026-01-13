@@ -3,8 +3,8 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
-import { addDays, getDay, startOfDay, startOfWeek, endOfWeek } from 'date-fns';
-import { doc, collection, setDoc, deleteDoc, query, getDocs, writeBatch, arrayUnion, deleteField } from 'firebase/firestore';
+import { addDays, startOfDay, startOfWeek, endOfWeek } from 'date-fns';
+import { doc, collection, setDoc, deleteDoc, query, getDocs, writeBatch, deleteField } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -18,12 +18,7 @@ const initialUserData: UserData = {
   subjects: [],
   schedule: {},
   setupComplete: false,
-  notifications: {
-    enabled: false,
-    dailyTime: '19:00',
-  },
   theme: 'purple',
-  fcmTokens: [],
 };
 
 type AppContextType = {
@@ -37,7 +32,6 @@ type AppContextType = {
   deleteAllTasks: () => Promise<void>;
   resetData: () => Promise<void>;
   logout: () => Promise<void>;
-  addFcmToken: (token: string) => void;
   isDataLoaded: boolean;
   currentDate: Date;
   getNextSchoolDayWithTasks: () => Date | null;
@@ -73,11 +67,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
       return initialUserData;
     }
-    const mergedNotifications = {
-      ...initialUserData.notifications,
-      ...(userDataFromHook?.notifications || {}),
-    };
-    return { ...initialUserData, ...userDataFromHook, notifications: mergedNotifications };
+    return { ...initialUserData, ...userDataFromHook };
   }, [userDataFromHook, isUserDataLoading, user, userDocRef]);
 
 
@@ -92,17 +82,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUser = useCallback((data: Partial<UserData>) => {
     if (userDocRef) {
-      const currentData = userData ? JSON.parse(JSON.stringify(userData)) : {};
-      
-      const newNotifications = data.notifications 
-        ? { ...currentData.notifications, ...data.notifications }
-        : currentData.notifications;
-
-      const finalData = { ...data, notifications: newNotifications };
-
-      setDocumentNonBlocking(userDocRef, finalData, { merge: true });
+      setDocumentNonBlocking(userDocRef, data, { merge: true });
     }
-  }, [userDocRef, userData]);
+  }, [userDocRef]);
 
 
    const updateSubjects = useCallback((subjects: Subject[]) => {
@@ -152,12 +134,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await batch.commit();
 
   }, [firestore, tasksCollectionRef]);
-
-  const addFcmToken = useCallback(async (token: string) => {
-    if (!userDocRef || !userData) return;
-    if (userData.fcmTokens && userData.fcmTokens.includes(token)) return;
-    updateUser({ fcmTokens: arrayUnion(token) });
-  }, [userDocRef, userData, updateUser]);
 
   const logout = useCallback(async () => {
     if (!auth) return;
@@ -223,7 +199,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     deleteAllTasks,
     resetData,
     logout,
-    addFcmToken,
     isDataLoaded,
     currentDate,
     getNextSchoolDayWithTasks,

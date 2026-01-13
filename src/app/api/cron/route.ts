@@ -1,125 +1,76 @@
-
-import { NextResponse } from 'next/server';
-import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import { getMessaging } from 'firebase-admin/messaging';
-import type { UserData } from '@/lib/types';
-
-// Simplified and robust Firebase Admin initialization
-function initializeFirebaseAdmin(): App {
-    if (getApps().length) {
-        return getApps()[0]!;
+{
+  "name": "homework-planner",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
+    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
+    "build": "NODE_ENV=production next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@genkit-ai/google-genai": "^1.20.0",
+    "@genkit-ai/next": "^1.20.0",
+    "@hookform/resolvers": "^4.1.3",
+    "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-alert-dialog": "^1.1.6",
+    "@radix-ui/react-avatar": "^1.1.3",
+    "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-dropdown-menu": "^2.1.6",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-menubar": "^1.1.6",
+    "@radix-ui/react-popover": "^1.1.6",
+    "@radix-ui/react-progress": "^1.1.2",
+    "@radix-ui/react-radio-group": "^1.2.3",
+    "@radix-ui/react-scroll-area": "^1.2.3",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-separator": "^1.1.2",
+    "@radix-ui/react-slider": "^1.2.3",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.1.3",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@radix-ui/react-toast": "^1.2.6",
+    "@radix-ui/react-toggle-group": "^1.1.0",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.1.3",
+    "embla-carousel-react": "^8.6.0",
+    "firebase": "^11.9.1",
+    "firebase-admin": "^12.1.0",
+    "genkit": "^1.20.0",
+    "lucide-react": "^0.475.0",
+    "next": "15.5.9",
+    "next-themes": "latest",
+    "react": "^19.2.1",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^19.2.1",
+    "react-hook-form": "^7.54.2",
+    "recharts": "^2.15.1",
+    "sharp": "^0.33.4",
+    "tailwind-merge": "^3.0.1",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19.2.1",
+    "@types/react-dom": "^19.2.1",
+    "genkit-cli": "^1.20.0",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  },
+  "overrides": {
+    "react-day-picker": {
+      "react": "$react",
+      "react-dom": "$react-dom"
     }
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountString) {
-        console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.");
-        throw new Error("Server-side Firebase credentials are not configured.");
-    }
-    try {
-        const serviceAccount = JSON.parse(serviceAccountString);
-        return initializeApp({
-            credential: cert(serviceAccount)
-        });
-    } catch (e: any) {
-        console.error("Firebase Admin initialization failed:", e.message);
-        throw new Error(`Firebase Admin initialization failed: ${e.message}`);
-    }
-}
-
-export const dynamic = 'force-dynamic';
-
-export async function GET() {
-    console.log("Cron job started.");
-    let app: App;
-    try {
-        app = initializeFirebaseAdmin();
-    } catch (error: any) {
-        console.error("Failed to initialize Firebase Admin:", error.message);
-        return NextResponse.json({ message: "Error: Firebase Admin SDK initialization failed." }, { status: 500 });
-    }
-    
-    const db = getFirestore(app);
-    const messaging = getMessaging(app);
-
-    // Vercel servers run on UTC. We will adjust to Romania's time (UTC+3 for EEST).
-    const now = new Date();
-    now.setHours(now.getUTCHours() + 3);
-    
-    const currentHour = now.getHours().toString().padStart(2, '0');
-    const currentMinute = now.getMinutes().toString().padStart(2, '0');
-    const currentTime = `${currentHour}:${currentMinute}`;
-    
-    console.log(`Cron running. Current time (assumed Romania) is ${currentTime}. Checking for users to notify.`);
-    
-    try {
-        const usersSnapshot = await db
-            .collection("users")
-            .where("notifications.enabled", "==", true)
-            .get();
-
-        if (usersSnapshot.empty) {
-            console.log("No users have notifications enabled.");
-            return NextResponse.json({ message: "No users to notify." });
-        }
-        
-        console.log(`Found ${usersSnapshot.docs.length} users with notifications enabled. Checking their daily notification time...`);
-        const notificationPromises: Promise<any>[] = [];
-
-        for (const userDoc of usersSnapshot.docs) {
-            const userId = userDoc.id;
-            const userData = userDoc.data() as UserData;
-            
-            const userNotificationTime = userData.notifications?.dailyTime;
-
-            if (!userData.fcmTokens?.length || !userNotificationTime) {
-                 console.log(`[${userId}] Skipping user ${userData.name}: No FCM tokens or notification time set.`);
-                 continue;
-            }
-            
-            // SUPER SIMPLE CHECK: Does the user's notification time match the current time?
-            if (userNotificationTime === currentTime) {
-                console.log(`[${userId}] MATCH! User's time ${userNotificationTime} matches current time. Preparing to send notification.`);
-                
-                const message = {
-                    notification: { 
-                        title: "Planificator Teme", 
-                        body: `Salut ${userData.name}! Ai teme de verificat.` 
-                    },
-                    tokens: userData.fcmTokens!,
-                };
-                
-                // This sends the notification and handles logging for success/failure
-                const promise = messaging.sendEachForMulticast(message)
-                    .then(response => {
-                        console.log(`[${userId}] Successfully sent multicast message: ${response.successCount} successes, ${response.failureCount} failures.`);
-                        if (response.failureCount > 0) {
-                            response.responses.forEach(resp => {
-                                if (!resp.success) {
-                                    console.error(`[${userId}] - Failure reason for a token:`, resp.error);
-                                }
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error(`[${userId}] - Error sending multicast message:`, error);
-                    });
-                notificationPromises.push(promise);
-            }
-        }
-        
-        if (notificationPromises.length > 0) {
-            await Promise.all(notificationPromises);
-            console.log(`Finished sending notifications to ${notificationPromises.length} users.`);
-        } else {
-            console.log("No users matched the time criteria in this run.");
-        }
-
-        const finalMessage = `Cron job finished. Checked ${usersSnapshot.docs.length} users. Sent notifications to ${notificationPromises.length} users.`;
-        console.log(finalMessage);
-        return NextResponse.json({ message: finalMessage });
-
-    } catch (error: any) {
-        console.error("An unexpected error occurred during the cron job execution:", error);
-        return NextResponse.json({ message: `Error: ${error.message}` }, { status: 500 });
-    }
+  }
 }

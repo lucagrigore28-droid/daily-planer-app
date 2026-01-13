@@ -83,12 +83,9 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
       {showNavButtons ? (
         <CardFooter className="flex justify-between shrink-0">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={handleNext}>Continuă</Button>
+          <Button onClick={handleNext}>Finalizează Configurarea</Button>
         </CardFooter>
       ) : null}
     </div>
   );
 }
-
-
-

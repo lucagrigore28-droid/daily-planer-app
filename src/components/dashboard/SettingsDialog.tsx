@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useState } from 'react';
@@ -6,9 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StepName from '../setup/StepName';
 import StepSubjects from '../setup/StepSubjects';
 import StepSchedule from '../setup/StepSchedule';
-import StepNotifications from '../setup/StepNotifications';
 import StepTheme from '../setup/StepTheme';
-import { User, Palette, Calendar, Bell, BookOpen, ChevronLeft } from 'lucide-react';
+import { User, Palette, Calendar, BookOpen, ChevronLeft } from 'lucide-react';
 import ThemeToggle from '../ThemeToggle';
 import { useTheme } from 'next-themes';
 import { ScrollArea } from '../ui/scroll-area';
@@ -16,7 +16,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '../ui/button';
 import { AppContext } from '@/contexts/AppContext';
 import { themes } from '@/lib/themes';
-import { cn } from '@/lib/utils';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -27,7 +26,6 @@ const TABS = [
     { value: 'profile', label: 'Profil', icon: User, component: <StepName /> },
     { value: 'subjects', label: 'Materii', icon: BookOpen, component: <StepSubjects /> },
     { value: 'schedule', label: 'Orar', icon: Calendar, component: <StepSchedule /> },
-    { value: 'notifications', label: 'Notificări', icon: Bell, component: <StepNotifications /> },
     { value: 'appearance', label: 'Aspect', icon: Palette, component: <AppearanceSettings /> },
 ];
 
@@ -68,12 +66,6 @@ function MobileSettingsView({ onBack }: { onBack: () => void }) {
             case 'schedule':
                 const scheduledCount = Object.values(userData.schedule || {}).filter(days => days.length > 0).length;
                 return `Orar setat pentru ${scheduledCount} ${scheduledCount === 1 ? 'materie' : 'materii'}`;
-            case 'notifications':
-                 return (
-                    <span className={cn(userData.notifications.enabled ? "text-green-500" : "text-muted-foreground")}>
-                        {userData.notifications.enabled ? "Active" : "Inactive"}
-                    </span>
-                );
             case 'appearance':
                 const themeLabel = themes.find(t => t.name === userData.theme)?.label || userData.theme;
                 const modeLabel = currentTheme === 'dark' ? 'Întunecat' : 'Luminos';

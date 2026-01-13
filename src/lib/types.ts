@@ -20,17 +20,10 @@ export type HomeworkTask = {
   completedAt?: string; // ISO string when the task was completed
 };
 
-export type UserNotifications = {
-  enabled: boolean; // Master switch
-  dailyTime: string; // e.g. "19:00"
-};
-
 export type UserData = {
   name: string;
   subjects: Subject[];
   schedule: Schedule;
   setupComplete: boolean;
-  notifications: UserNotifications;
   theme: string;
-  fcmTokens?: string[];
 };
