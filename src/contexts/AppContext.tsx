@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
-import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, isBefore } from 'date-fns';
+import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek, isBefore, format } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -59,24 +59,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const taskGenRef = useRef(false); // Ref to prevent multiple runs
 
   const userDocRef = useMemo(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
-  const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
+  const { data: userDataFromHook, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
   
   const tasksCollectionRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
   const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
   const [currentDate] = useState(new Date());
   
-  const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
+  // Custom isDataLoaded to account for initial document creation logic
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : initialUserData.theme;
+    // This effect ensures the user document exists for new users.
+    const ensureUserDoc = async () => {
+      if (user && !isUserDataLoading && userDataFromHook === null) {
+        // User is authenticated, loading is done, but no document exists.
+        // This is a new user, so create their initial document.
+        try {
+          await setDoc(userDocRef!, initialUserData);
+          // Don't set isReady(true) here, let the hook re-fetch and update the state naturally.
+        } catch (error) {
+          console.error("Failed to create initial user document:", error);
+        }
+      } else if (!isUserDataLoading) {
+        // If loading is done and data is present or user is not logged in, we are ready.
+        setIsReady(true);
+      }
+    };
+    ensureUserDoc();
+  }, [user, isUserDataLoading, userDataFromHook, userDocRef]);
+
+  const isDataLoaded = isReady && !isUserLoading;
+  const userData = isDataLoaded ? (userDataFromHook === null ? initialUserData : { ...initialUserData, ...userDataFromHook }) : null;
+
+
+  useEffect(() => {
+    const themeToApply = userData?.theme || initialUserData.theme;
     if (themeToApply) {
         const root = window.document.documentElement;
-        
         root.classList.remove(...Array.from(root.classList).filter(c => c.startsWith('theme-')));
         root.classList.add(`theme-${themeToApply}`);
     }
-  }, [userData?.theme, isDataLoaded]);
+  }, [userData?.theme]);
 
   const updateUser = useCallback(async (data: Partial<UserData>) => {
     if (userDocRef) {
@@ -239,13 +263,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Find the earliest due date among incomplete tasks
     const sortedTasks = incompleteTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
     const earliestDueDate = startOfDay(new Date(sortedTasks[0].dueDate));
+    
+    // Check if there are any tasks with past due dates
+    const pastDueTasks = sortedTasks.filter(task => isBefore(startOfDay(new Date(task.dueDate)), today));
+    if (pastDueTasks.length > 0) {
+        return startOfDay(new Date(pastDueTasks[0].dueDate));
+    }
 
-    // If there are past due tasks, show the earliest one. Otherwise, show the next future one.
+    // If no past due tasks, find the next one from today onwards
     const tasksDueTodayOrLater = sortedTasks.filter(task => startOfDay(new Date(task.dueDate)) >= today);
     if (tasksDueTodayOrLater.length > 0) {
         return startOfDay(new Date(tasksDueTodayOrLater[0].dueDate));
     }
     
+    // Fallback to the earliest due date if something is odd
     return earliestDueDate;
   }, [currentDate, tasks, userData]);
 
@@ -271,15 +302,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     return Array.from(firstOccurrenceMap.values());
   }, [tasks, currentDate]);
-
-  const memoizedUserData = useMemo(() => {
-    if (isUserDataLoading || userData === undefined) return null;
-    if (userData === null) return initialUserData;
-    return { ...initialUserData, ...userData };
-  }, [userData, isUserDataLoading]);
   
   const value = {
-    userData: memoizedUserData,
+    userData: userData,
     tasks: tasks || [],
     updateUser,
     updateSubjects,
@@ -299,3 +324,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
