@@ -24,6 +24,7 @@ type AppContextType = {
   userData: UserData | null;
   tasks: HomeworkTask[];
   updateUser: (data: Partial<UserData>) => Promise<void>;
+  createInitialUserDocument: () => Promise<void>;
   updateSubjects: (subjects: Subject[]) => Promise<void>;
   addTask: (task: Omit<HomeworkTask, 'id'>) => Promise<void>;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => Promise<void>;
@@ -49,34 +50,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const auth = useAuth();
 
   const userDocRef = useMemoFirebase(() => (user && firestore ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
-  const { data: userDataFromHook, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
+  const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
   
   const tasksCollectionRef = useMemoFirebase(() => (user && firestore ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
   const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
   const [currentDate] = useState(new Date());
   
-  const isDataLoaded = !isUserLoading && !isUserDataLoading && !areTasksLoading && user !== undefined;
-
-  const userData = useMemo(() => {
-    // While loading, return null to signify data is not ready.
-    if (isUserDataLoading) return null;
-    
-    // If the user exists but there's no document for them in Firestore yet.
-    if (user && userDataFromHook === null) {
-        // We'll create the document, but for now, return a default state.
-        const initialName = user.displayName || user.email?.split('@')[0] || 'Utilizator';
-        const defaultData = { ...initialUserData, name: initialName };
-        setDoc(userDocRef!, defaultData, { merge: false });
-        return defaultData;
-    }
-
-    // If data is loaded from the hook, merge it with defaults to ensure all fields are present.
-    // The properties from userDataFromHook will overwrite the initialUserData properties.
-    return userDataFromHook ? { ...initialUserData, ...userDataFromHook } : null;
-
-  }, [userDataFromHook, isUserDataLoading, user, userDocRef]);
-
+  const isDataLoaded = !isUserLoading && !isUserDataLoading && !areTasksLoading;
 
   useEffect(() => {
     const themeToApply = userData?.theme || initialUserData.theme;
@@ -86,6 +67,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         root.classList.add(`theme-${themeToApply}`);
     }
   }, [userData?.theme]);
+
+  const createInitialUserDocument = useCallback(async () => {
+    if (user && userDocRef) {
+      const initialName = user.displayName || user.email?.split('@')[0] || 'Utilizator';
+      const defaultData = { ...initialUserData, name: initialName };
+      await setDoc(userDocRef, defaultData, { merge: false });
+    }
+  }, [user, userDocRef]);
 
   const updateUser = useCallback(async (data: Partial<UserData>) => {
     if (userDocRef) {
@@ -202,6 +191,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     userData,
     tasks: tasks || [],
     updateUser,
+    createInitialUserDocument,
     updateSubjects,
     addTask,
     updateTask,

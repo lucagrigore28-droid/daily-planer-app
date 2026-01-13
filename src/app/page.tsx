@@ -28,31 +28,34 @@ export default function Home() {
   const [showWelcomeBack, setShowWelcomeBack] = useState(true);
   const [isNewSetup, setIsNewSetup] = useState(false);
 
-  // Use a loading state that combines both user loading and data loading from context
-  const { isUserLoading, user, userData, isDataLoaded } = context || { 
+  const { isUserLoading, user, userData, isDataLoaded, createInitialUserDocument } = context || { 
       isUserLoading: true, 
       user: null, 
-      userData: null, 
-      isDataLoaded: false 
+      userData: undefined, // Use undefined to distinguish from null (no document)
+      isDataLoaded: false,
+      createInitialUserDocument: async () => {},
   };
 
   useEffect(() => {
-    // Redirect only when we are sure the user is not logged in
     if (!isUserLoading && !user) {
       router.push('/login');
     }
   }, [user, isUserLoading, router]);
 
-  // Show loading screen if either user or their data is still loading
-  if (isUserLoading || !isDataLoaded) {
+  useEffect(() => {
+    if (isDataLoaded && user && userData === null) {
+      createInitialUserDocument();
+    }
+  }, [isDataLoaded, user, userData, createInitialUserDocument]);
+  
+  if (isUserLoading || !isDataLoaded || userData === undefined) {
     return <LoadingScreen />;
   }
 
-  // Once loaded, if user is somehow null, redirect (defensive coding)
   if (!user) {
     return <LoadingScreen />;
   }
-
+  
   const showWizard = !userData?.setupComplete;
 
   if (showWizard) {
