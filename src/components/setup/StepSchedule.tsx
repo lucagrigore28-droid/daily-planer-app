@@ -1,12 +1,12 @@
 
 "use client";
 
-import React, { useState, useContext, useMemo, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
-import type { Schedule } from '@/lib/types';
+import type { Schedule, Subject } from '@/lib/types';
 import { DAYS_OF_WEEK_SCHEDULE } from '@/lib/constants';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,14 +19,21 @@ type StepProps = {
 
 export default function StepSchedule({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const subjects = useMemo(() => context?.userData?.subjects || [], [context?.userData?.subjects]);
+  
+  // Stare locală pentru a păstra materiile, actualizată din context
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [schedule, setSchedule] = useState<Schedule>({});
 
+  // Efect pentru a sincroniza starea locală cu cea din context
   useEffect(() => {
+    if (context?.userData?.subjects) {
+      setSubjects(context.userData.subjects);
+    }
     if (context?.userData?.schedule) {
       setSchedule(context.userData.schedule);
     }
-  }, [context?.userData?.schedule]);
+  }, [context?.userData?.subjects, context?.userData?.schedule]);
+
 
   const handleNext = () => {
     context?.updateUser({ schedule });
@@ -75,6 +82,11 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
                 </ToggleGroup>
               </div>
             ))}
+             {subjects.length === 0 && (
+                <div className="text-center text-muted-foreground p-8">
+                    <p>Nu ai selectat nicio materie. Mergi la pasul anterior sau la Setări {'>'} Materii pentru a le adăuga.</p>
+                </div>
+            )}
           </div>
         </ScrollArea>
       </CardContent>
@@ -87,5 +99,6 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     </Card>
   );
 }
+
 
 
