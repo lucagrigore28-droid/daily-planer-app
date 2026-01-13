@@ -20,11 +20,9 @@ type StepProps = {
 export default function StepSchedule({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
   
-  // Stare locală pentru a păstra materiile, actualizată din context
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [schedule, setSchedule] = useState<Schedule>({});
+  const [subjects, setSubjects] = useState<Subject[]>(context?.userData?.subjects || []);
+  const [schedule, setSchedule] = useState<Schedule>(context?.userData?.schedule || {});
 
-  // Efect pentru a sincroniza starea locală cu cea din context
   useEffect(() => {
     if (context?.userData?.subjects) {
       setSubjects(context.userData.subjects);
@@ -93,12 +91,9 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
       {showNavButtons ? (
         <CardFooter className="flex justify-between">
           <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={handleNext}>Continuă</Button>
+          <Button onClick={handleNext}>{onNext ? 'Finalizează Configurarea' : 'Salvează'}</Button>
         </CardFooter>
       ) : null}
     </Card>
   );
 }
-
-
-

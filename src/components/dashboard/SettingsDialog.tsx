@@ -8,9 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StepName from '@/components/setup/StepName';
 import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
-import StepNotifications from '@/components/setup/StepNotifications';
 import StepTheme from '@/components/setup/StepTheme';
-import { User, Book, Calendar, Bell, Palette, LogOut, Trash2 } from 'lucide-react';
+import { User, Book, Calendar, Palette, LogOut, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +34,6 @@ const TABS = [
     { value: 'profile', label: 'Profil', icon: User, component: StepName },
     { value: 'subjects', label: 'Materii', icon: Book, component: StepSubjects },
     { value: 'schedule', label: 'Orar', icon: Calendar, component: StepSchedule },
-    { value: 'notifications', label: 'Notificări', icon: Bell, component: StepNotifications },
     { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
 ];
 
