@@ -18,18 +18,6 @@ type FirebaseServices = {
   firestore: Firestore;
 };
 
-// Define the config directly in the client component
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-};
-
-
 function FullscreenLoader() {
     return (
       <div className="flex h-screen w-screen items-center justify-center p-4 bg-background">
@@ -48,6 +36,19 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Define the config directly in the client component
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+
+    const firebaseConfig = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      authDomain: projectId ? `${projectId}.firebaseapp.com` : undefined,
+      projectId: projectId,
+      storageBucket: projectId ? `${projectId}.appspot.com` : undefined,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+    };
+
     // A more robust check for all required public Firebase environment variables.
     const allKeysPresent =
       firebaseConfig.apiKey &&
