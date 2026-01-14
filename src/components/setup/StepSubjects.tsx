@@ -85,7 +85,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
                   onCheckedChange={() => handleToggleSubject(subjectName)}
                   className="h-5 w-5"
                 />
-                <Label htmlFor={subjectName} className="flex-1 cursor-pointer text-base">
+                <Label htmlFor={subjectName} className="flex-1 cursor-pointer text-lg">
                   {subjectName}
                 </Label>
                  {subjectIsCustom && (
