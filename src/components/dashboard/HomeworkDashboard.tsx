@@ -24,7 +24,7 @@ export default function HomeworkDashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
-  const { userData, currentDate, tasks, getNextSchoolDayWithTasks, areTasksSynced, isDataLoaded } = context!;
+  const { userData, currentDate, setCurrentDate, tasks, getNextSchoolDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
    useEffect(() => {
     // This effect runs to set the initial day when data is loaded
@@ -47,13 +47,29 @@ export default function HomeworkDashboard() {
     }
   };
 
+  const handlePrevTestDay = () => {
+    setCurrentDate(subDays(currentDate, 1));
+  };
+  const handleNextTestDay = () => {
+    setCurrentDate(addDays(currentDate, 1));
+  };
+
   if (!context || !context.userData) return null;
 
-  const tabs = [
-    { value: "next-tasks", label: "Teme următoare" },
-    { value: "weekend", label: "Weekend" },
-    { value: "calendar", label: "Calendar" }
-  ];
+  const dayOfWeek = getDay(currentDate); // 0=Sun, 1=Mon, ..., 6=Sat
+  const isWeekendVisible = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
+
+  const tabs = useMemo(() => {
+    const baseTabs = [
+      { value: "next-tasks", label: "Teme următoare" },
+    ];
+    if (isWeekendVisible) {
+      baseTabs.push({ value: "weekend", label: "Weekend" });
+    }
+    baseTabs.push({ value: "calendar", label: "Calendar" });
+    return baseTabs;
+  }, [isWeekendVisible]);
+
 
   const tasksForDisplayedDay = useMemo(() => {
     if (!displayedDay) return [];
@@ -72,8 +88,10 @@ export default function HomeworkDashboard() {
             <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Salut, {userData.name}!
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
+            <p className="text-lg text-muted-foreground flex items-center gap-2">
+              <Button size="icon" variant="ghost" onClick={handlePrevTestDay}><ChevronLeft/></Button>
+              <span>Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.</span>
+              <Button size="icon" variant="ghost" onClick={handleNextTestDay}><ChevronRight/></Button>
             </p>
           </div>
             <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
@@ -88,7 +106,7 @@ export default function HomeworkDashboard() {
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-6">
+        <TabsList className={cn("grid w-full max-w-lg mx-auto mb-6", `grid-cols-${tabs.length}`)}>
           {tabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
           ))}
@@ -141,9 +159,11 @@ export default function HomeworkDashboard() {
         </TabsContent>
 
         
-          <TabsContent value="weekend">
-            <WeekendView />
-          </TabsContent>
+          {isWeekendVisible && (
+            <TabsContent value="weekend">
+              <WeekendView />
+            </TabsContent>
+          )}
         
 
         <TabsContent value="calendar">
