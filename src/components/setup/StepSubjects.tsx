@@ -29,6 +29,8 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   }, [subjects]);
 
   const updateGlobalSubjects = (updatedSubjects: Subject[]) => {
+    // When used in Settings, this should trigger an immediate update.
+    // In the setup wizard, it just updates local state until "Continue" is clicked.
     context?.updateUser({ subjects: updatedSubjects });
   };
 
@@ -40,7 +42,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       updatedSubjects = subjects.filter(s => s.name !== subjectName);
     } else {
       const isPredefined = PREDEFINED_SUBJECTS.includes(subjectName);
-      updatedSubjects = [...subjects, { id: subjectName.toLowerCase().replace(/\\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
+      updatedSubjects = [...subjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
     }
     updateGlobalSubjects(updatedSubjects);
   };
@@ -48,7 +50,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   const handleAddCustomSubject = () => {
     const trimmedName = customSubject.trim();
     if (trimmedName && !subjects.some(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
-      const newSubjects = [...subjects, { id: trimmedName.toLowerCase().replace(/\\s/g, '_'), name: trimmedName, isCustom: true }];
+      const newSubjects = [...subjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
       updateGlobalSubjects(newSubjects);
       setCustomSubject('');
     }
@@ -60,6 +62,8 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   };
 
   const handleNext = () => {
+    // This is only called in the setup wizard context
+    context?.updateUser({ subjects });
     if(onNext) onNext();
   };
 
@@ -78,7 +82,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px] md:h-[400px] pr-4">
+        <ScrollArea className="h-[350px] md:h-[450px] pr-4">
           <div className="grid grid-cols-2 gap-4">
             {allSubjectNames.map(subjectName => {
               const isChecked = subjects.some(s => s.name === subjectName);

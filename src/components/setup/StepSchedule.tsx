@@ -27,6 +27,22 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     }
   }, [context?.userData?.schedule]);
 
+  useEffect(() => {
+    // This effect ensures the schedule view is up-to-date when subjects change.
+    const currentSubjects = context?.userData?.subjects || [];
+    setSchedule(currentSchedule => {
+      const newSchedule = { ...currentSchedule };
+      // Optional: Clean up schedule from removed subjects
+      Object.keys(newSchedule).forEach(subjectId => {
+        if (!currentSubjects.some(s => s.id === subjectId)) {
+          delete newSchedule[subjectId];
+        }
+      });
+      return newSchedule;
+    });
+  }, [context?.userData?.subjects]);
+
+
   const handleNext = () => {
     context?.updateUser({ schedule });
     if(onNext) onNext();
@@ -54,7 +70,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[300px] md:h-[400px] pr-4">
+        <ScrollArea className="h-[350px] md:h-[450px] pr-4">
           <div className="space-y-6">
             {subjects.map(subject => (
               <div key={subject.id}>
