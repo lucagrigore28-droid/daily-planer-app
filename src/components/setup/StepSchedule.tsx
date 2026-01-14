@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useContext, useMemo, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
@@ -62,10 +62,12 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
-      <CardHeader>
-        <CardTitle className="font-headline text-2xl">Setează-ți orarul săptămânal</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
+        <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm mb-6">
+            <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Setează-ți orarul săptămânal
+            </h2>
+        </div>
         <div className="space-y-6">
           {subjects.map(subject => (
             <div key={subject.id}>
