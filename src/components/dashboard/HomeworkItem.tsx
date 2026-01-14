@@ -171,5 +171,3 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     </>
   );
 }
-
-    
