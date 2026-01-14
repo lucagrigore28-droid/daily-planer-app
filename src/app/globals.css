@@ -144,3 +144,9 @@
         pointer-events: none; /* Make sure it doesn't interfere with clicks */
     }
 }
+
+@layer utilities {
+  .text-shadow-elegant {
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
