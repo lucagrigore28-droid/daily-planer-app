@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   description: 'Planificatorul tău inteligent pentru teme.',
   manifest: '/manifest.webmanifest',
   icons: {
-    icon: '/icon.svg',
+    icon: '/icon.png',
+    shortcut: '/icon.png',
     apple: '/apple-icon.png',
   }
 };
