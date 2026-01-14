@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useState, useEffect } from 'react';
@@ -103,7 +104,7 @@ const UserAccount = () => {
     return (
         <div className="p-4 rounded-lg border bg-background/50 mb-6">
             <h3 className="text-lg font-semibold mb-4">Contul Meu</h3>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col items-start gap-4">
                 <div className="flex items-center gap-3">
                     <Avatar>
                          <AvatarFallback>{initial}</AvatarFallback>
