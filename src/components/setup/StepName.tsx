@@ -14,19 +14,23 @@ type StepProps = {
 
 export default function StepName({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const [name, setName] = useState(context?.userData?.name || '');
+  const [name, setName] = useState('');
+  const { user } = context!;
 
   useEffect(() => {
-    // Sync local state if context changes
     if (context?.userData?.name) {
       setName(context.userData.name);
     }
   }, [context?.userData?.name]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (name.trim()) {
-      context?.updateUser({ name: name.trim() });
-      if(onNext) onNext();
+      if (onNext) { // This is the initial setup
+        await context?.createUserDocument(user, name.trim());
+        onNext();
+      } else { // This is from the settings dialog
+        await context?.updateUser({ name: name.trim() });
+      }
     }
   };
   
@@ -50,16 +54,19 @@ export default function StepName({ onNext, onBack }: StepProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && showNavButtons && name.trim() && handleContinue()}
-            onBlur={() => context?.updateUser({ name: name.trim() })}
+            onKeyDown={(e) => e.key === 'Enter' && name.trim() && handleContinue()}
           />
         </div>
       </CardContent>
-       {showNavButtons && (
+       {showNavButtons ? (
           <CardFooter className="flex justify-between">
              {onBack && <Button variant="ghost" onClick={onBack}>Înapoi</Button>}
             <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
           </CardFooter>
+       ) : (
+        <CardFooter>
+           <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Salvează</Button>
+        </CardFooter>
        )}
     </Card>
   );

@@ -47,7 +47,7 @@ type AppContextType = {
   user: any;
   isUserLoading: boolean;
   generateAndSyncTasks: (schedule: UserData['schedule'], subjects: UserData['subjects']) => Promise<void>;
-  createUserDocument: (user: any, name: string, username: string) => Promise<void>;
+  createUserDocument: (user: any, name: string) => Promise<void>;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -156,50 +156,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [isDataLoaded, userData, tasks, areTasksSynced, generateAndSyncTasks]);
 
 
-  const createUserDocument = useCallback(async (user: any, name: string, username: string) => {
+  const createUserDocument = useCallback(async (user: any, name: string) => {
     if (!user) return;
     const userDocRef = doc(firestore, 'users', user.uid);
-    const usernameRef = doc(firestore, 'usernames', username.toLowerCase());
-
-    await runTransaction(firestore, async (transaction) => {
-        const usernameDoc = await transaction.get(usernameRef);
-        if (usernameDoc.exists()) {
-            throw new Error(`Numele de utilizator "${username}" este deja folosit.`);
-        }
-        
-        const initialData = {
-            ...initialUserData,
-            name,
-            username,
-        };
-        transaction.set(userDocRef, initialData);
-        transaction.set(usernameRef, { uid: user.uid });
+    
+    await setDoc(userDocRef, {
+      ...initialUserData,
+      name,
     });
   }, [firestore]);
   
-  const updateUser = useCallback(async (data: Partial<UserData>, oldUsername?: string) => {
-    if (!userDocRef || !firestore) return;
-
-    if (data.username && data.username !== oldUsername) {
-        const newUsernameRef = doc(firestore, 'usernames', data.username.toLowerCase());
-        const oldUsernameRef = oldUsername ? doc(firestore, 'usernames', oldUsername.toLowerCase()) : null;
-
-        await runTransaction(firestore, async (transaction) => {
-            const newUsernameDoc = await transaction.get(newUsernameRef);
-            if (newUsernameDoc.exists()) {
-                throw new Error(`Numele de utilizator "${data.username}" este deja folosit.`);
-            }
-
-            transaction.set(userDocRef, data, { merge: true });
-            transaction.set(newUsernameRef, { uid: userDocRef.id });
-            if (oldUsernameRef) {
-                transaction.delete(oldUsernameRef);
-            }
-        });
-    } else {
-        await setDoc(userDocRef, data, { merge: true });
-    }
-  }, [userDocRef, firestore]);
+  const updateUser = useCallback(async (data: Partial<UserData>) => {
+    if (!userDocRef) return;
+    await setDoc(userDocRef, data, { merge: true });
+  }, [userDocRef]);
 
   const updateSubjects = useCallback(async (subjects: Subject[]) => {
     if (userDocRef) {
@@ -239,12 +209,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const batch = writeBatch(firestore);
     tasksSnapshot.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
-
-    // Delete username
-    if (userData?.username) {
-        const usernameRef = doc(firestore, 'usernames', userData.username.toLowerCase());
-        await deleteDoc(usernameRef);
-    }
 
     // Reset user document
     await setDoc(userDocRef, initialUserData);
@@ -324,5 +288,3 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    
