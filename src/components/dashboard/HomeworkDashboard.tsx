@@ -23,20 +23,18 @@ export default function HomeworkDashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
-  const { userData, currentDate, tasks, getNextSchoolDayWithTasks } = context!;
+  const { userData, currentDate, tasks, getNextSchoolDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
   useEffect(() => {
-    // This effect will run whenever the relevant context data changes.
-    const nextDay = getNextSchoolDayWithTasks();
-    if (nextDay) {
-        // Only update if the day is different to avoid re-renders
-        if (!displayedDay || !isSameDay(nextDay, displayedDay)) {
-            setDisplayedDay(startOfDay(nextDay));
-        }
-    } else {
-        setDisplayedDay(null);
+    if (areTasksSynced && isDataLoaded) {
+      const nextDay = getNextSchoolDayWithTasks();
+      if (!displayedDay || (nextDay && !isSameDay(nextDay, displayedDay))) {
+        setDisplayedDay(nextDay ? startOfDay(nextDay) : startOfDay(new Date()));
+      } else if (!nextDay && !displayedDay) {
+        setDisplayedDay(startOfDay(new Date()));
+      }
     }
-  }, [tasks, getNextSchoolDayWithTasks, displayedDay]);
+  }, [tasks, areTasksSynced, isDataLoaded, getNextSchoolDayWithTasks, displayedDay]);
 
   const handlePrevDay = () => {
     if (displayedDay) {
@@ -114,7 +112,6 @@ export default function HomeworkDashboard() {
                                       variant="ghost" 
                                       size="icon" 
                                       onClick={handlePrevDay}
-                                      disabled={isSameDay(displayedDay, new Date())}
                                     >
                                         <ChevronLeft className="h-6 w-6" />
                                     </Button>
@@ -162,5 +159,3 @@ export default function HomeworkDashboard() {
     </main>
   );
 }
-
-    
