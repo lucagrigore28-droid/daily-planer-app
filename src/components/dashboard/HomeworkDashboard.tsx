@@ -75,7 +75,7 @@ export default function HomeworkDashboard() {
 
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
-      <header className="mb-6 flex justify-between items-center gap-4">
+      <header className="mb-6 flex justify-between items-start gap-4">
         <div className="flex items-center gap-4 rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
            <div>
             <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -86,7 +86,7 @@ export default function HomeworkDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
                 <Settings className="h-6 w-6" />
                 <span className="sr-only">Setări</span>
