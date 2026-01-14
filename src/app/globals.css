@@ -126,22 +126,9 @@
         background-image: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent)));
     }
 
-    .border-gradient::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        border-radius: inherit; /* Match the parent's border-radius */
-        border: 2px solid transparent;
-        background: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent))) border-box;
-        -webkit-mask:
-            linear-gradient(#fff 0 0) padding-box, 
-            linear-gradient(#fff 0 0);
-        -webkit-mask-composite: destination-out;
-        mask-composite: exclude;
-        pointer-events: none; /* Make sure it doesn't interfere with clicks */
+    .border-gradient {
+        background: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent)));
+        padding: 2px;
     }
 }
 
