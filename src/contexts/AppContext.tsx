@@ -172,7 +172,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = useCallback(async (data: Partial<UserData>) => {
     if (!userDocRef) return;
     await setDoc(userDocRef, data, { merge: true });
-  }, [userDocRef]);
+    
+    // If setup is being completed, trigger task sync immediately.
+    if (data.setupComplete === true && userData) {
+      const fullSchedule = data.schedule || userData.schedule;
+      const fullSubjects = data.subjects || userData.subjects;
+      await generateAndSyncTasks(fullSchedule, fullSubjects);
+    }
+  }, [userDocRef, userData, generateAndSyncTasks]);
 
   const updateSubjects = useCallback(async (subjects: Subject[]) => {
     if (userDocRef) {
