@@ -16,6 +16,7 @@ import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
 import SettingsDialog from './SettingsDialog';
 import { Progress } from '../ui/progress';
+import { cn } from '@/lib/utils';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
@@ -90,7 +91,7 @@ export default function HomeworkDashboard() {
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-6">
+        <TabsList className={cn("grid w-full max-w-lg mx-auto mb-6", showWeekendTab ? "grid-cols-3" : "grid-cols-2")}>
           {tabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
           ))}
