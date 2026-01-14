@@ -27,12 +27,12 @@ export default function HomeworkDashboard() {
   const { userData, currentDate, setCurrentDate, tasks, getNextSchoolDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
    useEffect(() => {
-    // This effect runs to set the initial day when data is loaded
-    if (areTasksSynced && isDataLoaded) {
+    // This effect runs ONCE to set the initial day when data is loaded
+    if (areTasksSynced && isDataLoaded && !displayedDay) {
       const nextDay = getNextSchoolDayWithTasks();
       setDisplayedDay(nextDay ? startOfDay(nextDay) : startOfDay(new Date()));
     }
-  }, [areTasksSynced, isDataLoaded, getNextSchoolDayWithTasks]);
+  }, [areTasksSynced, isDataLoaded]);
 
 
   const handlePrevDay = () => {
