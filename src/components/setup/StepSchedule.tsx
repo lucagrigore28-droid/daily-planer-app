@@ -27,11 +27,9 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
   }, [context?.userData?.schedule]);
 
   useEffect(() => {
-    // This effect ensures the schedule view is up-to-date when subjects change.
     const currentSubjects = context?.userData?.subjects || [];
     setSchedule(currentSchedule => {
       const newSchedule = { ...currentSchedule };
-      // Optional: Clean up schedule from removed subjects
       Object.keys(newSchedule).forEach(subjectId => {
         if (!currentSubjects.some(s => s.id === subjectId)) {
           delete newSchedule[subjectId];
@@ -58,7 +56,7 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
   
   const showNavButtons = !!onNext;
 
-  const scheduleDays = DAYS_OF_WEEK_SCHEDULE.filter(d => d.id <= 5); // Only Mon-Fri
+  const scheduleDays = DAYS_OF_WEEK_SCHEDULE.filter(d => d.id <= 5);
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
@@ -70,12 +68,12 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
         </div>
         <div className="space-y-6">
           {subjects.map(subject => (
-            <div key={subject.id}>
+            <div key={subject.id} className="overflow-x-auto pb-2">
               <Label className="text-base font-medium">{subject.name}</Label>
               <ToggleGroup
                 type="multiple"
                 variant="outline"
-                className="mt-2 justify-start flex-wrap"
+                className="mt-2"
                 value={schedule[subject.id]?.map(String) || []}
                 onValueChange={(days) => handleScheduleChange(subject.id, days)}
               >
