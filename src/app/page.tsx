@@ -37,7 +37,7 @@ function AppContainer() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user || !context || context.userData === undefined) {
+  if (isUserLoading || !user || !context || context.userData === undefined || !context.areTasksSynced) {
     return <LoadingScreen />;
   }
 
@@ -71,3 +71,5 @@ function AppContainer() {
 export default function Home() {
   return <AppContainer />;
 }
+
+    

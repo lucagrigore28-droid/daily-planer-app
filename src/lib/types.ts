@@ -31,6 +31,7 @@ export type UserNotifications = {
 }
 
 export type UserData = {
+  username: string;
   name: string;
   subjects: Subject[];
   schedule: Schedule;
@@ -38,3 +39,5 @@ export type UserData = {
   notifications: UserNotifications;
   theme: string;
 };
+
+    

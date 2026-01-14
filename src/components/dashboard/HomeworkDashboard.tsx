@@ -23,15 +23,20 @@ export default function HomeworkDashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
-  const nextDayWithTasks = useMemo(() => {
-    return context?.getNextSchoolDayWithTasks();
-  }, [context?.tasks, context?.currentDate, context?.userData?.schedule]);
+  const { userData, currentDate, tasks, getNextSchoolDayWithTasks } = context!;
 
   useEffect(() => {
-    if (!displayedDay && nextDayWithTasks) {
-      setDisplayedDay(startOfDay(nextDayWithTasks));
+    // This effect will run whenever the relevant context data changes.
+    const nextDay = getNextSchoolDayWithTasks();
+    if (nextDay) {
+        // Only update if the day is different to avoid re-renders
+        if (!displayedDay || !isSameDay(nextDay, displayedDay)) {
+            setDisplayedDay(startOfDay(nextDay));
+        }
+    } else {
+        setDisplayedDay(null);
     }
-  }, [nextDayWithTasks, displayedDay]);
+  }, [tasks, getNextSchoolDayWithTasks, displayedDay]);
 
   const handlePrevDay = () => {
     if (displayedDay) {
@@ -45,8 +50,7 @@ export default function HomeworkDashboard() {
     }
   };
 
-  if (!context || !context.userData) return null; // Wait for user data
-  const { userData, currentDate, tasks } = context;
+  if (!context || !context.userData) return null;
 
   const dayOfWeek = getDay(currentDate);
   const showWeekendTab = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
@@ -158,3 +162,5 @@ export default function HomeworkDashboard() {
     </main>
   );
 }
+
+    
