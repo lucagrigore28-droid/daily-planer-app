@@ -33,7 +33,7 @@
   }
 
   .dark {
-    --background: 240 4% 16%; /* Darker version of light gray */
+    --background: 0 0% 0%; /* Black */
     --foreground: 0 0% 98%;
     --card: 240 4% 20%;
     --card-foreground: 0 0% 98%;
