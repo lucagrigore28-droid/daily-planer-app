@@ -8,7 +8,6 @@ import { AppContext } from '@/contexts/AppContext';
 import type { Schedule } from '@/lib/types';
 import { DAYS_OF_WEEK_SCHEDULE } from '@/lib/constants';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 type StepProps = {
@@ -70,33 +69,31 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[350px] md:h-[450px] pr-4">
-          <div className="space-y-6">
-            {subjects.map(subject => (
-              <div key={subject.id}>
-                <Label className="text-base font-medium">{subject.name}</Label>
-                <ToggleGroup
-                  type="multiple"
-                  variant="outline"
-                  className="mt-2 justify-start flex-wrap"
-                  value={schedule[subject.id]?.map(String) || []}
-                  onValueChange={(days) => handleScheduleChange(subject.id, days)}
-                >
-                  {scheduleDays.map(day => (
-                    <ToggleGroupItem key={day.id} value={String(day.id)} aria-label={day.name}>
-                      {day.name}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
+        <div className="space-y-6">
+          {subjects.map(subject => (
+            <div key={subject.id}>
+              <Label className="text-base font-medium">{subject.name}</Label>
+              <ToggleGroup
+                type="multiple"
+                variant="outline"
+                className="mt-2 justify-start flex-wrap"
+                value={schedule[subject.id]?.map(String) || []}
+                onValueChange={(days) => handleScheduleChange(subject.id, days)}
+              >
+                {scheduleDays.map(day => (
+                  <ToggleGroupItem key={day.id} value={String(day.id)} aria-label={day.name}>
+                    {day.name}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+          ))}
+        </div>
       </CardContent>
       {showNavButtons ? (
         <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
           <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">Înapoi</Button>
-          <Button onClick={handleNext} className="w-full sm:w-auto">Continuă</Button>
+          <Button onClick={handleNext} className="w-full sm:w-auto">Finalizează</Button>
         </CardFooter>
       ) : null}
     </Card>

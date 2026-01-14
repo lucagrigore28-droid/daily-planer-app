@@ -81,32 +81,30 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[350px] md:h-[450px] pr-4">
-          <div className="grid grid-cols-2 gap-4">
-            {allSubjectNames.map(subjectName => {
-              const isChecked = subjects.some(s => s.name === subjectName);
-              const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
-              return (
-                <div key={subjectName} className="flex items-center space-x-3 p-2 rounded-md transition-colors hover:bg-muted">
-                  <Checkbox
-                    id={subjectName}
-                    checked={isChecked}
-                    onCheckedChange={() => handleToggleSubject(subjectName)}
-                    className="h-5 w-5"
-                  />
-                  <Label htmlFor={subjectName} className="flex-1 cursor-pointer text-base">
-                    {subjectName}
-                  </Label>
-                   {subjectIsCustom && (
-                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRemoveCustomSubject(subjectName)}>
-                       <X className="h-4 w-4" />
-                     </Button>
-                   )}
-                </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
+        <div className="grid grid-cols-2 gap-4">
+          {allSubjectNames.map(subjectName => {
+            const isChecked = subjects.some(s => s.name === subjectName);
+            const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
+            return (
+              <div key={subjectName} className="flex items-center space-x-3 p-2 rounded-md transition-colors hover:bg-muted">
+                <Checkbox
+                  id={subjectName}
+                  checked={isChecked}
+                  onCheckedChange={() => handleToggleSubject(subjectName)}
+                  className="h-5 w-5"
+                />
+                <Label htmlFor={subjectName} className="flex-1 cursor-pointer text-base">
+                  {subjectName}
+                </Label>
+                 {subjectIsCustom && (
+                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRemoveCustomSubject(subjectName)}>
+                     <X className="h-4 w-4" />
+                   </Button>
+                 )}
+              </div>
+            );
+          })}
+        </div>
         <div className="mt-6 flex items-center space-x-2">
           <Input
             placeholder="Altă materie..."
