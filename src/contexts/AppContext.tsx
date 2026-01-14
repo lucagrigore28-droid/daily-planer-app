@@ -5,7 +5,7 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback, useM
 import type { HomeworkTask, UserData, Subject, Schedule } from '@/lib/types';
 import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
@@ -189,7 +189,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const updateTask = useCallback(async (taskId: string, updates: Partial<HomeworkTask>) => {
     if (user) {
       const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-      await setDoc(taskDocRef, updates, { merge: true });
+      const finalUpdates = { ...updates };
+
+      if ('plannedDate' in finalUpdates && (finalUpdates.plannedDate === undefined || finalUpdates.plannedDate === null)) {
+        finalUpdates.plannedDate = deleteField() as any;
+      }
+      if ('estimatedTime' in finalUpdates && (finalUpdates.estimatedTime === undefined || finalUpdates.estimatedTime <= 0)) {
+        finalUpdates.estimatedTime = deleteField() as any;
+      }
+      
+      await setDoc(taskDocRef, finalUpdates, { merge: true });
     }
   }, [firestore, user]);
 

@@ -183,7 +183,7 @@ export default function WeekendView() {
   const handleDrop = (targetDate: Date | null) => (e: React.DragEvent<HTMLDivElement>) => {
     const taskId = e.dataTransfer.getData("taskId");
     if (taskId) {
-        updateTask(taskId, { plannedDate: targetDate ? targetDate.toISOString() : undefined });
+        updateTask(taskId, { plannedDate: targetDate ? targetDate.toISOString() : null });
     }
     setIsDragging(false);
   };
@@ -203,7 +203,7 @@ export default function WeekendView() {
     if (day === 'saturday') targetDate = saturday;
     if (day === 'sunday') targetDate = sunday;
     
-    updateTask(taskId, { plannedDate: targetDate ? targetDate.toISOString() : undefined });
+    updateTask(taskId, { plannedDate: targetDate ? targetDate.toISOString() : null });
   };
 
 
