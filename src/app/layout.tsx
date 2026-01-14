@@ -12,12 +12,6 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 export const metadata: Metadata = {
   title: 'Daily Planner Pro',
   description: 'Planificatorul tău inteligent pentru teme.',
-  manifest: '/manifest.webmanifest',
-  icons: {
-    icon: '/icon.png',
-    shortcut: '/icon.png',
-    apple: '/apple-icon.png',
-  }
 };
 
 export const viewport: Viewport = {

@@ -23,6 +23,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   const [localSubjects, setLocalSubjects] = useState<Subject[]>([]);
   const [customSubject, setCustomSubject] = useState('');
 
+  // Sync local state with context state when it changes
   useEffect(() => {
     if (context?.userData?.subjects) {
       setLocalSubjects(context.userData.subjects);
@@ -33,6 +34,14 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     const customNames = localSubjects.filter(s => s.isCustom).map(s => s.name);
     return [...new Set([...PREDEFINED_SUBJECTS, ...customNames])].sort((a,b) => a.localeCompare(b));
   }, [localSubjects]);
+
+  const handleUpdateSubjects = (updatedSubjects: Subject[]) => {
+    setLocalSubjects(updatedSubjects);
+    // If not in setup wizard, save immediately.
+    if (!onNext) {
+      context?.updateSubjects(updatedSubjects);
+    }
+  };
 
   const handleToggleSubject = (subjectName: string) => {
     const isAlreadySelected = localSubjects.some(s => s.name === subjectName);
@@ -45,26 +54,30 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       updatedSubjects = [...localSubjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
     }
     
-    setLocalSubjects(updatedSubjects);
+    handleUpdateSubjects(updatedSubjects);
   };
 
   const handleAddCustomSubject = () => {
     const trimmedName = customSubject.trim();
     if (trimmedName && !localSubjects.some(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
       const newSubjects = [...localSubjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
-      setLocalSubjects(newSubjects);
+      handleUpdateSubjects(newSubjects);
       setCustomSubject('');
     }
   };
   
   const handleRemoveCustomSubject = (subjectName: string) => {
       const updatedSubjects = localSubjects.filter(s => s.name !== subjectName);
-      setLocalSubjects(updatedSubjects);
+      handleUpdateSubjects(updatedSubjects);
   };
 
   const handleNext = () => {
-    context?.updateSubjects(localSubjects);
-    if (onNext) onNext();
+    // onNext is only present during initial setup.
+    // In settings, changes are saved instantly via handleUpdateSubjects.
+    if (onNext) {
+      context?.updateSubjects(localSubjects);
+      onNext();
+    }
   };
 
   const handleBack = () => {
@@ -98,7 +111,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
                   <Label htmlFor={subjectName} className="flex-1 cursor-pointer text-base">
                     {subjectName}
                   </Label>
-                   {subjectIsCustom && (
+                   {subjectIsCustom && isChecked && ( // Only show remove for selected custom subjects
                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRemoveCustomSubject(subjectName)}>
                        <X className="h-4 w-4" />
                      </Button>
