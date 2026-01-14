@@ -10,7 +10,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 
 
 export const metadata: Metadata = {
-  title: 'Homework Planner',
+  title: 'Daily Planner Pro',
   description: 'Planificatorul tău inteligent pentru teme.',
   manifest: '/manifest.webmanifest',
   icons: {
