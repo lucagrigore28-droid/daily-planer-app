@@ -9,9 +9,9 @@ export type Theme = {
 
 export const themes: Theme[] = [
   {
-    name: 'purple',
-    label: 'Apus',
-    className: 'theme-purple',
+    name: 'classic',
+    label: 'Clasic',
+    className: 'theme-classic',
     primary: '262 84% 60%',
     accent: '289 84% 65%',
   },
