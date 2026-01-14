@@ -70,7 +70,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
       >
         <Card className={cn(
           "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 relative",
-           task.isCompleted ? 'border-gradient bg-card' : 'bg-card'
+           task.isCompleted ? 'border-gradient bg-card border-transparent' : 'bg-card'
         )}>
           <CardContent className="p-3">
             <Accordion type="single" collapsible disabled={task.isCompleted}>

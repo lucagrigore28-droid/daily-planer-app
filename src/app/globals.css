@@ -134,7 +134,7 @@
         right: 0;
         bottom: 0;
         border-radius: inherit; /* Match the parent's border-radius */
-        border: 1px solid transparent;
+        border: 2px solid transparent;
         background: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent))) border-box;
         -webkit-mask:
             linear-gradient(#fff 0 0) padding-box, 
@@ -142,6 +142,7 @@
         -webkit-mask-composite: destination-out;
         mask-composite: exclude;
         pointer-events: none; /* Make sure it doesn't interfere with clicks */
+        z-index: -1;
     }
 }
 
