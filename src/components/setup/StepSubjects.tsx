@@ -55,6 +55,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   };
 
   const handleNext = () => {
+    context?.updateUser({ subjects });
     if(onNext) onNext();
   };
 
