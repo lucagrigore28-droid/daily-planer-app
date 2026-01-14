@@ -64,9 +64,6 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-2xl">Setează-ți orarul săptămânal</CardTitle>
-        <CardDescription>
-          Pentru fiecare materie, selectează zilele în care o ai. Acest lucru ne ajută să-ți afișăm temele corect.
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -88,6 +85,11 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
               </ToggleGroup>
             </div>
           ))}
+           {subjects.length === 0 && (
+            <p className="text-center text-muted-foreground pt-8">
+              Mai întâi adaugă materii în tab-ul anterior pentru a le vedea aici.
+            </p>
+          )}
         </div>
       </CardContent>
       {showNavButtons ? (
