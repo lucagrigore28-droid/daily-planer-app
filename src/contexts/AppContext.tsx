@@ -42,6 +42,7 @@ type AppContextType = {
   isDataLoaded: boolean;
   areTasksSynced: boolean; // New flag
   currentDate: Date;
+  setCurrentDate: (date: Date) => void;
   getNextSchoolDayWithTasks: () => Date | null;
   getWeekendTasks: () => HomeworkTask[];
   user: any;
@@ -63,7 +64,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const tasksCollectionRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
   const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
-  const [currentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [areTasksSynced, setAreTasksSynced] = useState(false);
   const isSyncing = useRef(false);
 
@@ -287,6 +288,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     isDataLoaded,
     areTasksSynced,
     currentDate,
+    setCurrentDate,
     getNextSchoolDayWithTasks,
     getWeekendTasks,
     user,
