@@ -28,13 +28,17 @@ export default function HomeworkDashboard() {
   useEffect(() => {
     if (areTasksSynced && isDataLoaded) {
       const nextDay = getNextSchoolDayWithTasks();
+      // Only set the initial day, or if the next day with tasks has changed.
       if (!displayedDay || (nextDay && !isSameDay(nextDay, displayedDay))) {
         setDisplayedDay(nextDay ? startOfDay(nextDay) : startOfDay(new Date()));
       } else if (!nextDay && !displayedDay) {
+        // Fallback if there are no tasks at all
         setDisplayedDay(startOfDay(new Date()));
       }
     }
-  }, [tasks, areTasksSynced, isDataLoaded, getNextSchoolDayWithTasks, displayedDay]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, areTasksSynced, isDataLoaded, getNextSchoolDayWithTasks]);
+
 
   const handlePrevDay = () => {
     if (displayedDay) {
