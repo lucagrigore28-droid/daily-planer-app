@@ -8,9 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StepName from '@/components/setup/StepName';
 import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
-import StepNotifications from '@/components/setup/StepNotifications';
 import StepTheme from '@/components/setup/StepTheme';
-import { User, Book, Calendar, Bell, Palette, LogOut, Trash2 } from 'lucide-react';
+import { User, Book, Calendar, Palette, LogOut, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,7 +37,6 @@ const TABS = [
     { value: 'profile', label: 'Profil', icon: User, component: StepName },
     { value: 'subjects', label: 'Materii', icon: Book, component: StepSubjects },
     { value: 'schedule', label: 'Orar', icon: Calendar, component: StepSchedule },
-    { value: 'notifications', label: 'Notificări', icon: Bell, component: StepNotifications },
     { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
 ];
 
@@ -111,7 +109,7 @@ const UserAccount = () => {
                     </Avatar>
                     <span className="font-medium text-sm text-muted-foreground">{email}</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="self-start">
                     <LogOut className="mr-2 h-4 w-4" />
                     Deconectare
                 </Button>
@@ -163,7 +161,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Setări</DialogTitle>
           <DialogDescription>
-            Modifică-ți preferințele, materiile, orarul și notificările.
+            Modifică-ți preferințele, materiile, orarul și aspectul.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
@@ -189,7 +187,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
             </TabsList>
             <div className="flex-1 min-h-0">
               <ScrollArea className="h-full pr-4">
-                 <TabsContent value='profile' className="h-full flex flex-col mt-0">
+                 <TabsContent value='profile' className="h-full flex flex-col mt-0 justify-center">
                     <div className="flex flex-col justify-center flex-1 h-full">
                         <div>
                             <UserAccount />
