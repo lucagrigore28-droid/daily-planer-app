@@ -47,13 +47,6 @@ export default function HomeworkDashboard() {
     }
   };
 
-  const handlePrevTestDay = () => {
-    setCurrentDate(subDays(currentDate, 1));
-  };
-  const handleNextTestDay = () => {
-    setCurrentDate(addDays(currentDate, 1));
-  };
-
   if (!context || !context.userData) return null;
 
   const dayOfWeek = getDay(currentDate); // 0=Sun, 1=Mon, ..., 6=Sat
@@ -88,10 +81,8 @@ export default function HomeworkDashboard() {
             <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               Salut, {userData.name}!
             </h1>
-            <p className="text-lg text-muted-foreground flex items-center gap-2">
-              <Button size="icon" variant="ghost" onClick={handlePrevTestDay}><ChevronLeft/></Button>
-              <span>Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.</span>
-              <Button size="icon" variant="ghost" onClick={handleNextTestDay}><ChevronRight/></Button>
+            <p className="text-lg text-muted-foreground">
+              Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
             </p>
           </div>
         </div>
