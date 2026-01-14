@@ -23,13 +23,19 @@ export default function StepName({ onNext, onBack }: StepProps) {
     }
   }, [context?.userData?.name]);
 
+  const handleUpdate = () => {
+     if (name.trim()) {
+        context?.updateUser({ name: name.trim() });
+    }
+  }
+
   const handleContinue = async () => {
     if (name.trim()) {
       if (onNext) { // This is the initial setup
         await context?.createUserDocument(user, name.trim());
         onNext();
       } else { // This is from the settings dialog
-        await context?.updateUser({ name: name.trim() });
+        handleUpdate();
       }
     }
   };
@@ -53,20 +59,17 @@ export default function StepName({ onNext, onBack }: StepProps) {
             placeholder="ex: Alex"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onBlur={handleUpdate}
             autoFocus
             onKeyDown={(e) => e.key === 'Enter' && name.trim() && handleContinue()}
           />
         </div>
       </CardContent>
-       {showNavButtons ? (
+       {showNavButtons && (
           <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
              {onBack && <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">Înapoi</Button>}
             <Button onClick={handleContinue} disabled={!name.trim()} className="w-full sm:w-auto sm:ml-auto">Continuă</Button>
           </CardFooter>
-       ) : (
-        <CardFooter>
-           <Button onClick={handleContinue} disabled={!name.trim()} className="w-full sm:w-auto sm:ml-auto">Salvează</Button>
-        </CardFooter>
        )}
     </Card>
   );

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext, useState, useEffect } from 'react';
@@ -159,7 +158,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-full md:h-[90vh] lg:h-[80vh] flex flex-col p-0">
+      <DialogContent className="max-w-3xl h-full md:h-auto lg:h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Setări</DialogTitle>
           <DialogDescription>
@@ -190,7 +189,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
             <div className="flex-1 min-h-0">
               <ScrollArea className="h-full pr-4">
                  <TabsContent value='profile' className="h-full flex flex-col mt-0">
-                    <div className="flex flex-col justify-between flex-1 h-full">
+                    <div className="flex flex-col justify-center flex-1 h-full">
                         <div>
                             <UserAccount />
                             <StepName />
