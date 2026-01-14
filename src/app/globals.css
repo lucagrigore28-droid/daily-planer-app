@@ -142,7 +142,6 @@
         -webkit-mask-composite: destination-out;
         mask-composite: exclude;
         pointer-events: none; /* Make sure it doesn't interfere with clicks */
-        z-index: -1;
     }
 }
 
