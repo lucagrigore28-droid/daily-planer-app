@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useContext, useMemo } from 'react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,7 +10,6 @@ import { AppContext } from '@/contexts/AppContext';
 import type { Subject } from '@/lib/types';
 import { PREDEFINED_SUBJECTS } from '@/lib/constants';
 import { PlusCircle, X } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 type StepProps = {
   onNext?: () => void;
@@ -28,12 +27,6 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
     return [...new Set([...PREDEFINED_SUBJECTS, ...customNames])].sort((a,b) => a.localeCompare(b));
   }, [subjects]);
 
-  const updateGlobalSubjects = (updatedSubjects: Subject[]) => {
-    // When used in Settings, this should trigger an immediate update.
-    // In the setup wizard, it just updates local state until "Continue" is clicked.
-    context?.updateUser({ subjects: updatedSubjects });
-  };
-
   const handleToggleSubject = (subjectName: string) => {
     const isAlreadySelected = subjects.some(s => s.name === subjectName);
     let updatedSubjects;
@@ -44,25 +37,24 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       const isPredefined = PREDEFINED_SUBJECTS.includes(subjectName);
       updatedSubjects = [...subjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
     }
-    updateGlobalSubjects(updatedSubjects);
+    context?.updateUser({ subjects: updatedSubjects });
   };
 
   const handleAddCustomSubject = () => {
     const trimmedName = customSubject.trim();
     if (trimmedName && !subjects.some(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
       const newSubjects = [...subjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
-      updateGlobalSubjects(newSubjects);
+      context?.updateUser({ subjects: newSubjects });
       setCustomSubject('');
     }
   };
   
   const handleRemoveCustomSubject = (subjectName: string) => {
       const updatedSubjects = subjects.filter(s => s.name !== subjectName);
-      updateGlobalSubjects(updatedSubjects);
+      context?.updateUser({ subjects: updatedSubjects });
   };
 
   const handleNext = () => {
-    // This is only called in the setup wizard context
     if(onNext) onNext();
   };
 
@@ -74,13 +66,13 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
-      <CardHeader>
-        <CardTitle className="font-headline text-2xl">Ce materii ai?</CardTitle>
-        <CardDescription>
-          Bifează materiile din orarul tău. Poți adăuga și materii personalizate.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
+        <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm mb-6">
+            <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Selectează-ți materiile
+            </h2>
+             <p className="text-sm text-muted-foreground mt-1">Bifează materiile din orarul tău. Poți adăuga și materii personalizate.</p>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           {allSubjectNames.map(subjectName => {
             const isChecked = subjects.some(s => s.name === subjectName);
