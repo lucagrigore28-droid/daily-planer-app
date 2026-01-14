@@ -26,6 +26,8 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import ThemeToggle from '../ThemeToggle';
 import { useTheme } from 'next-themes';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -151,12 +153,13 @@ const AppearanceSettings = () => {
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const context = useContext(AppContext);
   const [activeTab, setActiveTab] = useState(TABS[0].value);
+  const isMobile = useIsMobile();
   
   if (!context) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[90vh] md:h-[80vh] flex flex-col p-0">
+      <DialogContent className="max-w-3xl h-full md:h-[90vh] lg:h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Setări</DialogTitle>
           <DialogDescription>
@@ -164,11 +167,23 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="flex flex-col md:flex-row gap-6 h-full p-6">
-            <TabsList className="flex-col h-auto justify-start shrink-0">
+          <Tabs 
+            value={activeTab} 
+            onValueChange={setActiveTab} 
+            orientation={isMobile ? 'horizontal' : 'vertical'} 
+            className="flex flex-col md:flex-row gap-6 h-full p-6"
+          >
+            <TabsList className={cn(
+              "flex-col h-auto justify-start shrink-0",
+              isMobile && "flex-row w-full overflow-x-auto"
+            )}>
               {TABS.map(tab => (
-                <TabsTrigger key={tab.value} value={tab.value} className="w-full justify-start gap-2">
-                    <tab.icon className="h-4 w-4"/> {tab.label}
+                <TabsTrigger key={tab.value} value={tab.value} className={cn(
+                  "w-full justify-start gap-2",
+                  isMobile && "flex-col h-16"
+                )}>
+                    <tab.icon className="h-4 w-4"/>
+                    <span className={cn(isMobile && "text-xs")}>{tab.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
