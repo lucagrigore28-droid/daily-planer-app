@@ -59,13 +59,13 @@ export default function StepName({ onNext, onBack }: StepProps) {
         </div>
       </CardContent>
        {showNavButtons ? (
-          <CardFooter className="flex justify-between">
-             {onBack && <Button variant="ghost" onClick={onBack}>Înapoi</Button>}
-            <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Continuă</Button>
+          <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+             {onBack && <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">Înapoi</Button>}
+            <Button onClick={handleContinue} disabled={!name.trim()} className="w-full sm:w-auto sm:ml-auto">Continuă</Button>
           </CardFooter>
        ) : (
         <CardFooter>
-           <Button onClick={handleContinue} disabled={!name.trim()} className="ml-auto">Salvează</Button>
+           <Button onClick={handleContinue} disabled={!name.trim()} className="w-full sm:w-auto sm:ml-auto">Salvează</Button>
         </CardFooter>
        )}
     </Card>

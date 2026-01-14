@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext } from 'react';
@@ -60,9 +59,9 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
         </div>
       </CardContent>
       {showNavButtons && (
-        <CardFooter className="flex justify-between mt-4">
-          <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={onNext}>Continuă</Button>
+        <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 mt-4">
+          <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">Înapoi</Button>
+          <Button onClick={onNext} className="w-full sm:w-auto">Continuă</Button>
         </CardFooter>
       )}
     </Card>

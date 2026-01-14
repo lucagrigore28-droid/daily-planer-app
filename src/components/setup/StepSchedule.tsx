@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useMemo, useEffect } from 'react';
@@ -79,13 +78,11 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
         </ScrollArea>
       </CardContent>
       {showNavButtons ? (
-        <CardFooter className="flex justify-between">
-          <Button variant="ghost" onClick={onBack}>Înapoi</Button>
-          <Button onClick={handleNext}>Continuă</Button>
+        <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+          <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">Înapoi</Button>
+          <Button onClick={handleNext} className="w-full sm:w-auto">Continuă</Button>
         </CardFooter>
       ) : null}
     </Card>
   );
 }
-
-

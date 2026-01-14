@@ -21,7 +21,6 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
   const [customSubject, setCustomSubject] = useState('');
   
-  // Directly use subjects from context to ensure it's always up-to-date
   const subjects = useMemo(() => context?.userData?.subjects || [], [context?.userData?.subjects]);
 
   const allSubjectNames = useMemo(() => {
@@ -30,7 +29,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   }, [subjects]);
 
   const updateGlobalSubjects = (updatedSubjects: Subject[]) => {
-    context?.updateSubjects(updatedSubjects);
+    context?.updateUser({ subjects: updatedSubjects });
   };
 
   const handleToggleSubject = (subjectName: string) => {
@@ -41,7 +40,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       updatedSubjects = subjects.filter(s => s.name !== subjectName);
     } else {
       const isPredefined = PREDEFINED_SUBJECTS.includes(subjectName);
-      updatedSubjects = [...subjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
+      updatedSubjects = [...subjects, { id: subjectName.toLowerCase().replace(/\\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
     }
     updateGlobalSubjects(updatedSubjects);
   };
@@ -49,7 +48,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   const handleAddCustomSubject = () => {
     const trimmedName = customSubject.trim();
     if (trimmedName && !subjects.some(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
-      const newSubjects = [...subjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
+      const newSubjects = [...subjects, { id: trimmedName.toLowerCase().replace(/\\s/g, '_'), name: trimmedName, isCustom: true }];
       updateGlobalSubjects(newSubjects);
       setCustomSubject('');
     }
@@ -61,8 +60,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   };
 
   const handleNext = () => {
-    // Subjects are already updated, just proceed
-    if (onNext) onNext();
+    if(onNext) onNext();
   };
 
   const handleBack = () => {
@@ -119,9 +117,9 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
         </div>
       </CardContent>
       {showNavButtons && (
-        <CardFooter className="flex justify-between">
-          <Button variant="ghost" onClick={handleBack}>Înapoi</Button>
-          <Button onClick={handleNext} disabled={subjects.length === 0}>Continuă</Button>
+        <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+          <Button variant="ghost" onClick={handleBack} className="w-full sm:w-auto">Înapoi</Button>
+          <Button onClick={handleNext} disabled={subjects.length === 0} className="w-full sm:w-auto">Continuă</Button>
         </CardFooter>
       )}
     </Card>
