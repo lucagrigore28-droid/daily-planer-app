@@ -13,6 +13,8 @@ import { GripVertical } from 'lucide-react';
 import type { HomeworkTask } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobilePlannerItem } from './MobilePlannerItem';
 
 type PlanningColumnProps = {
   title: string;
@@ -91,6 +93,7 @@ export default function WeekendView() {
   const [isPlanningMode, setIsPlanningMode] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const isMobile = useIsMobile();
 
 
   const weekendTasks = useMemo(() => {
@@ -194,6 +197,15 @@ export default function WeekendView() {
   const progressPercentage = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
   const allTasksCompleted = totalTasksCount > 0 && completedTasksCount === totalTasksCount;
 
+  const handlePlanDay = (taskId: string, day: 'friday' | 'saturday' | 'sunday' | null) => {
+    let targetDate: Date | null = null;
+    if (day === 'friday') targetDate = friday;
+    if (day === 'saturday') targetDate = saturday;
+    if (day === 'sunday') targetDate = sunday;
+    
+    updateTask(taskId, { plannedDate: targetDate ? targetDate.toISOString() : undefined });
+  };
+
 
   return (
     <div className="w-full max-w-6xl mx-auto">
@@ -245,6 +257,13 @@ export default function WeekendView() {
                     </div>
                 </CardContent>
             </Card>
+        ) : isMobile ? (
+            <div className="space-y-4">
+              <MobilePlannerItem title="Teme neplanificate" tasks={plannedTasks.unplannedTasks} onPlanDay={handlePlanDay} />
+              <MobilePlannerItem title="Vineri" tasks={plannedTasks.fridayTasks} onPlanDay={handlePlanDay} />
+              <MobilePlannerItem title="Sâmbătă" tasks={plannedTasks.saturdayTasks} onPlanDay={handlePlanDay} />
+              <MobilePlannerItem title="Duminică" tasks={plannedTasks.sundayTasks} onPlanDay={handlePlanDay} />
+            </div>
         ) : (
             <div className="flex flex-col lg:flex-row gap-4" onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                 {/* Unplanned Column */}
@@ -274,5 +293,7 @@ export default function WeekendView() {
     </div>
   );
 }
+
+    
 
     
