@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AppContext } from '@/contexts/AppContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +25,7 @@ import { Button } from '../ui/button';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import ThemeToggle from '../ThemeToggle';
+import { useTheme } from 'next-themes';
 
 type SettingsDialogProps = {
   open: boolean;
@@ -117,6 +118,35 @@ const UserAccount = () => {
     )
 }
 
+const AppearanceSettings = () => {
+    const { theme } = useTheme();
+    const [isClient, setIsClient] = useState(false);
+    
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    const getThemeLabel = () => {
+        if (!isClient) return 'Mod Întunecat';
+        switch (theme) {
+            case 'light': return 'Mod Luminos';
+            case 'dark': return 'Mod Întunecat';
+            case 'system': return 'Temă Sistem';
+            default: return 'Mod Întunecat';
+        }
+    };
+
+    return (
+        <>
+            <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50 mb-6">
+                <h3 className="font-semibold">{getThemeLabel()}</h3>
+                <ThemeToggle />
+            </div>
+            <StepTheme />
+        </>
+    );
+};
+
 
 export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const context = useContext(AppContext);
@@ -154,11 +184,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
                     </div>
                 </TabsContent>
                 <TabsContent value='appearance' className="mt-0">
-                    <div className="flex items-center justify-between rounded-lg border p-4 bg-background/50 mb-6">
-                         <h3 className="font-semibold">Mod Întunecat</h3>
-                         <ThemeToggle />
-                    </div>
-                    <StepTheme />
+                    <AppearanceSettings />
                 </TabsContent>
 
                 {TABS.filter(t => t.value !== 'profile' && t.value !== 'appearance').map(tab => {
