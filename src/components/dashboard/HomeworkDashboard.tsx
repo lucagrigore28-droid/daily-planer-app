@@ -94,15 +94,17 @@ export default function HomeworkDashboard() {
               <Button size="icon" variant="ghost" onClick={handleNextTestDay}><ChevronRight/></Button>
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
                 <Settings className="h-6 w-6" />
                 <span className="sr-only">Setări</span>
             </Button>
+            <Button onClick={() => setAddTaskOpen(true)} size="icon" variant="default" className="w-12 h-12">
+                <Plus className="h-6 w-6" />
+                <span className="sr-only">Adaugă temă</span>
+            </Button>
         </div>
-         <Button onClick={() => setAddTaskOpen(true)} size="icon" variant="default" className="w-12 h-12">
-            <Plus className="h-6 w-6" />
-            <span className="sr-only">Adaugă temă</span>
-        </Button>
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
