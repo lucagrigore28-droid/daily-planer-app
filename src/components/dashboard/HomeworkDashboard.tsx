@@ -49,14 +49,11 @@ export default function HomeworkDashboard() {
 
   if (!context || !context.userData) return null;
 
-  const dayOfWeek = getDay(currentDate);
-  const showWeekendTab = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
-
-  const tabs = [{ value: "next-tasks", label: "Teme următoare" }];
-  if (showWeekendTab) {
-    tabs.push({ value: "weekend", label: "Weekend" });
-  }
-  tabs.push({ value: "calendar", label: "Calendar" });
+  const tabs = [
+    { value: "next-tasks", label: "Teme următoare" },
+    { value: "weekend", label: "Weekend" },
+    { value: "calendar", label: "Calendar" }
+  ];
 
   const tasksForDisplayedDay = useMemo(() => {
     if (!displayedDay) return [];
@@ -91,7 +88,7 @@ export default function HomeworkDashboard() {
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className={cn("grid w-full max-w-lg mx-auto mb-6", showWeekendTab ? "grid-cols-3" : "grid-cols-2")}>
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-6">
           {tabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
           ))}
@@ -143,11 +140,11 @@ export default function HomeworkDashboard() {
             </div>
         </TabsContent>
 
-        {showWeekendTab && (
+        
           <TabsContent value="weekend">
             <WeekendView />
           </TabsContent>
-        )}
+        
 
         <TabsContent value="calendar">
             <ExpandableCalendarView />
