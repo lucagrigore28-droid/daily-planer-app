@@ -120,11 +120,12 @@ export default function HomeworkDashboard() {
                                       variant="ghost" 
                                       size="icon" 
                                       onClick={handlePrevDay}
+                                      disabled
                                     >
-                                        <ChevronLeft className="h-6 w-6" />
+                                        <ChevronLeft className="h-6 w-6 opacity-0" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={handleNextDay}>
-                                        <ChevronRight className="h-6 w-6" />
+                                    <Button variant="ghost" size="icon" onClick={handleNextDay} disabled>
+                                        <ChevronRight className="h-6 w-6 opacity-0" />
                                     </Button>
                                 </div>
                             </div>
