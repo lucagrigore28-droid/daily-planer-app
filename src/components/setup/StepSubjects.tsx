@@ -63,7 +63,6 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
 
   const handleNext = () => {
     // This is only called in the setup wizard context
-    context?.updateUser({ subjects });
     if(onNext) onNext();
   };
 
