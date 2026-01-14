@@ -65,7 +65,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   const showNavButtons = !!onNext;
 
   return (
-    <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
+    <Card className="border-0 shadow-none bg-transparent sm:bg-card/80 sm:backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardContent className="pt-6">
         <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm mb-6">
             <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -73,7 +73,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
             </h2>
              <p className="text-sm text-muted-foreground mt-1">Bifează materiile din orarul tău. Poți adăuga și materii personalizate.</p>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
           {allSubjectNames.map(subjectName => {
             const isChecked = subjects.some(s => s.name === subjectName);
             const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
