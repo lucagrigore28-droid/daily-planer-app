@@ -5,7 +5,7 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback, useM
 import type { HomeworkTask, UserData, Subject } from '@/lib/types';
 import { addDays, getDay, startOfDay, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
@@ -45,23 +45,11 @@ type AppContextType = {
   getWeekendTasks: () => HomeworkTask[];
   user: any;
   isUserLoading: boolean;
+  generateAndSyncTasks: (schedule: UserData['schedule'], subjects: UserData['subjects']) => Promise<void>;
+  createUserDocument: (user: any) => Promise<void>;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
-
-function useTasksForUser() {
-    const firestore = useFirestore();
-    const { user } = useUser();
-    
-    const tasksQuery = useMemo(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'users', user.uid, 'tasks'));
-    }, [firestore, user]);
-
-    const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksQuery);
-    
-    return { tasks: tasks || [], areTasksLoading };
-}
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading } = useUser();
@@ -79,7 +67,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !areTasksLoading && !isUserLoading;
 
   useEffect(() => {
-    const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : initialUserData.theme;
+    const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : 'purple';
     if (themeToApply) {
         const root = window.document.documentElement;
         
@@ -93,6 +81,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(userDocRef, data, { merge: true });
     }
   }, [userDocRef]);
+
+  const createUserDocument = useCallback(async (user: any) => {
+      if (!user) return;
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+          const initialData = {
+              ...initialUserData,
+              name: user.displayName || 'Utilizator',
+          };
+          await setDoc(userDocRef, initialData);
+      }
+  }, [firestore]);
+
 
    const updateSubjects = useCallback(async (subjects: Subject[]) => {
     if (userDocRef) {
@@ -149,60 +152,66 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         window.location.reload();
     }
   }, [userDocRef, userData, deleteAllTasks]);
-
-  useEffect(() => {
-    if (!isDataLoaded || !userData || !userData.setupComplete || userData.subjects.length === 0 || !tasksCollectionRef) {
-      return;
-    }
-
-    const checkAndCreateTasks = async () => {
-      const today = startOfDay(new Date());
-      const batch = writeBatch(firestore);
-      let writes = 0;
-
-      for (let i = -7; i < 14; i++) {
-        const dateToCheck = addDays(today, i);
-        const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
-
-        if (dayIndex >= 1 && dayIndex <= 5) {
-          for (const subject of userData.subjects) {
-            if (userData.schedule[subject.id]?.includes(dayIndex)) {
-              
-              const taskExists = tasks.some(t => 
-                !t.isManual &&
-                t.subjectId === subject.id && 
-                startOfDay(new Date(t.dueDate)).getTime() === dateToCheck.getTime()
-              );
-
-              if (!taskExists) {
-                const newTaskRef = doc(tasksCollectionRef);
-                batch.set(newTaskRef, {
-                  subjectId: subject.id,
-                  subjectName: subject.name,
-                  description: '',
-                  dueDate: dateToCheck.toISOString(),
-                  isCompleted: false,
-                  isManual: false
-                });
-                writes++;
-              }
-            }
-          }
-        }
-      }
-
-      if (writes > 0) {
-        try {
-          await batch.commit();
-        } catch (err) {
-          console.error("Silently failed to create tasks in batch", err);
-        }
-      }
-    };
-
-    checkAndCreateTasks();
-  }, [isDataLoaded, userData, tasks, tasksCollectionRef, firestore]);
   
+    const generateAndSyncTasks = useCallback(async (schedule: UserData['schedule'], subjects: UserData['subjects']) => {
+        if (!tasksCollectionRef || !tasks) return;
+
+        const batch = writeBatch(firestore);
+        const today = startOfDay(new Date());
+
+        const automaticTasks = tasks.filter(t => !t.isManual);
+        const tasksToDelete: HomeworkTask[] = [];
+
+        // Identify tasks to delete or that already exist
+        const existingTasks = new Set<string>();
+        for (const task of automaticTasks) {
+            const taskDate = startOfDay(new Date(task.dueDate));
+            const dayIndex = getDay(taskDate) === 0 ? 7 : getDay(taskDate);
+            const subjectStillExists = subjects.some(s => s.id === task.subjectId);
+            const isScheduled = schedule[task.subjectId]?.includes(dayIndex);
+
+            if (!subjectStillExists || !isScheduled) {
+                tasksToDelete.push(task);
+            } else {
+                 existingTasks.add(`${task.subjectId}_${task.dueDate}`);
+            }
+        }
+        
+        // Delete tasks that are no longer relevant
+        tasksToDelete.forEach(task => {
+            const taskRef = doc(tasksCollectionRef, task.id);
+            batch.delete(taskRef);
+        });
+
+        // Create new tasks
+        for (let i = -7; i < 14; i++) {
+            const dateToCheck = addDays(today, i);
+            const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
+
+            if (dayIndex >= 1 && dayIndex <= 5) {
+                for (const subject of subjects) {
+                    if (schedule[subject.id]?.includes(dayIndex)) {
+                        const taskKey = `${subject.id}_${dateToCheck.toISOString()}`;
+                         if (!existingTasks.has(taskKey)) {
+                            const newTaskRef = doc(tasksCollectionRef);
+                            batch.set(newTaskRef, {
+                                subjectId: subject.id,
+                                subjectName: subject.name,
+                                description: '',
+                                dueDate: dateToCheck.toISOString(),
+                                isCompleted: false,
+                                isManual: false
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        await batch.commit();
+
+    }, [firestore, tasksCollectionRef, tasks]);
+
   const getNextSchoolDayWithTasks = useCallback(() => {
     if (!tasks || !userData) return null;
     const today = startOfDay(currentDate);
@@ -244,7 +253,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return { ...initialUserData, ...userData };
   }, [userData, isUserDataLoading]);
   
-  const value = {
+  const value: AppContextType = {
     userData: memoizedUserData,
     tasks: tasks || [],
     updateUser,
@@ -261,9 +270,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     getWeekendTasks,
     user,
     isUserLoading,
+    generateAndSyncTasks,
+    createUserDocument,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    
