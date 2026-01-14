@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect, useMemo } from 'react';
@@ -20,50 +19,49 @@ type StepProps = {
 
 export default function StepSubjects({ onNext, onBack }: StepProps) {
   const context = useContext(AppContext);
-  const [localSubjects, setLocalSubjects] = useState<Subject[]>([]);
   const [customSubject, setCustomSubject] = useState('');
-
-  useEffect(() => {
-    if (context?.userData?.subjects) {
-      setLocalSubjects(context.userData.subjects);
-    }
-  }, [context?.userData?.subjects]);
+  
+  // Directly use subjects from context to ensure it's always up-to-date
+  const subjects = useMemo(() => context?.userData?.subjects || [], [context?.userData?.subjects]);
 
   const allSubjectNames = useMemo(() => {
-    const customNames = localSubjects.filter(s => s.isCustom).map(s => s.name);
+    const customNames = subjects.filter(s => s.isCustom).map(s => s.name);
     return [...new Set([...PREDEFINED_SUBJECTS, ...customNames])].sort((a,b) => a.localeCompare(b));
-  }, [localSubjects]);
+  }, [subjects]);
+
+  const updateGlobalSubjects = (updatedSubjects: Subject[]) => {
+    context?.updateSubjects(updatedSubjects);
+  };
 
   const handleToggleSubject = (subjectName: string) => {
-    const isAlreadySelected = localSubjects.some(s => s.name === subjectName);
+    const isAlreadySelected = subjects.some(s => s.name === subjectName);
     let updatedSubjects;
 
     if (isAlreadySelected) {
-      updatedSubjects = localSubjects.filter(s => s.name !== subjectName);
+      updatedSubjects = subjects.filter(s => s.name !== subjectName);
     } else {
       const isPredefined = PREDEFINED_SUBJECTS.includes(subjectName);
-      updatedSubjects = [...localSubjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
+      updatedSubjects = [...subjects, { id: subjectName.toLowerCase().replace(/\s/g, '_'), name: subjectName, isCustom: !isPredefined }];
     }
-    
-    setLocalSubjects(updatedSubjects);
+    updateGlobalSubjects(updatedSubjects);
   };
 
   const handleAddCustomSubject = () => {
     const trimmedName = customSubject.trim();
-    if (trimmedName && !localSubjects.some(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
-      const newSubjects = [...localSubjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
-      setLocalSubjects(newSubjects);
+    if (trimmedName && !subjects.some(s => s.name.toLowerCase() === trimmedName.toLowerCase())) {
+      const newSubjects = [...subjects, { id: trimmedName.toLowerCase().replace(/\s/g, '_'), name: trimmedName, isCustom: true }];
+      updateGlobalSubjects(newSubjects);
       setCustomSubject('');
     }
   };
   
   const handleRemoveCustomSubject = (subjectName: string) => {
-      const updatedSubjects = localSubjects.filter(s => s.name !== subjectName);
-      setLocalSubjects(updatedSubjects);
+      const updatedSubjects = subjects.filter(s => s.name !== subjectName);
+      updateGlobalSubjects(updatedSubjects);
   };
 
   const handleNext = () => {
-    context?.updateSubjects(localSubjects);
+    // Subjects are already updated, just proceed
     if (onNext) onNext();
   };
 
@@ -85,7 +83,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
         <ScrollArea className="h-[300px] md:h-[400px] pr-4">
           <div className="grid grid-cols-2 gap-4">
             {allSubjectNames.map(subjectName => {
-              const isChecked = localSubjects.some(s => s.name === subjectName);
+              const isChecked = subjects.some(s => s.name === subjectName);
               const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
               return (
                 <div key={subjectName} className="flex items-center space-x-3 p-2 rounded-md transition-colors hover:bg-muted">
@@ -123,7 +121,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
       {showNavButtons && (
         <CardFooter className="flex justify-between">
           <Button variant="ghost" onClick={handleBack}>Înapoi</Button>
-          <Button onClick={handleNext} disabled={localSubjects.length === 0}>Continuă</Button>
+          <Button onClick={handleNext} disabled={subjects.length === 0}>Continuă</Button>
         </CardFooter>
       )}
     </Card>
