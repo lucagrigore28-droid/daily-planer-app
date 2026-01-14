@@ -25,11 +25,10 @@ export default function HomeworkDashboard() {
 
   const { userData, currentDate, tasks, getNextSchoolDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
-  useEffect(() => {
+   useEffect(() => {
+    // This effect runs to set the initial day when data is loaded
     if (areTasksSynced && isDataLoaded) {
       const nextDay = getNextSchoolDayWithTasks();
-      // This logic runs once when data is loaded, or if the next day with tasks changes.
-      // It avoids re-running on every `displayedDay` change.
       setDisplayedDay(nextDay ? startOfDay(nextDay) : startOfDay(new Date()));
     }
   }, [areTasksSynced, isDataLoaded, getNextSchoolDayWithTasks]);
@@ -69,7 +68,7 @@ export default function HomeworkDashboard() {
 
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
-      <header className="mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+      <header className="mb-6 flex justify-between items-center gap-4">
         <div className="flex items-center gap-4 rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
            <div>
             <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -84,15 +83,16 @@ export default function HomeworkDashboard() {
                 <span className="sr-only">Setări</span>
             </Button>
         </div>
-        <Button onClick={() => setAddTaskOpen(true)} size="default" className="sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" /> <span className="sm:inline">Adaugă temă</span>
+         <Button onClick={() => setAddTaskOpen(true)} size="icon" variant="default" className="w-12 h-12">
+            <Plus className="h-6 w-6" />
+            <span className="sr-only">Adaugă temă</span>
         </Button>
       </header>
       
       <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className="flex flex-col sm:flex-row h-auto sm:h-10 w-full max-w-lg mx-auto mb-6">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-6">
           {tabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className="flex-1 w-full sm:w-auto">{tab.label}</TabsTrigger>
+            <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
           ))}
         </TabsList>
         
