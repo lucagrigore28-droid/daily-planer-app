@@ -9,6 +9,7 @@ import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs,
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
+import { themes } from '@/lib/themes';
 
 const initialUserData: UserData = {
   username: '',
@@ -71,13 +72,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
 
   useEffect(() => {
-    const themeToApply = (isDataLoaded && userData?.theme) ? userData.theme : 'purple';
-    if (themeToApply) {
-        const root = window.document.documentElement;
-        root.classList.remove(...Array.from(root.classList).filter(c => c.startsWith('theme-')));
-        root.classList.add(`theme-${themeToApply}`);
+    const themeName = userData?.theme || 'purple';
+    const theme = themes.find(t => t.name === themeName);
+    if (theme) {
+        const root = document.documentElement;
+        root.style.setProperty('--primary', theme.primary);
+        root.style.setProperty('--accent', theme.accent);
     }
-  }, [userData?.theme, isDataLoaded]);
+  }, [userData?.theme]);
 
   const generateAndSyncTasks = useCallback(async (schedule: Schedule, subjects: Subject[]) => {
     if (!tasksCollectionRef || !tasks || !user) return;
