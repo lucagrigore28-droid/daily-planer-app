@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useContext, useEffect } from 'react';
@@ -30,6 +31,19 @@ export default function StepNotifications({ onNext, onBack }: StepProps) {
   const [sundayMorningTime, setSundayMorningTime] = useState(notifications?.sundayMorningTime || '11:00');
   const [sundayEveningTime, setSundayEveningTime] = useState(notifications?.sundayEveningTime || '20:00');
 
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(
+        (registration) => {
+          console.log('Service Worker registration successful with scope: ', registration.scope);
+        },
+        (err) => {
+          console.log('Service Worker registration failed: ', err);
+        }
+      );
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
