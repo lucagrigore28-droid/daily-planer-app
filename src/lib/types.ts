@@ -38,6 +38,5 @@ export type UserData = {
   setupComplete: boolean;
   notifications: UserNotifications;
   theme: string;
+  customThemeColors?: string[];
 };
-
-    

@@ -86,6 +86,9 @@
       --primary: 220 10% 50%;
       --accent: 220 10% 70%;
   }
+  .theme-custom {
+    background-image: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+  }
 }
 
 @layer base {
@@ -127,8 +130,30 @@
     }
 
     .border-gradient {
+        position: relative;
+        background-color: transparent;
+    }
+
+    .border-gradient .inner-content {
+        background-color: hsl(var(--card));
+        border-radius: calc(var(--radius) - 2px);
+    }
+    
+    .border-gradient::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: var(--radius); 
+        padding: 2px; 
         background: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent)));
-        padding: 2px;
+        -webkit-mask: 
+            linear-gradient(#fff 0 0) content-box, 
+            linear-gradient(#fff 0 0);
+        -webkit-mask-composite: destination-out; 
+        mask-composite: exclude; 
     }
 }
 

@@ -69,16 +69,13 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
         )}
       >
         <Card className={cn(
-          "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
-           task.isCompleted ? 'border-gradient p-0.5' : 'bg-card'
+          "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 bg-card",
+           task.isCompleted ? 'border-gradient' : ''
         )}>
-          <div className={cn(
-            "h-full w-full rounded-[calc(var(--radius)-2px)]",
-            task.isCompleted ? 'bg-card' : 'p-3'
-          )}>
+          <div className={cn("inner-content h-full w-full p-3")}>
             <Accordion type="single" collapsible disabled={task.isCompleted}>
               <AccordionItem value="item-1" className="border-b-0">
-                <div className={cn("flex items-center gap-4", !task.isCompleted ? "" : "p-3")}>
+                <div className={cn("flex items-center gap-4")}>
                   <Checkbox
                     id={`task-${task.id}`}
                     checked={task.isCompleted}

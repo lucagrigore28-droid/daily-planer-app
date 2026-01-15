@@ -27,7 +27,8 @@ const initialUserData: UserData = {
     sundayMorningTime: '11:00',
     sundayEveningTime: '20:00',
   },
-  theme: 'purple',
+  theme: 'classic',
+  customThemeColors: ['#A099FF', '#73A7AD'],
 };
 
 type AppContextType = {
@@ -72,14 +73,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
 
   useEffect(() => {
-    const themeName = userData?.theme || 'purple';
-    const theme = themes.find(t => t.name === themeName);
-    if (theme) {
-        const root = document.documentElement;
-        root.style.setProperty('--primary', theme.primary);
-        root.style.setProperty('--accent', theme.accent);
+    const root = document.documentElement;
+    const themeName = userData?.theme || 'classic';
+  
+    if (themeName === 'custom' && userData?.customThemeColors?.length) {
+      const colors = userData.customThemeColors;
+      root.style.setProperty('--primary', colors[0]);
+      root.style.setProperty('--accent', colors[colors.length - 1]);
+      
+      const body = document.body;
+      body.style.setProperty('--gradient-bg', `linear-gradient(to right, ${colors.join(', ')})`);
+  
+    } else {
+      const theme = themes.find(t => t.name === themeName);
+      if (theme) {
+        root.style.setProperty('--primary', `hsl(${theme.primary})`);
+        root.style.setProperty('--accent', `hsl(${theme.accent})`);
+      }
     }
-  }, [userData?.theme]);
+  }, [userData?.theme, userData?.customThemeColors]);
 
   const generateAndSyncTasks = useCallback(async (schedule: Schedule, subjects: Subject[]) => {
     if (!tasksCollectionRef || !tasks || !user) return;
