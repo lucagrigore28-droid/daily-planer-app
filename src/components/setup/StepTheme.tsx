@@ -24,13 +24,13 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
   };
   
   const handleColorChange = (index: number, color: string) => {
-    const newColors = [...(userData?.customThemeColors || ['#A099FF', '#73A7AD'])];
+    const newColors = [...(userData?.customThemeColors || ['#8a2be2', '#4169e1'])];
     newColors[index] = color;
     updateUser?.({ customThemeColors: newColors });
   };
 
   const addColor = () => {
-    const currentColors = userData?.customThemeColors || ['#A099FF', '#73A7AD'];
+    const currentColors = userData?.customThemeColors || ['#8a2be2', '#4169e1'];
     if (currentColors.length < 3) {
       updateUser?.({ customThemeColors: [...currentColors, '#FFFFFF'] });
     }
@@ -46,7 +46,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
 
   const showNavButtons = !!onNext;
   const isCustomTheme = userData?.theme === 'custom';
-  const customColors = userData?.customThemeColors || ['#A099FF', '#73A7AD'];
+  const customColors = userData?.customThemeColors || ['#8a2be2', '#4169e1'];
 
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
