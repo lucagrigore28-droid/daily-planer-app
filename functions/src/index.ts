@@ -1,8 +1,8 @@
-
 /**
  * Importuri necesare pentru funcțiile server-side.
  */
-import * as functions from "firebase-functions";
+import {onRequest} from "firebase-functions/v2/https";
+import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
 // Inițializăm Firebase Admin SDK pentru a putea interacționa cu Firestore.
@@ -12,14 +12,14 @@ admin.initializeApp();
  * Endpoint HTTP care poate fi apelat pentru a trimite notificări.
  * Acesta va fi URL-ul pe care îl veți seta în serviciul de cron-job.
  */
-export const sendScheduledNotifications = functions
-  .region("europe-west1") // Alegeți o regiune apropiată de utilizatorii dvs.
-  .https.onRequest(async (request, response) => {
+export const sendScheduledNotifications = onRequest(
+  {region: "europe-west1"},
+  async (request, response) => {
     // Securizăm endpoint-ul pentru a nu putea fi apelat de oricine.
     // Ideal, aici ați verifica un token secret trimis de cron-job.
     // Pentru simplitate, momentan lăsăm accesul deschis.
 
-    functions.logger.info("Pornire job de trimitere notificări...", {
+    logger.info("Pornire job de trimitere notificări...", {
       structuredData: true,
     });
 
@@ -28,7 +28,6 @@ export const sendScheduledNotifications = functions
       const usersSnapshot = await db.collection("users").get();
 
       const today = new Date();
-      // const dayOfWeek = today.getDay(); // 0=Duminică, 1=Luni...
 
       // Iterăm prin toți utilizatorii din baza de date
       for (const userDoc of usersSnapshot.docs) {
@@ -84,7 +83,12 @@ export const sendScheduledNotifications = functions
         // Trimiterea notificării către fiecare dispozitiv abonat
         const promises = subscriptionsSnapshot.docs.map((subDoc) => {
           const subscription = subDoc.data();
-          return admin.messaging().sendToDevice(subscription.token, payload);
+          return admin.messaging().send(
+            {
+              token: subscription.token,
+              notification: payload.notification,
+            }
+          );
         });
 
         await Promise.all(promises);
@@ -92,7 +96,7 @@ export const sendScheduledNotifications = functions
 
       response.send("Job de notificări finalizat cu succes.");
     } catch (error) {
-      functions.logger.error("Eroare în job-ul de notificări:", error);
+      logger.error("Eroare în job-ul de notificări:", error);
       response.status(500).send("A apărut o eroare.");
     }
   });
