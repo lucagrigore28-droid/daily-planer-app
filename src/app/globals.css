@@ -87,7 +87,8 @@
       --accent: 220 10% 70%;
   }
   .theme-custom {
-    background-image: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+    --primary: var(--primary-from-custom, 262 84% 60%);
+    --accent: var(--accent-from-custom, 289 84% 65%);
   }
 }
 

@@ -78,19 +78,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
     if (themeName === 'custom' && userData?.customThemeColors?.length) {
       const colors = userData.customThemeColors;
-      root.style.setProperty('--primary', colors[0]);
-      root.style.setProperty('--accent', colors[colors.length - 1]);
+      // For custom themes, we expect HEX values
+      document.documentElement.style.setProperty('--primary-from-custom', colors[0]);
+      document.documentElement.style.setProperty('--accent-from-custom', colors[colors.length - 1]);
       
       const body = document.body;
       body.style.setProperty('--gradient-bg', `linear-gradient(to right, ${colors.join(', ')})`);
+      body.classList.add('theme-custom-active');
   
     } else {
-      const theme = themes.find(t => t.name === themeName);
-      if (theme) {
-        root.style.setProperty('--primary', `hsl(${theme.primary})`);
-        root.style.setProperty('--accent', `hsl(${theme.accent})`);
-      }
+      const body = document.body;
+      body.classList.remove('theme-custom-active');
+      body.style.removeProperty('--gradient-bg');
+      document.documentElement.style.removeProperty('--primary-from-custom');
+      document.documentElement.style.removeProperty('--accent-from-custom');
     }
+    
+    // Apply className for all themes to switch CSS variables
+    document.body.className = document.body.className.replace(/theme-\w+/g, '');
+    if (themeName) {
+      document.body.classList.add(`theme-${themeName}`);
+    }
+
   }, [userData?.theme, userData?.customThemeColors]);
 
   const generateAndSyncTasks = useCallback(async (schedule: Schedule, subjects: Subject[]) => {

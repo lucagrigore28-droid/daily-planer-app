@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AppContext } from '@/contexts/AppContext';
@@ -73,7 +73,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
                         <div 
                           className="w-full h-full rounded-full" 
                           style={{
-                            backgroundImage: `linear-gradient(to bottom right, ${theme.primary}, ${theme.accent})`
+                            backgroundImage: `linear-gradient(to bottom right, hsl(${theme.primary}), hsl(${theme.accent}))`
                           }}
                         />
                     </button>
@@ -89,7 +89,12 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
                         isCustomTheme ? 'border-primary' : 'border-muted'
                     )}
                 >
-                    <div className="w-full h-full rounded-full theme-custom flex items-center justify-center">
+                     <div 
+                        className="w-full h-full rounded-full flex items-center justify-center" 
+                        style={{
+                           backgroundImage: `conic-gradient(${customColors.join(', ')}, ${customColors[0]})`
+                        }}
+                     >
                        <Palette className="h-8 w-8 text-white/80" />
                     </div>
                 </button>
