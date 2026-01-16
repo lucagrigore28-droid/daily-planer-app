@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext } from 'react';
@@ -20,7 +19,7 @@ export default function WelcomeBackScreen({ onNext }: WelcomeBackScreenProps) {
         <Logo />
         <div className="space-y-3 mt-4">
           <h1 className="text-5xl font-extrabold font-headline tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Salut, {name}!
+            Bine ai revenit, {name}!
           </h1>
           <p className="text-xl text-muted-foreground max-w-md mx-auto">
             Bucuros să te revedem. Ești gata să-ți organizezi temele?
