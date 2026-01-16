@@ -7,11 +7,14 @@ import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import Script from 'next/script';
+import { OneSignalInitializer } from '@/components/OneSignalInitializer';
 
 
 export const metadata: Metadata = {
   title: 'Daily Planner Pro',
   description: 'Planificatorul tău inteligent pentru teme.',
+  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {
@@ -40,6 +43,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ro" suppressHydrationWarning>
+       <head>
+        <link rel="apple-touch-icon" href="/apple-icon.png"></link>
+      </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <FirebaseClientProvider>
           <ThemeProvider
@@ -48,11 +54,16 @@ export default function RootLayout({
             enableSystem
           >
             <AppProvider>
+              <OneSignalInitializer />
               {children}
               <Toaster />
             </AppProvider>
           </ThemeProvider>
         </FirebaseClientProvider>
+        <Script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
