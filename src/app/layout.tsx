@@ -42,7 +42,7 @@ export default function RootLayout({
     <html lang="ro" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/logo.svg" />
-        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer />
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="lazyOnload" />
       </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <FirebaseClientProvider>
