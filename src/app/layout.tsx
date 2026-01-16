@@ -14,13 +14,11 @@ import { OneSignalInitializer } from '@/components/OneSignalInitializer';
 export const metadata: Metadata = {
   title: 'Daily Planner Pro',
   description: 'Planificatorul tău inteligent pentru teme.',
+  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ]
+  themeColor: 'black',
 };
 
 const fontPoppins = Poppins({
@@ -43,6 +41,7 @@ export default function RootLayout({
   return (
     <html lang="ro" suppressHydrationWarning>
       <head>
+        <link rel="apple-touch-icon" href="/logo.svg" />
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer />
       </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
