@@ -136,6 +136,8 @@
     }
 
     .border-gradient .inner-content {
+        position: relative;
+        z-index: 1;
         background-color: hsl(var(--card));
         border-radius: calc(var(--radius) - 2px);
     }
@@ -143,6 +145,7 @@
     .border-gradient::before {
         content: "";
         position: absolute;
+        z-index: 0;
         top: 0;
         left: 0;
         right: 0;
