@@ -73,7 +73,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
            task.isCompleted ? 'border-gradient' : ''
         )}>
           <div className={cn("inner-content h-full w-full p-3")}>
-            <Accordion type="single" collapsible disabled={task.isCompleted}>
+            <Accordion type="single" collapsible>
               <AccordionItem value="item-1" className="border-b-0">
                 <div className={cn("flex items-center gap-4")}>
                   <Checkbox
