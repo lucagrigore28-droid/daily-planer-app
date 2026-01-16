@@ -7,6 +7,7 @@ import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import Script from 'next/script';
 
 
 export const metadata: Metadata = {
@@ -40,6 +41,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ro" suppressHydrationWarning>
+      <head>
+        <Script id="pushalert-script">
+          {`(function(d, t) {
+              var g = d.createElement(t),
+              s = d.getElementsByTagName(t)[0];
+              g.src = "https://cdn.pushalert.co/integrate_c0b003d5dfc2b57d96526e1bb26749a4.js";
+              s.parentNode.insertBefore(g, s);
+            }(document, "script"));`}
+        </Script>
+      </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <FirebaseClientProvider>
           <ThemeProvider
