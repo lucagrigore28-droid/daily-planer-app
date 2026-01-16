@@ -4,7 +4,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import type { HomeworkTask } from '@/lib/types';
 import { AppContext } from '@/contexts/AppContext';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -63,94 +63,88 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
 
   return (
     <>
-      <div
-        className={cn(
-          "transition-all duration-500"
-        )}
-      >
-        <Card className={cn(
-          "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 bg-card",
-           task.isCompleted ? 'border-gradient' : ''
-        )}>
-          <div className={cn("inner-content h-full w-full p-3")}>
-            <Accordion type="single" collapsible>
-              <AccordionItem value="item-1" className="border-b-0">
-                <div className={cn("flex items-center gap-4")}>
-                  <Checkbox
-                    id={`task-${task.id}`}
-                    checked={task.isCompleted}
-                    onCheckedChange={handleCompletionChange}
-                    className={cn(
-                        "h-6 w-6 rounded-full"
-                    )}
-                  />
-                  <div className="flex-1">
-                    <Label 
-                        htmlFor={`task-${task.id}`} 
-                        className={cn(
-                            "text-lg font-medium cursor-pointer transition-colors",
-                            task.isCompleted && "text-muted-foreground"
-                        )}
-                    >
-                      {task.subjectName}
-                    </Label>
-                    {task.estimatedTime && task.estimatedTime > 0 && (
-                        <div className={cn("flex items-center gap-1.5 text-xs", task.isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
-                            <Clock className="h-3 w-3" />
-                            <span>{task.estimatedTime} minute</span>
-                        </div>
-                    )}
-                  </div>
-                  {!task.isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-primary" />}
+      <Card className={cn(
+        "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
+         task.isCompleted ? 'border-gradient' : 'bg-card'
+      )}>
+        <div className="p-3">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="item-1" className="border-b-0">
+              <div className={cn("flex items-center gap-4")}>
+                <Checkbox
+                  id={`task-${task.id}`}
+                  checked={task.isCompleted}
+                  onCheckedChange={handleCompletionChange}
+                  className={cn(
+                      "h-6 w-6 rounded-full"
+                  )}
+                />
+                <div className="flex-1">
+                  <Label 
+                      htmlFor={`task-${task.id}`} 
+                      className={cn(
+                          "text-lg font-medium cursor-pointer transition-colors",
+                          task.isCompleted && "text-muted-foreground"
+                      )}
+                  >
+                    {task.subjectName}
+                  </Label>
+                  {task.estimatedTime && task.estimatedTime > 0 && (
+                      <div className={cn("flex items-center gap-1.5 text-xs", task.isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
+                          <Clock className="h-3 w-3" />
+                          <span>{task.estimatedTime} minute</span>
+                      </div>
+                  )}
                 </div>
-                <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
-                  <div className="space-y-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor={`description-${task.id}`}>Descriere</Label>
-                         <Textarea
-                          id={`description-${task.id}`}
-                          placeholder="Adaugă detalii despre temă..."
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                          className="min-h-[80px]"
-                         />
-                    </div>
-                     <div className="grid gap-2">
-                        <Label htmlFor={`estimated-time-${task.id}`}>Timp estimat (minute)</Label>
-                        <div className="flex items-center gap-4 pt-2">
-                             <Slider 
-                                value={[estimatedTime]} 
-                                max={180} 
-                                step={5} 
-                                onValueChange={(value) => setEstimatedTime(value[0])}
-                                className="flex-1"
-                            />
-                            <div className="flex items-center gap-2">
-                                <span className="font-bold w-12 text-right">{estimatedTime > 0 ? `${estimatedTime} min` : 'N/A'}</span>
-                            </div>
-                        </div>
-                     </div>
-                     <div className="flex justify-between items-center">
-                        <div>
-                            {hasChanged && (
-                              <Button size="sm" onClick={handleSaveDetails} disabled={isSaving}>
-                                  <CornerDownLeft className="mr-2 h-4 w-4"/>
-                                  {isSaving ? 'Se salvează...' : 'Salvează detaliile'}
-                              </Button>
-                            )}
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Șterge
-                        </Button>
-                     </div>
+                {!task.isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-primary" />}
+              </div>
+              <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                      <Label htmlFor={`description-${task.id}`}>Descriere</Label>
+                       <Textarea
+                        id={`description-${task.id}`}
+                        placeholder="Adaugă detalii despre temă..."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="min-h-[80px]"
+                       />
                   </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
-        </Card>
-      </div>
+                   <div className="grid gap-2">
+                      <Label htmlFor={`estimated-time-${task.id}`}>Timp estimat (minute)</Label>
+                      <div className="flex items-center gap-4 pt-2">
+                           <Slider 
+                              value={[estimatedTime]} 
+                              max={180} 
+                              step={5} 
+                              onValueChange={(value) => setEstimatedTime(value[0])}
+                              className="flex-1"
+                          />
+                          <div className="flex items-center gap-2">
+                              <span className="font-bold w-12 text-right">{estimatedTime > 0 ? `${estimatedTime} min` : 'N/A'}</span>
+                          </div>
+                      </div>
+                   </div>
+                   <div className="flex justify-between items-center">
+                      <div>
+                          {hasChanged && (
+                            <Button size="sm" onClick={handleSaveDetails} disabled={isSaving}>
+                                <CornerDownLeft className="mr-2 h-4 w-4"/>
+                                {isSaving ? 'Se salvează...' : 'Salvează detaliile'}
+                            </Button>
+                          )}
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Șterge
+                      </Button>
+                   </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      </Card>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

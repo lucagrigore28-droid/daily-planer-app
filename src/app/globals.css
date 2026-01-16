@@ -131,33 +131,12 @@
     }
 
     .border-gradient {
-        position: relative;
-        background-color: transparent;
-    }
-
-    .border-gradient .inner-content {
-        position: relative;
-        z-index: 1;
-        background-color: hsl(var(--card));
-        border-radius: calc(var(--radius) - 2px);
-    }
-    
-    .border-gradient::before {
-        content: "";
-        position: absolute;
-        z-index: 0;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        border-radius: var(--radius); 
-        padding: 2px; 
-        background: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent)));
-        -webkit-mask: 
-            linear-gradient(#fff 0 0) content-box, 
-            linear-gradient(#fff 0 0);
-        -webkit-mask-composite: destination-out; 
-        mask-composite: exclude; 
+        border: 2px solid transparent;
+        background-clip: padding-box, border-box;
+        background-origin: padding-box, border-box;
+        background-image: 
+            linear-gradient(to right, hsl(var(--card)), hsl(var(--card))), 
+            linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--accent)));
     }
 }
 
