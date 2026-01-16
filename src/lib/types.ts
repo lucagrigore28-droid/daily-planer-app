@@ -19,24 +19,12 @@ export type HomeworkTask = {
   estimatedTime?: number; // in minutes
 };
 
-export type UserNotifications = {
-  enabled: boolean;
-  afterSchoolTime: string; // e.g. "15:00"
-  eveningTime: string; // e.g. "20:00"
-  weekendEnabled: boolean;
-  saturdayMorningTime: string;
-  saturdayEveningTime: string;
-  sundayMorningTime: string;
-  sundayEveningTime: string;
-}
-
 export type UserData = {
   username: string;
   name: string;
   subjects: Subject[];
   schedule: Schedule;
   setupComplete: boolean;
-  notifications: UserNotifications;
   theme: string;
   customThemeColors?: string[]; // Array of hex color strings
 };

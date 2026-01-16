@@ -27,20 +27,6 @@
             }
           }
         },
-        "notifications": {
-          "type": "object",
-          "description": "User's notification preferences.",
-          "properties": {
-            "enabled": { "type": "boolean" },
-            "afterSchoolTime": { "type": "string" },
-            "eveningTime": { "type": "string" },
-            "weekendEnabled": { "type": "boolean" },
-            "saturdayMorningTime": { "type": "string" },
-            "saturdayEveningTime": { "type": "string" },
-            "sundayMorningTime": { "type": "string" },
-            "sundayEveningTime": { "type": "string" }
-          }
-        },
         "theme": {
           "type": "string",
           "description": "The selected color theme for the app."

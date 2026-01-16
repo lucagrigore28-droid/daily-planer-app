@@ -17,16 +17,6 @@ const initialUserData: UserData = {
   subjects: [],
   schedule: {},
   setupComplete: false,
-  notifications: {
-    enabled: false,
-    afterSchoolTime: '15:00',
-    eveningTime: '20:00',
-    weekendEnabled: true,
-    saturdayMorningTime: '10:00',
-    saturdayEveningTime: '20:00',
-    sundayMorningTime: '11:00',
-    sundayEveningTime: '20:00',
-  },
   theme: 'classic',
   customThemeColors: ['#A099FF', '#73A7AD'],
 };
