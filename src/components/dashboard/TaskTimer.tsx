@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useContext } from 'react';
@@ -19,6 +18,27 @@ const formatTime = (ms: number) => {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
+// Helper to play a sound
+const playCompletionSound = () => {
+  if (typeof window === 'undefined' || !window.AudioContext) {
+    return;
+  }
+  const audioContext = new (window.AudioContext)();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+  gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + 0.5);
 };
 
 export default function TaskTimer({ task }: TaskTimerProps) {
@@ -46,9 +66,14 @@ export default function TaskTimer({ task }: TaskTimerProps) {
   }, [task, totalDuration, timeAlreadySpent]);
   
   useEffect(() => {
+    const handleTimerEnd = () => {
+        playCompletionSound();
+        completeTaskWithTimer(task.id);
+    }
+    
     if (isRunning) {
       if (timeRemaining <= 0) {
-        completeTaskWithTimer(task.id);
+        handleTimerEnd();
         return;
       }
 
@@ -59,7 +84,7 @@ export default function TaskTimer({ task }: TaskTimerProps) {
 
         if (newRemaining <= 0) {
           clearInterval(interval);
-          completeTaskWithTimer(task.id);
+          handleTimerEnd();
         } else {
           setTimeRemaining(newRemaining);
         }
@@ -67,9 +92,14 @@ export default function TaskTimer({ task }: TaskTimerProps) {
 
       return () => clearInterval(interval);
     }
-  }, [isRunning, task.id, task.timerStartTime, totalDuration, timeAlreadySpent, completeTaskWithTimer]);
+  }, [isRunning, task.id, task.timerStartTime, totalDuration, timeAlreadySpent, completeTaskWithTimer, timeRemaining]);
   
   const progress = totalDuration > 0 ? Math.min(100, ((totalDuration - timeRemaining) / totalDuration) * 100) : 0;
+
+  const handleStopAndComplete = () => {
+    playCompletionSound();
+    completeTaskWithTimer(task.id);
+  }
 
   return (
     <Card className="bg-card/90 border-primary border-2 shadow-lg shadow-primary/20">
@@ -103,7 +133,7 @@ export default function TaskTimer({ task }: TaskTimerProps) {
               variant="destructive"
               size="icon"
               className="w-14 h-14 rounded-full"
-              onClick={() => completeTaskWithTimer(task.id)}
+              onClick={handleStopAndComplete}
             >
                 <StopCircle className="h-7 w-7" />
                 <span className="sr-only">Oprește și finalizează</span>
