@@ -347,7 +347,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return Array.from(firstOccurrenceMap.values());
   }, [tasks, currentDate]);
 
-  const startTimer = useCallback((taskId: string) => {
+  const startTimer = useCallback(async (taskId: string) => {
+    // Request permission when the user first starts a timer.
+    // This is a good practice as it's triggered by a user action.
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        // We only proceed if permission is granted.
+        if (permission !== 'granted') return;
+      }
+    }
+
     updateTask(taskId, { timerStartTime: Date.now() });
     setActiveTimerTaskId(taskId);
   }, [updateTask]);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useContext } from 'react';
@@ -41,6 +42,17 @@ const playCompletionSound = () => {
   oscillator.stop(audioContext.currentTime + 0.5);
 };
 
+// Helper to show a browser notification
+const showCompletionNotification = (taskName: string) => {
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    const notification = new Notification('Timpul a expirat!', {
+      body: `Tema pentru "${taskName}" a fost finalizată.`,
+      icon: '/logo.svg',
+      badge: '/logo.svg',
+    });
+  }
+};
+
 export default function TaskTimer({ task }: TaskTimerProps) {
   const context = useContext(AppContext);
   const { startTimer, pauseTimer, completeTaskWithTimer } = context!;
@@ -68,6 +80,7 @@ export default function TaskTimer({ task }: TaskTimerProps) {
   useEffect(() => {
     const handleTimerEnd = () => {
         playCompletionSound();
+        showCompletionNotification(task.subjectName);
         completeTaskWithTimer(task.id);
     }
     
@@ -92,12 +105,13 @@ export default function TaskTimer({ task }: TaskTimerProps) {
 
       return () => clearInterval(interval);
     }
-  }, [isRunning, task.id, task.timerStartTime, totalDuration, timeAlreadySpent, completeTaskWithTimer, timeRemaining]);
+  }, [isRunning, task.id, task.timerStartTime, totalDuration, timeAlreadySpent, completeTaskWithTimer, timeRemaining, task.subjectName]);
   
   const progress = totalDuration > 0 ? Math.min(100, ((totalDuration - timeRemaining) / totalDuration) * 100) : 0;
 
   const handleStopAndComplete = () => {
     playCompletionSound();
+    showCompletionNotification(task.subjectName);
     completeTaskWithTimer(task.id);
   }
 
