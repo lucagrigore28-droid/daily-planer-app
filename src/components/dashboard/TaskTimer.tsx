@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import type { HomeworkTask } from '@/lib/types';
 import { AppContext } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
@@ -58,83 +58,107 @@ const showCompletionNotification = (taskName: string) => {
   }
 };
 
+type TaskTimerProps = {
+  task: HomeworkTask;
+};
+
+
 export default function TaskTimer({ task }: TaskTimerProps) {
-  const context = useContext(AppContext);
-  const { tasks, startTimer, pauseTimer, updateTask } = context!;
+  const { tasks, startTimer, pauseTimer, updateTask } = useContext(AppContext)!;
   
   const [isIos, setIsIos] = useState(false);
   const [isTimeUp, setIsTimeUp] = useState(false);
 
-  useEffect(() => {
-    // Detect if the user is on an iOS device. This runs only on the client.
-    setIsIos(/iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream);
-  }, []);
+  const calculateTimeRemaining = () => {
+    const totalDuration = (task.estimatedTime || 0) * 60 * 1000;
+    const timeAlreadySpent = task.timeSpent || 0;
 
-  const totalDuration = (task.estimatedTime || 0) * 60 * 1000;
-  const timeAlreadySpent = task.timeSpent || 0;
-
-  const getInitialTimeRemaining = () => {
-    if (!task.timerStartTime) { // Timer is paused
+    if (!task.timerStartTime) { // Timer is paused or stopped
       return totalDuration - timeAlreadySpent;
     }
-    // Timer is running, calculate current remaining time
+    // Timer is running
     const elapsedSinceStart = Date.now() - task.timerStartTime;
     return totalDuration - (timeAlreadySpent + elapsedSinceStart);
   };
 
-  const [timeRemaining, setTimeRemaining] = useState(getInitialTimeRemaining());
-  const isRunning = !!task.timerStartTime;
+  const [timeRemaining, setTimeRemaining] = useState(calculateTimeRemaining());
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
   useEffect(() => {
-    // This effect ensures the timer state is correct when the task prop changes (e.g., from Firestore updates)
-    setTimeRemaining(getInitialTimeRemaining());
-  }, [task, totalDuration, timeAlreadySpent]);
-  
+    // This effect ensures the displayed time is correct whenever the task data from Firestore changes.
+    setTimeRemaining(calculateTimeRemaining());
+  }, [task]);
+
   useEffect(() => {
-    // This function handles the end of the timer.
-    const handleTimerEnd = () => {
-        playCompletionSound();
-        showCompletionNotification(task.subjectName);
-        // Pause timer to correctly save progress before showing dialog
-        pauseTimer(task.id);
-        setIsTimeUp(true);
-    }
+    const isRunning = !!task.timerStartTime;
+
+    const stopInterval = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
     
-    if (!isRunning) {
+    // Stop any existing timers if the timer shouldn't be running or if the 'Time Up' dialog is active.
+    if (!isRunning || isTimeUp) {
+      stopInterval();
       return;
     }
     
-    // On the initial run of this effect, we check if time is already up.
-    // This handles cases where the app was closed and reopened after the timer should have ended.
-    const initialRemaining = getInitialTimeRemaining();
-    if (initialRemaining <= 0) {
-      handleTimerEnd();
-      return; // Stop here, the timer is already done.
-    }
+    // --- This is the main timer logic ---
 
-    const interval = setInterval(() => {
-      const elapsedSinceStart = Date.now() - (task.timerStartTime as number);
-      const newRemaining = totalDuration - (timeAlreadySpent + elapsedSinceStart);
+    const tick = () => {
+      const remaining = calculateTimeRemaining();
+      
+      if (remaining <= 0) {
+        // Timer has finished.
+        stopInterval();
+        
+        // Use a functional update for `setIsTimeUp` to prevent race conditions
+        // where this might be called multiple times before a re-render.
+        setIsTimeUp(wasTimeUp => {
+            if (!wasTimeUp) { // Only run the 'end' logic if it hasn't run before
+                playCompletionSound();
+                showCompletionNotification(task.subjectName);
+                pauseTimer(task.id); // This updates timeSpent and removes timerStartTime
+            }
+            return true; // Set state to true
+        });
 
-      if (newRemaining <= 0) {
-        clearInterval(interval);
-        handleTimerEnd();
       } else {
-        setTimeRemaining(newRemaining);
+        // Timer is still running, update the displayed time.
+        setTimeRemaining(remaining);
       }
-    }, 1000);
+    };
 
-    return () => clearInterval(interval);
-  }, [isRunning, task.id, task.timerStartTime, totalDuration, timeAlreadySpent, pauseTimer, task.subjectName]);
-  
+    // Immediately call tick() to check the current state when the effect starts.
+    // This handles the case of starting a timer that should have already finished.
+    tick();
+
+    // Set up the interval to tick every second.
+    intervalRef.current = setInterval(tick, 1000);
+
+    // Cleanup function to clear the interval when the component unmounts or dependencies change.
+    return () => stopInterval();
+
+  }, [task, isTimeUp, pauseTimer]); // Effect depends on the task data and the isTimeUp flag.
+
+
+  useEffect(() => {
+    setIsIos(/iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream);
+  }, []);
+
+  const totalDuration = (task.estimatedTime || 0) * 60 * 1000;
   const progress = totalDuration > 0 ? Math.min(100, ((totalDuration - timeRemaining) / totalDuration) * 100) : 0;
+  const isRunning = !!task.timerStartTime;
 
   const handleStopAndComplete = () => {
     playCompletionSound();
     showCompletionNotification(task.subjectName);
-    // The timer might be running or paused here, so we need to handle both.
+    
     let finalTimeSpent = task.timeSpent || 0;
-    if (task.timerStartTime) {
+    if (task.timerStartTime) { // If timer was running, calculate final elapsed time
         const elapsed = Date.now() - task.timerStartTime;
         finalTimeSpent += elapsed;
     }
@@ -142,18 +166,18 @@ export default function TaskTimer({ task }: TaskTimerProps) {
   }
 
   const handleConfirmCompletion = () => {
-    // The timer has been paused by handleTimerEnd, so timeSpent is already correct.
+    // The timer has been paused by the effect, so timeSpent is already correct.
     updateTask(task.id, { isCompleted: true });
     setIsTimeUp(false);
   };
 
   const handleAddTime = (minutes: number) => {
     // Find the latest version of the task from the context to get the most up-to-date data
-    const currentTask = tasks.find(t => t.id === task.id) || task;
-    const newEstimatedTime = (currentTask.estimatedTime || 0) + minutes;
+    const currentTaskData = tasks.find(t => t.id === task.id) || task;
+    const newEstimatedTime = (currentTaskData.estimatedTime || 0) + minutes;
     
-    // The timer was paused by `handleTimerEnd`, so `timeSpent` is already updated.
-    // We just need to update the total estimated time and then restart the timer.
+    // We update the task and then restart the timer.
+    // The `pauseTimer` call in the effect has already synced the latest `timeSpent`.
     updateTask(task.id, { estimatedTime: newEstimatedTime }).then(() => {
         startTimer(task.id);
     });
