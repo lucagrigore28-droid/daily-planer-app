@@ -64,7 +64,6 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
 
   const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime || 0);
 
-  const canStartTime = task.estimatedTime && task.estimatedTime > 0;
   const anotherTimerIsRunning = activeTimerTaskId !== null && activeTimerTaskId !== task.id;
 
   // If a timer is running for this task, show the timer component.
@@ -115,7 +114,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <div>
-                                {canStartTime && !task.isCompleted && (
+                                {!task.isCompleted && (
                                     <Button
                                     variant="ghost"
                                     size="icon"
@@ -132,7 +131,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                            <p>{anotherTimerIsRunning ? 'Un alt timer este deja activ' : 'Pornește timerul'}</p>
+                            <p>{anotherTimerIsRunning ? 'Un alt timer este deja activ' : 'Pornește cronometru'}</p>
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>

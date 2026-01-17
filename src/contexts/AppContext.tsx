@@ -44,7 +44,7 @@ type AppContextType = {
   activeTimerTaskId: string | null;
   startTimer: (taskId: string) => void;
   pauseTimer: (taskId: string) => void;
-  completeTaskWithTimer: (taskId: string) => void;
+  stopAndCompleteTimer: (taskId: string) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -349,17 +349,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const startTimer = useCallback(async (taskId: string) => {
     // Request permission when the user first starts a timer.
-    // This is a good practice as it's triggered by a user action.
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission !== 'granted') {
-        const permission = await Notification.requestPermission();
-        // We only proceed if permission is granted.
-        if (permission !== 'granted') return;
+        await Notification.requestPermission();
       }
     }
-
     updateTask(taskId, { timerStartTime: Date.now() });
-    setActiveTimerTaskId(taskId);
   }, [updateTask]);
 
   const pauseTimer = useCallback((taskId: string) => {
@@ -369,12 +364,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const newTimeSpent = (task.timeSpent || 0) + elapsed;
       updateTask(taskId, { 
         timeSpent: newTimeSpent,
-        timerStartTime: deleteField() as any 
+        timerStartTime: null 
       });
     }
   }, [tasks, updateTask]);
   
-  const completeTaskWithTimer = useCallback((taskId: string) => {
+  const stopAndCompleteTimer = useCallback((taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
       let finalTimeSpent = task.timeSpent || 0;
@@ -384,7 +379,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
       updateTask(taskId, { 
         timeSpent: finalTimeSpent,
-        timerStartTime: deleteField() as any,
+        timerStartTime: null,
         isCompleted: true
       });
     }
@@ -419,7 +414,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     activeTimerTaskId,
     startTimer,
     pauseTimer,
-    completeTaskWithTimer,
+    stopAndCompleteTimer,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
