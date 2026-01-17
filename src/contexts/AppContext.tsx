@@ -372,7 +372,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         timerStartTime: deleteField() as any 
       });
     }
-    setActiveTimerTaskId(null);
   }, [tasks, updateTask]);
   
   const completeTaskWithTimer = useCallback((taskId: string) => {
@@ -389,7 +388,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isCompleted: true
       });
     }
-    setActiveTimerTaskId(null);
   }, [tasks, updateTask]);
 
   const memoizedUserData = useMemo(() => {
