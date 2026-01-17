@@ -120,7 +120,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                     id="estimated-time"
                     value={[estimatedTime]} 
                     max={180} 
-                    step={5} 
+                    step={1} 
                     onValueChange={(value) => setEstimatedTime(value[0])}
                     className="flex-1"
                 />
