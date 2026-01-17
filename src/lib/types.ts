@@ -17,6 +17,8 @@ export type HomeworkTask = {
   isManual: boolean;
   plannedDate?: string; // ISO string for the day it's planned for weekend work
   estimatedTime?: number; // in minutes
+  timeSpent?: number; // in milliseconds
+  timerStartTime?: number; // timestamp in milliseconds
 };
 
 export type UserData = {

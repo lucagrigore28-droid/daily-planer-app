@@ -41,6 +41,10 @@ type AppContextType = {
   isUserLoading: boolean;
   generateAndSyncTasks: (schedule: UserData['schedule'], subjects: UserData['subjects']) => Promise<void>;
   createUserDocument: (user: any, name: string) => Promise<void>;
+  activeTimerTaskId: string | null;
+  startTimer: (taskId: string) => void;
+  pauseTimer: (taskId: string) => void;
+  completeTaskWithTimer: (taskId: string) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -58,9 +62,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [areTasksSynced, setAreTasksSynced] = useState(false);
+  const [activeTimerTaskId, setActiveTimerTaskId] = useState<string | null>(null);
   const isSyncing = useRef(false);
 
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
+
+  useEffect(() => {
+    if (tasks) {
+      const runningTask = tasks.find(t => !!t.timerStartTime);
+      if (runningTask) {
+        setActiveTimerTaskId(runningTask.id);
+      } else {
+        setActiveTimerTaskId(null);
+      }
+    }
+  }, [tasks]);
+
 
   useEffect(() => {
     const root = document.documentElement;
@@ -256,6 +273,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if ('estimatedTime' in finalUpdates && (finalUpdates.estimatedTime === undefined || finalUpdates.estimatedTime <= 0)) {
         finalUpdates.estimatedTime = deleteField() as any;
       }
+       if ('timerStartTime' in finalUpdates && (finalUpdates.timerStartTime === undefined || finalUpdates.timerStartTime === null)) {
+        finalUpdates.timerStartTime = deleteField() as any;
+      }
       
       await setDoc(taskDocRef, finalUpdates, { merge: true });
     }
@@ -327,6 +347,41 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return Array.from(firstOccurrenceMap.values());
   }, [tasks, currentDate]);
 
+  const startTimer = useCallback((taskId: string) => {
+    updateTask(taskId, { timerStartTime: Date.now() });
+    setActiveTimerTaskId(taskId);
+  }, [updateTask]);
+
+  const pauseTimer = useCallback((taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task && task.timerStartTime) {
+      const elapsed = Date.now() - task.timerStartTime;
+      const newTimeSpent = (task.timeSpent || 0) + elapsed;
+      updateTask(taskId, { 
+        timeSpent: newTimeSpent,
+        timerStartTime: deleteField() as any 
+      });
+    }
+    setActiveTimerTaskId(null);
+  }, [tasks, updateTask]);
+  
+  const completeTaskWithTimer = useCallback((taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      let finalTimeSpent = task.timeSpent || 0;
+      if (task.timerStartTime) {
+          const elapsed = Date.now() - task.timerStartTime;
+          finalTimeSpent += elapsed;
+      }
+      updateTask(taskId, { 
+        timeSpent: finalTimeSpent,
+        timerStartTime: deleteField() as any,
+        isCompleted: true
+      });
+    }
+    setActiveTimerTaskId(null);
+  }, [tasks, updateTask]);
+
   const memoizedUserData = useMemo(() => {
     if (isUserDataLoading || userData === undefined) return null;
     if (userData === null) return initialUserData;
@@ -353,6 +408,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     isUserLoading,
     generateAndSyncTasks,
     createUserDocument,
+    activeTimerTaskId,
+    startTimer,
+    pauseTimer,
+    completeTaskWithTimer,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

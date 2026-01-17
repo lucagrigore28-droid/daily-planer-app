@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { CornerDownLeft, Trash2, Clock } from 'lucide-react';
+import { CornerDownLeft, Trash2, Clock, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -22,8 +22,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { Slider } from '../ui/slider';
+import TaskTimer from './TaskTimer';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 type HomeworkItemProps = {
   task: HomeworkTask;
@@ -31,6 +33,7 @@ type HomeworkItemProps = {
 
 export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
+  const { updateTask, startTimer, activeTimerTaskId } = context!;
   const [description, setDescription] = useState(task.description);
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
   const [isSaving, setIsSaving] = useState(false);
@@ -61,6 +64,15 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
 
   const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime || 0);
 
+  const canStartTime = task.estimatedTime && task.estimatedTime > 0;
+  const anotherTimerIsRunning = activeTimerTaskId !== null && activeTimerTaskId !== task.id;
+
+  // If a timer is running for this task, show the timer component.
+  // This also handles reloading the app while a timer was active.
+  if (activeTimerTaskId === task.id || (activeTimerTaskId === null && task.timerStartTime)) {
+    return <TaskTimer task={task} />;
+  }
+
   return (
     <>
       <Card className={cn(
@@ -89,13 +101,42 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                   >
                     {task.subjectName}
                   </Label>
-                  {task.estimatedTime && task.estimatedTime > 0 && (
+                  {(task.estimatedTime || task.timeSpent) && (
                       <div className={cn("flex items-center gap-1.5 text-xs", task.isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
                           <Clock className="h-3 w-3" />
-                          <span>{task.estimatedTime} minute</span>
+                          <span>
+                            {task.timeSpent ? `${Math.round(task.timeSpent / 60000)} min lucrate` : `${task.estimatedTime} min estimate`}
+                          </span>
                       </div>
                   )}
                 </div>
+
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                {canStartTime && !task.isCompleted && (
+                                    <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation(); 
+                                        startTimer(task.id);
+                                    }}
+                                    disabled={anotherTimerIsRunning}
+                                    className="mr-1"
+                                    >
+                                    <Timer className="h-5 w-5" />
+                                    </Button>
+                                )}
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{anotherTimerIsRunning ? 'Un alt timer este deja activ' : 'Pornește timerul'}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
                 {!task.isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-primary" />}
               </div>
               <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
