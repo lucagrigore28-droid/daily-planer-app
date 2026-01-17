@@ -6,7 +6,8 @@ import type { HomeworkTask } from '@/lib/types';
 import { AppContext } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Play, Pause, StopCircle } from 'lucide-react';
+import { Play, Pause, StopCircle, Info } from 'lucide-react';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '../ui/tooltip';
 
 type TaskTimerProps = {
   task: HomeworkTask;
@@ -56,6 +57,12 @@ const showCompletionNotification = (taskName: string) => {
 export default function TaskTimer({ task }: TaskTimerProps) {
   const context = useContext(AppContext);
   const { startTimer, pauseTimer, completeTaskWithTimer } = context!;
+  const [isIos, setIsIos] = useState(false);
+
+  useEffect(() => {
+    // Detect if the user is on an iOS device. This runs only on the client.
+    setIsIos(/iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream);
+  }, []);
 
   const totalDuration = (task.estimatedTime || 0) * 60 * 1000;
   const timeAlreadySpent = task.timeSpent || 0;
@@ -153,6 +160,14 @@ export default function TaskTimer({ task }: TaskTimerProps) {
                 <span className="sr-only">Oprește și finalizează</span>
             </Button>
         </div>
+        {isIos && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground text-center max-w-xs pt-2">
+            <Info className="h-4 w-4 shrink-0" />
+            <p>
+              Pe iPhone, notificările pot întârzia dacă ecranul este blocat.
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
