@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useContext } from 'react';
@@ -85,34 +84,48 @@ export default function TaskTimer({ task }: TaskTimerProps) {
   }, [task, totalDuration, timeAlreadySpent]);
   
   useEffect(() => {
+    // This function handles the end of the timer.
     const handleTimerEnd = () => {
         playCompletionSound();
         showCompletionNotification(task.subjectName);
         completeTaskWithTimer(task.id);
     }
     
+    // We only want to run the timer logic if the `isRunning` flag is true.
     if (isRunning) {
-      if (timeRemaining <= 0) {
+      // On the initial run of this effect, we check if time is already up.
+      // This handles cases where the app was closed and reopened after the timer should have ended.
+      const initialRemaining = getInitialTimeRemaining();
+      if (initialRemaining <= 0) {
         handleTimerEnd();
-        return;
+        return; // Stop here, the timer is already done.
       }
 
+      // If we're here, the timer should be actively ticking.
       const interval = setInterval(() => {
-        // We calculate remaining time from scratch each tick to avoid drift
+        // We calculate remaining time from scratch each tick to avoid timing drift.
         const elapsedSinceStart = Date.now() - (task.timerStartTime as number);
         const newRemaining = totalDuration - (timeAlreadySpent + elapsedSinceStart);
 
         if (newRemaining <= 0) {
+          // Time is up. Clean up the interval and call the end handler.
           clearInterval(interval);
           handleTimerEnd();
         } else {
+          // Time is still left, update the state to re-render the display.
           setTimeRemaining(newRemaining);
         }
       }, 1000);
 
+      // The cleanup function for this effect.
+      // This runs when the component unmounts or when the dependencies change.
+      // It's crucial for preventing memory leaks and duplicate timers.
       return () => clearInterval(interval);
     }
-  }, [isRunning, task.id, task.timerStartTime, totalDuration, timeAlreadySpent, completeTaskWithTimer, timeRemaining, task.subjectName]);
+    // The dependency array is key. This effect re-runs ONLY when the timer's
+    // core properties change (isRunning, id, startTime, totalDuration, etc.),
+    // NOT every time the 'timeRemaining' state updates.
+  }, [isRunning, task.id, task.timerStartTime, totalDuration, timeAlreadySpent, completeTaskWithTimer, task.subjectName]);
   
   const progress = totalDuration > 0 ? Math.min(100, ((totalDuration - timeRemaining) / totalDuration) * 100) : 0;
 
