@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext, useState, useEffect } from 'react';
@@ -35,7 +34,7 @@ type HomeworkItemProps = {
 
 export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
-  const { updateTask, startTimer, activeTimerTaskId } = context!;
+  const { updateTask, startTimer, stopAndCompleteTimer, activeTimerTaskId } = context!;
   const [description, setDescription] = useState(task.description);
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
   const [isSaving, setIsSaving] = useState(false);
@@ -92,7 +91,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
 
   const anotherTimerIsRunning = activeTimerTaskId !== null && activeTimerTaskId !== task.id;
 
-  if (activeTimerTaskId === task.id || (activeTimerTaskId === null && task.timerStartTime)) {
+  if (activeTimerTaskId === task.id) {
     return <TaskTimer task={task} />;
   }
 
@@ -128,7 +127,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                       <div className={cn("flex items-center gap-1.5 text-xs", task.isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
                           <Clock className="h-3 w-3" />
                           <span>
-                            {task.timeSpent ? `${Math.round(task.timeSpent / 60000)} min lucrate` : `${task.estimatedTime} min estimate`}
+                            {task.timeSpent ? `${Math.round(task.timeSpent / 1000)} sec lucrate` : `${task.estimatedTime} min estimate`}
                           </span>
                       </div>
                   )}
