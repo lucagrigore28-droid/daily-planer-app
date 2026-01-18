@@ -4,14 +4,14 @@
 import React, { useContext, useState, useEffect } from 'react';
 import type { HomeworkTask } from '@/lib/types';
 import { AppContext } from '@/contexts/AppContext';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { CornerDownLeft, Trash2, Clock, Timer } from 'lucide-react';
+import { CornerDownLeft, Trash2, Clock, Timer, Sparkles, ListOrdered } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -26,6 +26,8 @@ import {
 import { Slider } from '../ui/slider';
 import TaskTimer from './TaskTimer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { breakdownTask } from '@/ai/flows/breakdownTaskFlow';
+import { Skeleton } from '../ui/skeleton';
 
 type HomeworkItemProps = {
   task: HomeworkTask;
@@ -38,6 +40,8 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [suggestedSteps, setSuggestedSteps] = useState<string[] | null>(null);
+  const [isGeneratingSteps, setIsGeneratingSteps] = useState(false);
   
   const handleCompletionChange = (checked: boolean) => {
     context?.updateTask(task.id, { isCompleted: checked });
@@ -57,17 +61,37 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     setIsDeleteDialogOpen(false);
   }
   
+  const handleSuggestSteps = async () => {
+    setIsGeneratingSteps(true);
+    setSuggestedSteps(null);
+    try {
+        const result = await breakdownTask({
+            subjectName: task.subjectName,
+            taskDescription: description,
+        });
+        if (result.steps) {
+            setSuggestedSteps(result.steps);
+        }
+    } catch (error) {
+        console.error("Failed to generate steps:", error);
+        // Optionally, set an error state to show in the UI
+    } finally {
+        setIsGeneratingSteps(false);
+    }
+  };
+
   useEffect(() => {
     setDescription(task.description);
     setEstimatedTime(task.estimatedTime || 0);
+    // Reset AI suggestions when task prop changes
+    setSuggestedSteps(null);
+    setIsGeneratingSteps(false);
   }, [task]);
 
   const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime || 0);
 
   const anotherTimerIsRunning = activeTimerTaskId !== null && activeTimerTaskId !== task.id;
 
-  // If a timer is running for this task, show the timer component.
-  // This also handles reloading the app while a timer was active.
   if (activeTimerTaskId === task.id || (activeTimerTaskId === null && task.timerStartTime)) {
     return <TaskTimer task={task} />;
   }
@@ -150,6 +174,41 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                         className="min-h-[80px]"
                        />
                   </div>
+
+                  <div className="grid gap-2">
+                      <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSuggestSteps}
+                          disabled={isGeneratingSteps}
+                      >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          {isGeneratingSteps ? 'Gândesc...' : 'Sugerează pași cu AI'}
+                      </Button>
+                      {isGeneratingSteps && (
+                          <div className="space-y-2 mt-2">
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-4/5" />
+                              <Skeleton className="h-4 w-full" />
+                          </div>
+                      )}
+                      {suggestedSteps && suggestedSteps.length > 0 && (
+                          <Card className="mt-4 bg-muted/50">
+                              <CardContent className="p-4">
+                                  <h4 className="flex items-center font-semibold mb-2 text-sm">
+                                      <ListOrdered className="mr-2 h-4 w-4" />
+                                      Pași Sugerați
+                                  </h4>
+                                  <ul className="list-decimal list-inside space-y-1 text-sm">
+                                      {suggestedSteps.map((step, index) => (
+                                          <li key={index}>{step}</li>
+                                      ))}
+                                  </ul>
+                              </CardContent>
+                          </Card>
+                      )}
+                  </div>
+                  
                    <div className="grid gap-2">
                       <Label htmlFor={`estimated-time-${task.id}`}>Timp estimat (minute)</Label>
                       <div className="flex items-center gap-4 pt-2">
