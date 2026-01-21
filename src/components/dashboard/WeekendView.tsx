@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext, useMemo, useState } from 'react';
@@ -293,7 +292,3 @@ export default function WeekendView() {
     </div>
   );
 }
-
-    
-
-    
