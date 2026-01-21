@@ -32,7 +32,7 @@ export default function HomeworkDashboard() {
       const nextDay = getNextSchoolDayWithTasks();
       setDisplayedDay(nextDay ? startOfDay(nextDay) : startOfDay(new Date()));
     }
-  }, [areTasksSynced, isDataLoaded]);
+  }, [areTasksSynced, isDataLoaded, displayedDay, getNextSchoolDayWithTasks]);
 
 
   const handlePrevDay = () => {
@@ -49,8 +49,10 @@ export default function HomeworkDashboard() {
 
   if (!context || !context.userData) return null;
 
-  const dayOfWeek = getDay(currentDate); // 0=Sun, 1=Mon, ..., 6=Sat
-  const isWeekendVisible = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
+  const dayOfWeekRaw = getDay(currentDate); // Sun=0, Mon=1, ..., Sat=6
+  const dayOfWeek = dayOfWeekRaw === 0 ? 7 : dayOfWeekRaw; // Mon=1, ..., Sun=7
+  const weekendStartDay = userData?.weekendTabStartDay ?? 5; // Default Friday (5)
+  const isWeekendVisible = dayOfWeek >= weekendStartDay;
 
   const tabs = useMemo(() => {
     const baseTabs = [

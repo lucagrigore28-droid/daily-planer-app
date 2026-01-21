@@ -19,6 +19,7 @@ const initialUserData: UserData = {
   setupComplete: false,
   theme: 'classic',
   customThemeColors: ['#A099FF', '#73A7AD'],
+  weekendTabStartDay: 5, // Default to Friday
 };
 
 type AppContextType = {
@@ -45,6 +46,7 @@ type AppContextType = {
   startTimer: (taskId: string) => void;
   pauseTimer: (taskId: string) => void;
   stopAndCompleteTimer: (taskId: string) => void;
+  completeTaskWithTimer: (taskId: string) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -70,11 +72,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (tasks) {
       const runningTask = tasks.find(t => !!t.timerStartTime);
-      if (runningTask) {
-        setActiveTimerTaskId(runningTask.id);
-      } else {
-        setActiveTimerTaskId(null);
-      }
+      setActiveTimerTaskId(runningTask ? runningTask.id : null);
     }
   }, [tasks]);
 
@@ -299,7 +297,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await batch.commit();
 
     // Reset user document
-    await setDoc(userDocRef, initialUserData);
+    await setDoc(userDocRef, { ...initialUserData, name: userData?.name || '' });
     
     window.location.reload();
   }, [firestore, user, userDocRef, userData]);
@@ -325,16 +323,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [currentDate, tasks, userData]);
 
   const getWeekendTasks = useCallback(() => {
-    if (!tasks) return [];
+    if (!tasks || !userData) return [];
+    
     const today = startOfDay(currentDate);
+    // Convert current day to 1-7 format (Mon=1, Sun=7)
+    const currentDayIndex = getDay(today) === 0 ? 7 : getDay(today);
+
+    // Identify the start and end of NEXT week
     const nextWeekStart = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
     const nextWeekEnd = endOfWeek(nextWeekStart, { weekStartsOn: 1 });
 
-    return tasks.filter(task => {
-        const taskDate = startOfDay(new Date(task.dueDate));
-        return taskDate >= nextWeekStart && taskDate <= nextWeekEnd;
+    // Get all tasks that are due next week
+    const allNextWeekTasks = tasks.filter(task => {
+        const taskDueDate = startOfDay(new Date(task.dueDate));
+        return taskDueDate >= nextWeekStart && taskDueDate <= nextWeekEnd;
     });
-  }, [tasks, currentDate]);
+
+    // Filter those tasks based on whether the subject is "done" for the current week
+    const filteredTasks = allNextWeekTasks.filter(task => {
+        const subjectSchedule = userData.schedule[task.subjectId];
+
+        // If the subject has no classes this week, it's considered "done". Show the task.
+        if (!subjectSchedule || subjectSchedule.length === 0) {
+            return true;
+        }
+
+        // Find the last day of class for this subject in a week (1-7)
+        const lastClassDay = Math.max(...subjectSchedule);
+
+        // If today is on or after the last class day, the subject is "done". Show the task.
+        return currentDayIndex >= lastClassDay;
+    });
+
+    return filteredTasks;
+  }, [tasks, currentDate, userData]);
 
   const startTimer = useCallback(async (taskId: string) => {
     // Request permission when the user first starts a timer.
@@ -358,7 +380,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [tasks, updateTask]);
   
-  const stopAndCompleteTimer = useCallback((taskId: string) => {
+  const completeTaskWithTimer = useCallback((taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
       let finalTimeSpent = task.timeSpent || 0;
@@ -373,6 +395,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
     }
   }, [tasks, updateTask]);
+
+  const stopAndCompleteTimer = useCallback((taskId: string) => {
+    completeTaskWithTimer(taskId);
+  }, [completeTaskWithTimer]);
 
   const memoizedUserData = useMemo(() => {
     if (isUserDataLoading || userData === undefined) return null;
@@ -404,6 +430,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     startTimer,
     pauseTimer,
     stopAndCompleteTimer,
+    completeTaskWithTimer,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

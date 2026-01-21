@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useState, useEffect } from 'react';
@@ -8,7 +9,8 @@ import StepName from '@/components/setup/StepName';
 import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
 import StepTheme from '@/components/setup/StepTheme';
-import { User, Book, Calendar, Palette, LogOut, Trash2 } from 'lucide-react';
+import StepFunctionality from '@/components/setup/StepFunctionality';
+import { User, Book, Calendar, Palette, LogOut, Trash2, SlidersHorizontal } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +39,7 @@ const TABS = [
     { value: 'subjects', label: 'Materii', icon: Book, component: StepSubjects },
     { value: 'schedule', label: 'Orar', icon: Calendar, component: StepSchedule },
     { value: 'appearance', label: 'Aspect', icon: Palette, component: StepTheme },
+    { value: 'functionality', label: 'Funcționalități', icon: SlidersHorizontal, component: StepFunctionality },
 ];
 
 const DangerZone = () => {
@@ -156,7 +159,7 @@ export default function SettingsDialog({ open, onOpenChange }: SettingsDialogPro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-full md:h-auto lg:h-[80vh] flex flex-col p-0">
+      <DialogContent className="max-w-4xl h-full md:h-auto lg:h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Setări</DialogTitle>
           <DialogDescription>
