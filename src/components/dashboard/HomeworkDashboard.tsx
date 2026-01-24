@@ -15,7 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
 import SettingsDialog from './SettingsDialog';
-import { Progress } from '../ui/progress';
 import { cn } from '@/lib/utils';
 
 export default function HomeworkDashboard() {
@@ -24,15 +23,15 @@ export default function HomeworkDashboard() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
 
-  const { userData, currentDate, setCurrentDate, tasks, getNextSchoolDayWithTasks, areTasksSynced, isDataLoaded } = context!;
+  const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
    useEffect(() => {
     // This effect runs ONCE to set the initial day when data is loaded
     if (areTasksSynced && isDataLoaded && !displayedDay) {
-      const nextDay = getNextSchoolDayWithTasks();
+      const nextDay = getNextDayWithTasks();
       setDisplayedDay(nextDay ? startOfDay(nextDay) : startOfDay(new Date()));
     }
-  }, [areTasksSynced, isDataLoaded, displayedDay, getNextSchoolDayWithTasks]);
+  }, [areTasksSynced, isDataLoaded, displayedDay, getNextDayWithTasks]);
 
 
   const handlePrevDay = () => {
@@ -56,7 +55,7 @@ export default function HomeworkDashboard() {
 
   const tabs = useMemo(() => {
     const baseTabs = [
-      { value: "next-tasks", label: "Teme următoare" },
+      { value: "next-tasks", label: "Teme" },
     ];
     if (isWeekendVisible) {
       baseTabs.push({ value: "weekend", label: "Weekend" });
@@ -64,16 +63,6 @@ export default function HomeworkDashboard() {
     baseTabs.push({ value: "calendar", label: "Calendar" });
     return baseTabs;
   }, [isWeekendVisible]);
-
-
-  const tasksForDisplayedDay = useMemo(() => {
-    if (!displayedDay) return [];
-    return tasks.filter(task => startOfDay(new Date(task.dueDate)).getTime() === displayedDay.getTime());
-  }, [tasks, displayedDay]);
-
-  const completedTasksCount = tasksForDisplayedDay.filter(t => t.isCompleted).length;
-  const totalTasksCount = tasksForDisplayedDay.length;
-  const progressPercentage = totalTasksCount > 0 ? (completedTasksCount / totalTasksCount) * 100 : 0;
 
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
@@ -112,10 +101,10 @@ export default function HomeworkDashboard() {
                 {displayedDay ? (
                     <Card>
                         <CardContent className="p-4">
-                            <div className="flex justify-between items-center mb-2">
+                            <div className="flex justify-between items-center mb-4">
                                 <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                                     <CalendarIcon className="h-6 w-6 text-primary"/>
-                                    Teme pentru {format(displayedDay, "EEEE, d MMMM", { locale: ro })}
+                                    <span>{format(displayedDay, "EEEE, d MMMM", { locale: ro })}</span>
                                 </h2>
                                 <div className="flex items-center gap-2">
                                     <Button 
@@ -130,15 +119,6 @@ export default function HomeworkDashboard() {
                                     </Button>
                                 </div>
                             </div>
-                             {totalTasksCount > 0 && (
-                                <div className="mt-2 mb-4">
-                                    <div className="flex justify-between items-center mb-1 text-sm font-medium">
-                                        <span className="text-muted-foreground">Progres zilnic</span>
-                                        <span className="text-primary">{completedTasksCount} / {totalTasksCount} teme</span>
-                                    </div>
-                                    <Progress value={progressPercentage} className="h-2" />
-                                </div>
-                            )}
                             <HomeworkList displayDate={displayedDay} />
                         </CardContent>
                     </Card>

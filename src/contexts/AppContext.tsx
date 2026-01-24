@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject, Schedule } from '@/lib/types';
-import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO } from 'date-fns';
+import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -36,7 +36,7 @@ type AppContextType = {
   areTasksSynced: boolean; // New flag
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
-  getNextSchoolDayWithTasks: () => Date | null;
+  getNextDayWithTasks: () => Date | null;
   getWeekendTasks: () => HomeworkTask[];
   user: any;
   isUserLoading: boolean;
@@ -138,87 +138,74 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   }, [userData?.theme, userData?.customThemeColors]);
 
-  const generateAndSyncTasks = useCallback(async (schedule: Schedule, subjects: Subject[]) => {
-      if (!tasksCollectionRef || !tasks || !user || syncInProgress.current) return;
+  const doSync = useCallback(async () => {
+    if (!user || !userData || !tasks || syncInProgress.current) return;
 
-      syncInProgress.current = true;
-      try {
-          const today = startOfDay(new Date());
-          const batch = writeBatch(firestore);
+    syncInProgress.current = true;
+    try {
+      const today = startOfDay(new Date());
+      const batch = writeBatch(firestore);
 
-          const automaticTasks = tasks.filter(t => !t.isManual);
-          const existingTasks = new Map<string, string>(); // Map "subjectId_dateString" to "taskId"
+      const automaticTasks = tasks.filter(t => !t.isManual);
+      const existingTasks = new Map<string, string>(); // Map "subjectId_dateString" to "taskId"
 
-          automaticTasks.forEach(task => {
-              const taskDate = startOfDay(parseISO(task.dueDate));
-              const dayIndex = getDay(taskDate) === 0 ? 7 : getDay(taskDate);
-              const subjectStillExists = subjects.some(s => s.id === task.subjectId);
-              const isScheduled = schedule[task.subjectId]?.includes(dayIndex);
-              const dateStr = task.dueDate.split('T')[0];
+      automaticTasks.forEach(task => {
+        const taskDate = startOfDay(parseISO(task.dueDate));
+        const dayIndex = getDay(taskDate) === 0 ? 7 : getDay(taskDate);
+        const subjectStillExists = userData.subjects.some(s => s.id === task.subjectId);
+        const isScheduled = userData.schedule[task.subjectId]?.includes(dayIndex);
+        const dateStr = task.dueDate.split('T')[0];
 
-              if (isAfter(today, taskDate) && !task.isCompleted || !subjectStillExists || !isScheduled) {
-                  batch.delete(doc(tasksCollectionRef, task.id));
-              } else {
-                  existingTasks.set(`${task.subjectId}_${dateStr}`, task.id);
+        if (isBefore(taskDate, today) && !task.isCompleted || !subjectStillExists || !isScheduled) {
+          batch.delete(doc(firestore, 'users', user.uid, 'tasks', task.id));
+        } else {
+          existingTasks.set(`${task.subjectId}_${dateStr}`, task.id);
+        }
+      });
+
+      for (let i = 0; i < 14; i++) {
+        const dateToCheck = addDays(today, i);
+        const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
+        const dateStr = dateToCheck.toISOString().split('T')[0];
+
+        if (dayIndex >= 1 && dayIndex <= 5) {
+          for (const subject of userData.subjects) {
+            if (userData.schedule[subject.id]?.includes(dayIndex)) {
+              const taskKey = `${subject.id}_${dateStr}`;
+              if (!existingTasks.has(taskKey)) {
+                const newTaskRef = doc(collection(firestore, 'users', user.uid, 'tasks'));
+                batch.set(newTaskRef, {
+                  subjectId: subject.id,
+                  subjectName: subject.name,
+                  description: '',
+                  dueDate: dateToCheck.toISOString(),
+                  isCompleted: false,
+                  isManual: false
+                });
               }
-          });
-          
-          for (let i = 0; i < 14; i++) {
-              const dateToCheck = addDays(today, i);
-              const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
-              const dateStr = dateToCheck.toISOString().split('T')[0];
-
-              if (dayIndex >= 1 && dayIndex <= 5) {
-                  for (const subject of subjects) {
-                      if (schedule[subject.id]?.includes(dayIndex)) {
-                          const taskKey = `${subject.id}_${dateStr}`;
-                          if (!existingTasks.has(taskKey)) {
-                              const newTaskRef = doc(tasksCollectionRef);
-                              batch.set(newTaskRef, {
-                                  subjectId: subject.id,
-                                  subjectName: subject.name,
-                                  description: '',
-                                  dueDate: dateToCheck.toISOString(),
-                                  isCompleted: false,
-                                  isManual: false
-                              });
-                          }
-                      }
-                  }
-              }
+            }
           }
-          await batch.commit();
-      } catch (error) {
-          console.error("Error syncing tasks:", error);
-      } finally {
-          syncInProgress.current = false;
-          // Set initial sync flag after the first successful run
-          if (!initialSyncCompleted.current) {
-            initialSyncCompleted.current = true;
-            setAreTasksSynced(true);
-          }
+        }
       }
-  }, [firestore, user, tasksCollectionRef, tasks]);
+      await batch.commit();
+    } catch (error) {
+      console.error("Error syncing tasks:", error);
+    } finally {
+      syncInProgress.current = false;
+      if (!initialSyncCompleted.current) {
+        initialSyncCompleted.current = true;
+        setAreTasksSynced(true);
+      }
+    }
+  }, [firestore, user, userData, tasks]);
 
-
-  // Effect for initial data load and sync
   useEffect(() => {
-    if (isDataLoaded && userData?.setupComplete && tasks !== null && !initialSyncCompleted.current) {
-        generateAndSyncTasks(userData.schedule, userData.subjects);
+    if (isDataLoaded && userData?.setupComplete && tasks !== null) {
+      doSync();
     } else if (isDataLoaded && (!userData?.setupComplete || tasks === null)) {
-        setAreTasksSynced(true); // Unblock UI if no setup or tasks
+      setAreTasksSynced(true);
     }
-  }, [isDataLoaded, userData, tasks, generateAndSyncTasks]);
-
-
-  // Effect for re-syncing when schedule or subjects change
-  useEffect(() => {
-    // Only run this if the initial sync has already happened.
-    if (initialSyncCompleted.current && userData?.schedule && userData?.subjects) {
-      generateAndSyncTasks(userData.schedule, userData.subjects);
-    }
-  }, [userData?.schedule, userData?.subjects]); // Removed generateAndSyncTasks from deps
-
+  }, [isDataLoaded, userData?.setupComplete, userData?.schedule, userData?.subjects, tasks, doSync]);
   
   const createUserDocument = useCallback(async (user: any, name: string) => {
     if (!user) return;
@@ -300,19 +287,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     window.location.href = '/login';
   }, [auth]);
 
-  const getNextSchoolDayWithTasks = useCallback(() => {
+  const getNextDayWithTasks = useCallback(() => {
     if (!tasks || !userData) return null;
     const today = startOfDay(currentDate);
     
     const incompleteTasks = tasks.filter(task => !task.isCompleted);
-    const futureTasks = incompleteTasks.filter(task => !isAfter(today, startOfDay(new Date(task.dueDate))));
+    
+    // Get all future dates that have tasks
+    const futureDates = incompleteTasks.reduce((acc, task) => {
+        const dueDate = startOfDay(new Date(task.dueDate));
+        if (!isBefore(dueDate, today)) {
+            acc.add(dueDate.getTime());
+        }
+        if (task.plannedDate) {
+            const plannedDate = startOfDay(new Date(task.plannedDate));
+            if (!isBefore(plannedDate, today)) {
+                acc.add(plannedDate.getTime());
+            }
+        }
+        return acc;
+    }, new Set<number>());
 
-    if (futureTasks.length > 0) {
-      futureTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-      return startOfDay(new Date(futureTasks[0].dueDate));
+    if (futureDates.size > 0) {
+        const sortedDates = Array.from(futureDates).sort();
+        return new Date(sortedDates[0]);
     }
   
-    return null; // Return null if no tasks are found
+    return null;
   }, [currentDate, tasks, userData]);
 
   const getWeekendTasks = useCallback(() => {
@@ -320,35 +321,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     
     const today = startOfDay(currentDate);
 
-    // Identify the start and end of NEXT week (Monday to Sunday)
     const nextWeekStart = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
-    const nextWeekEnd = endOfWeek(nextWeekStart, { weekStartsOn: 1 });
+    const nextWeekEnd = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
 
-    // 1. Get all tasks that are due next week
     const allNextWeekTasks = tasks.filter(task => {
         const taskDueDate = startOfDay(new Date(task.dueDate));
         return taskDueDate >= nextWeekStart && taskDueDate <= nextWeekEnd;
     });
 
-    // 2. Group tasks by subject and find the earliest one for each
     const earliestTasksBySubject = new Map<string, HomeworkTask>();
 
     for (const task of allNextWeekTasks) {
         const existingTask = earliestTasksBySubject.get(task.subjectId);
-
-        // If we haven't seen this subject yet, or if the current task is earlier
-        // than the one we've stored, update the map.
         if (!existingTask || new Date(task.dueDate) < new Date(existingTask.dueDate)) {
             earliestTasksBySubject.set(task.subjectId, task);
         }
     }
 
-    // 3. Return the values from the map
     return Array.from(earliestTasksBySubject.values());
   }, [tasks, currentDate, userData]);
 
   const startTimer = useCallback(async (taskId: string) => {
-    // Request permission when the user first starts a timer.
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission !== 'granted') {
         await Notification.requestPermission();
@@ -409,7 +402,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     areTasksSynced,
     currentDate,
     setCurrentDate,
-    getNextSchoolDayWithTasks,
+    getNextDayWithTasks,
     getWeekendTasks,
     user,
     isUserLoading,
