@@ -40,7 +40,6 @@ type AppContextType = {
   getWeekendTasks: () => HomeworkTask[];
   user: any;
   isUserLoading: boolean;
-  generateAndSyncTasks: (schedule: UserData['schedule'], subjects: UserData['subjects']) => Promise<void>;
   createUserDocument: (user: any, name: string) => Promise<void>;
   activeTimerTaskId: string | null;
   startTimer: (taskId: string) => void;
@@ -65,7 +64,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [areTasksSynced, setAreTasksSynced] = useState(false);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<string | null>(null);
-  const isSyncing = useRef(false);
+  
+  // Use a ref to track sync status and prevent re-runs
+  const syncInProgress = useRef(false);
+  const initialSyncCompleted = useRef(false);
 
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
 
@@ -137,83 +139,87 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [userData?.theme, userData?.customThemeColors]);
 
   const generateAndSyncTasks = useCallback(async (schedule: Schedule, subjects: Subject[]) => {
-    if (!tasksCollectionRef || !tasks || !user) return;
-    if (isSyncing.current) return;
-    isSyncing.current = true;
+      if (!tasksCollectionRef || !tasks || !user || syncInProgress.current) return;
 
-    try {
-        const today = startOfDay(new Date());
-        const batch = writeBatch(firestore);
+      syncInProgress.current = true;
+      try {
+          const today = startOfDay(new Date());
+          const batch = writeBatch(firestore);
 
-        const automaticTasks = tasks.filter(t => !t.isManual);
-        const existingTasks = new Map<string, string>(); // Map of "subjectId_dateString" to "taskId"
-        
-        // Identify tasks to delete or that already exist
-        automaticTasks.forEach(task => {
-            const taskDate = startOfDay(parseISO(task.dueDate));
-            if (isAfter(today, taskDate) && !task.isCompleted) {
-                 batch.delete(doc(tasksCollectionRef, task.id));
-                 return;
-            }
+          const automaticTasks = tasks.filter(t => !t.isManual);
+          const existingTasks = new Map<string, string>(); // Map "subjectId_dateString" to "taskId"
 
-            const dayIndex = getDay(taskDate) === 0 ? 7 : getDay(taskDate);
-            const subjectStillExists = subjects.some(s => s.id === task.subjectId);
-            const isScheduled = schedule[task.subjectId]?.includes(dayIndex);
-            const dateStr = task.dueDate.split('T')[0];
+          automaticTasks.forEach(task => {
+              const taskDate = startOfDay(parseISO(task.dueDate));
+              const dayIndex = getDay(taskDate) === 0 ? 7 : getDay(taskDate);
+              const subjectStillExists = subjects.some(s => s.id === task.subjectId);
+              const isScheduled = schedule[task.subjectId]?.includes(dayIndex);
+              const dateStr = task.dueDate.split('T')[0];
 
-            if (!subjectStillExists || !isScheduled) {
-                batch.delete(doc(tasksCollectionRef, task.id));
-            } else {
-                existingTasks.set(`${task.subjectId}_${dateStr}`, task.id);
-            }
-        });
+              if (isAfter(today, taskDate) && !task.isCompleted || !subjectStillExists || !isScheduled) {
+                  batch.delete(doc(tasksCollectionRef, task.id));
+              } else {
+                  existingTasks.set(`${task.subjectId}_${dateStr}`, task.id);
+              }
+          });
+          
+          for (let i = 0; i < 14; i++) {
+              const dateToCheck = addDays(today, i);
+              const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
+              const dateStr = dateToCheck.toISOString().split('T')[0];
 
-        // Create new tasks for the next 14 days
-        for (let i = 0; i < 14; i++) {
-            const dateToCheck = addDays(today, i);
-            const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
-            const dateStr = dateToCheck.toISOString().split('T')[0];
-
-            if (dayIndex >= 1 && dayIndex <= 5) {
-                for (const subject of subjects) {
-                    if (schedule[subject.id]?.includes(dayIndex)) {
-                        const taskKey = `${subject.id}_${dateStr}`;
-                        if (!existingTasks.has(taskKey)) {
-                            const newTaskRef = doc(tasksCollectionRef);
-                            batch.set(newTaskRef, {
-                                subjectId: subject.id,
-                                subjectName: subject.name,
-                                description: '',
-                                dueDate: dateToCheck.toISOString(),
-                                isCompleted: false,
-                                isManual: false
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        await batch.commit();
-    } catch (error) {
-        console.error("Error syncing tasks:", error);
-    } finally {
-        isSyncing.current = false;
-        setAreTasksSynced(true); // Signal that sync is complete
-    }
+              if (dayIndex >= 1 && dayIndex <= 5) {
+                  for (const subject of subjects) {
+                      if (schedule[subject.id]?.includes(dayIndex)) {
+                          const taskKey = `${subject.id}_${dateStr}`;
+                          if (!existingTasks.has(taskKey)) {
+                              const newTaskRef = doc(tasksCollectionRef);
+                              batch.set(newTaskRef, {
+                                  subjectId: subject.id,
+                                  subjectName: subject.name,
+                                  description: '',
+                                  dueDate: dateToCheck.toISOString(),
+                                  isCompleted: false,
+                                  isManual: false
+                              });
+                          }
+                      }
+                  }
+              }
+          }
+          await batch.commit();
+      } catch (error) {
+          console.error("Error syncing tasks:", error);
+      } finally {
+          syncInProgress.current = false;
+          // Set initial sync flag after the first successful run
+          if (!initialSyncCompleted.current) {
+            initialSyncCompleted.current = true;
+            setAreTasksSynced(true);
+          }
+      }
   }, [firestore, user, tasksCollectionRef, tasks]);
 
+
+  // Effect for initial data load and sync
   useEffect(() => {
-    // This effect runs once when data is ready to perform the initial sync.
-    if (isDataLoaded && userData?.setupComplete && tasks !== null && !areTasksSynced) {
-      generateAndSyncTasks(userData.schedule, userData.subjects);
+    if (isDataLoaded && userData?.setupComplete && tasks !== null && !initialSyncCompleted.current) {
+        generateAndSyncTasks(userData.schedule, userData.subjects);
     } else if (isDataLoaded && (!userData?.setupComplete || tasks === null)) {
-      // If setup is not complete, or tasks haven't loaded, we can consider it "synced" for now
-      // to unblock the UI.
-      setAreTasksSynced(true);
+        setAreTasksSynced(true); // Unblock UI if no setup or tasks
     }
-  }, [isDataLoaded, userData, tasks, areTasksSynced, generateAndSyncTasks]);
+  }, [isDataLoaded, userData, tasks, generateAndSyncTasks]);
 
 
+  // Effect for re-syncing when schedule or subjects change
+  useEffect(() => {
+    // Only run this if the initial sync has already happened.
+    if (initialSyncCompleted.current && userData?.schedule && userData?.subjects) {
+      generateAndSyncTasks(userData.schedule, userData.subjects);
+    }
+  }, [userData?.schedule, userData?.subjects]); // Removed generateAndSyncTasks from deps
+
+  
   const createUserDocument = useCallback(async (user: any, name: string) => {
     if (!user) return;
     const userDocRef = doc(firestore, 'users', user.uid);
@@ -227,32 +233,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = useCallback(async (data: Partial<UserData>) => {
     if (!userDocRef) return;
     
-    // Create a temporary object to avoid mutating `data`
     const updates = { ...data };
 
-    // When updating theme to non-custom, clear custom colors to avoid conflicts
     if (updates.theme && updates.theme !== 'custom') {
         updates.customThemeColors = deleteField() as any;
     }
 
     await setDoc(userDocRef, updates, { merge: true });
     
-    // If setup is being completed, trigger task sync immediately.
-    if (updates.setupComplete === true && userData) {
-      const fullSchedule = updates.schedule || userData.schedule;
-      const fullSubjects = updates.subjects || userData.subjects;
-      await generateAndSyncTasks(fullSchedule, fullSubjects);
-    }
-  }, [userDocRef, userData, generateAndSyncTasks]);
+  }, [userDocRef]);
 
   const updateSubjects = useCallback(async (subjects: Subject[]) => {
-    if (userDocRef) {
-        await updateUser({ subjects });
-        if(userData) {
-          await generateAndSyncTasks(userData.schedule, subjects);
-        }
-    }
-  }, [userDocRef, updateUser, userData, generateAndSyncTasks]);
+      await updateUser({ subjects });
+  }, [updateUser]);
 
   const addTask = useCallback(async (task: Omit<HomeworkTask, 'id'>) => {
       if (tasksCollectionRef) {
@@ -326,36 +319,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!tasks || !userData) return [];
     
     const today = startOfDay(currentDate);
-    // Convert current day to 1-7 format (Mon=1, Sun=7)
-    const currentDayIndex = getDay(today) === 0 ? 7 : getDay(today);
 
-    // Identify the start and end of NEXT week
+    // Identify the start and end of NEXT week (Monday to Sunday)
     const nextWeekStart = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
     const nextWeekEnd = endOfWeek(nextWeekStart, { weekStartsOn: 1 });
 
-    // Get all tasks that are due next week
+    // 1. Get all tasks that are due next week
     const allNextWeekTasks = tasks.filter(task => {
         const taskDueDate = startOfDay(new Date(task.dueDate));
         return taskDueDate >= nextWeekStart && taskDueDate <= nextWeekEnd;
     });
 
-    // Filter those tasks based on whether the subject is "done" for the current week
-    const filteredTasks = allNextWeekTasks.filter(task => {
-        const subjectSchedule = userData.schedule[task.subjectId];
+    // 2. Group tasks by subject and find the earliest one for each
+    const earliestTasksBySubject = new Map<string, HomeworkTask>();
 
-        // If the subject has no classes this week, it's considered "done". Show the task.
-        if (!subjectSchedule || subjectSchedule.length === 0) {
-            return true;
+    for (const task of allNextWeekTasks) {
+        const existingTask = earliestTasksBySubject.get(task.subjectId);
+
+        // If we haven't seen this subject yet, or if the current task is earlier
+        // than the one we've stored, update the map.
+        if (!existingTask || new Date(task.dueDate) < new Date(existingTask.dueDate)) {
+            earliestTasksBySubject.set(task.subjectId, task);
         }
+    }
 
-        // Find the last day of class for this subject in a week (1-7)
-        const lastClassDay = Math.max(...subjectSchedule);
-
-        // If today is on or after the last class day, the subject is "done". Show the task.
-        return currentDayIndex >= lastClassDay;
-    });
-
-    return filteredTasks;
+    // 3. Return the values from the map
+    return Array.from(earliestTasksBySubject.values());
   }, [tasks, currentDate, userData]);
 
   const startTimer = useCallback(async (taskId: string) => {
@@ -424,7 +413,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     getWeekendTasks,
     user,
     isUserLoading,
-    generateAndSyncTasks,
     createUserDocument,
     activeTimerTaskId,
     startTimer,
