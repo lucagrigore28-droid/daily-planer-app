@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject, Schedule } from '@/lib/types';
-import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore } from 'date-fns';
+import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -318,14 +318,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const getWeekendTasks = useCallback(() => {
     if (!tasks || !userData) return [];
-    
-    const today = startOfDay(currentDate);
-    const nextWeekEnd = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
 
-    return tasks.filter(task => {
-        const taskDueDate = startOfDay(new Date(task.dueDate));
-        return !task.isCompleted && isAfter(taskDueDate, today) && !isAfter(taskDueDate, nextWeekEnd);
+    const today = startOfDay(currentDate);
+
+    // This correctly defines "next week" as the upcoming Monday to Sunday, regardless of the current day.
+    const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+    const endOfNextWeek = endOfWeek(startOfNextWeek, { weekStartsOn: 1 });
+
+    // 1. Get all uncompleted tasks that fall within next week's interval.
+    const tasksInNextWeek = tasks.filter(task => {
+      if (task.isCompleted) {
+        return false;
+      }
+      const taskDueDate = startOfDay(new Date(task.dueDate));
+      return isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
     });
+    
+    // 2. Group tasks by subject and find the earliest one for each.
+    const earliestTasksBySubject = tasksInNextWeek.reduce((acc, task) => {
+      // If we haven't seen this subject yet, or if the current task is earlier than the one we stored, update it.
+      if (!acc[task.subjectId] || new Date(task.dueDate) < new Date(acc[task.subjectId].dueDate)) {
+        acc[task.subjectId] = task;
+      }
+      return acc;
+    }, {} as Record<string, HomeworkTask>);
+
+    // 3. Return the filtered list of tasks.
+    return Object.values(earliestTasksBySubject);
+
   }, [tasks, currentDate, userData]);
 
   const startTimer = useCallback(async (taskId: string) => {
