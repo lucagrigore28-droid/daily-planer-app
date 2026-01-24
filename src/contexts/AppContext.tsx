@@ -322,21 +322,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const today = startOfDay(currentDate);
     const nextWeekEnd = endOfWeek(addDays(today, 7), { weekStartsOn: 1 });
 
-    const allNextWeekTasks = tasks.filter(task => {
+    return tasks.filter(task => {
         const taskDueDate = startOfDay(new Date(task.dueDate));
         return !task.isCompleted && isAfter(taskDueDate, today) && !isAfter(taskDueDate, nextWeekEnd);
     });
-
-    const earliestTasksBySubject = new Map<string, HomeworkTask>();
-
-    for (const task of allNextWeekTasks) {
-        const existingTask = earliestTasksBySubject.get(task.subjectId);
-        if (!existingTask || new Date(task.dueDate) < new Date(existingTask.dueDate)) {
-            earliestTasksBySubject.set(task.subjectId, task);
-        }
-    }
-
-    return Array.from(earliestTasksBySubject.values());
   }, [tasks, currentDate, userData]);
 
   const startTimer = useCallback(async (taskId: string) => {
