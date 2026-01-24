@@ -321,29 +321,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const today = startOfDay(currentDate);
 
-    // This correctly defines "next week" as the upcoming Monday to Sunday, regardless of the current day.
-    const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
-    const endOfNextWeek = endOfWeek(startOfNextWeek, { weekStartsOn: 1 });
+    // More robust way to calculate next week's interval
+    // 1. Find the end of the current week (Sunday)
+    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 }); // weekStartsOn: 1 makes Monday the first day.
+    
+    // 2. Next week starts the day after the current week ends.
+    const startOfNextWeek = addDays(endOfThisWeek, 1);
+    const endOfNextWeek = addDays(startOfNextWeek, 6);
 
-    // 1. Get all uncompleted tasks that fall within next week's interval.
+    // Filter for uncompleted tasks that fall within next week's interval.
     const tasksInNextWeek = tasks.filter(task => {
       if (task.isCompleted) {
         return false;
       }
-      const taskDueDate = startOfDay(new Date(task.dueDate));
+      // Using parseISO is safer for ISO date strings
+      const taskDueDate = startOfDay(parseISO(task.dueDate));
       return isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
     });
     
-    // 2. Group tasks by subject and find the earliest one for each.
+    // Group tasks by subject and find the earliest one for each.
     const earliestTasksBySubject = tasksInNextWeek.reduce((acc, task) => {
-      // If we haven't seen this subject yet, or if the current task is earlier than the one we stored, update it.
-      if (!acc[task.subjectId] || new Date(task.dueDate) < new Date(acc[task.subjectId].dueDate)) {
+      const existingTask = acc[task.subjectId];
+      // If we haven't seen this subject yet, or if the current task is earlier, update it.
+      if (!existingTask || parseISO(task.dueDate) < parseISO(existingTask.dueDate)) {
         acc[task.subjectId] = task;
       }
       return acc;
     }, {} as Record<string, HomeworkTask>);
 
-    // 3. Return the filtered list of tasks.
+    // Return the filtered list of tasks.
     return Object.values(earliestTasksBySubject);
 
   }, [tasks, currentDate, userData]);
