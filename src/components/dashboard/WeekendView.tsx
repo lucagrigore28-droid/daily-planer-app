@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useMemo, useState } from 'react';
@@ -97,11 +98,15 @@ export default function WeekendView() {
 
   const weekendTasks = useMemo(() => {
     if (!context) return [];
-    return context.getWeekendTasks().sort((a, b) => {
+    const tasks = context.getWeekendTasks();
+    // Sort by completion status first (incomplete tasks first), then by due date
+    return tasks.sort((a, b) => {
+        if (a.isCompleted !== b.isCompleted) {
+            return a.isCompleted ? 1 : -1;
+        }
         const dateA = new Date(a.dueDate).getTime();
         const dateB = new Date(b.dueDate).getTime();
-        if (a.isCompleted === b.isCompleted) return dateA - dateB;
-        return a.isCompleted ? 1 : -1;
+        return dateA - dateB;
     });
   }, [context]);
 

@@ -318,40 +318,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const getWeekendTasks = useCallback(() => {
     if (!tasks || !userData) return [];
-
+  
     const today = startOfDay(currentDate);
-
-    // More robust way to calculate next week's interval
-    // 1. Find the end of the current week (Sunday)
-    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 }); // weekStartsOn: 1 makes Monday the first day.
-    
-    // 2. Next week starts the day after the current week ends.
-    const startOfNextWeek = addDays(endOfThisWeek, 1);
+  
+    // Determine the start of the current week (assuming Monday is the first day)
+    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 });
+  
+    // Determine the start and end of next week
+    const startOfNextWeek = addDays(startOfThisWeek, 7);
     const endOfNextWeek = addDays(startOfNextWeek, 6);
-
-    // Filter for uncompleted tasks that fall within next week's interval.
+  
+    // Filter for tasks that fall within the next week
     const tasksInNextWeek = tasks.filter(task => {
-      if (task.isCompleted) {
-        return false;
-      }
-      // Using parseISO is safer for ISO date strings
       const taskDueDate = startOfDay(parseISO(task.dueDate));
       return isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
     });
-    
-    // Group tasks by subject and find the earliest one for each.
+  
+    // Group tasks by subject and find the earliest one for each
     const earliestTasksBySubject = tasksInNextWeek.reduce((acc, task) => {
       const existingTask = acc[task.subjectId];
+  
       // If we haven't seen this subject yet, or if the current task is earlier, update it.
       if (!existingTask || parseISO(task.dueDate) < parseISO(existingTask.dueDate)) {
         acc[task.subjectId] = task;
       }
       return acc;
     }, {} as Record<string, HomeworkTask>);
-
-    // Return the filtered list of tasks.
+  
+    // Return the filtered list of tasks
     return Object.values(earliestTasksBySubject);
-
   }, [tasks, currentDate, userData]);
 
   const startTimer = useCallback(async (taskId: string) => {
