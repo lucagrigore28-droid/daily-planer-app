@@ -106,7 +106,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
             const scheduledDays = userData.schedule[subjectId] || [];
             const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5), 0);
-            const lastClassHasPassed = (lastDayOfClassThisWeek === 0 || currentDayOfWeek > lastDayOfClassThisWeek);
+            const lastClassHasPassed = (lastDayOfClassThisWeek === 0 || currentDayOfWeek >= lastDayOfClassThisWeek);
 
             const shouldUnlock = isDueThisWeek || (isDueNextWeek && lastClassHasPassed);
 
