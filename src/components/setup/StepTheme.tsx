@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext, useState } from 'react';
@@ -47,7 +46,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
   const handleThemeSelect = (theme: Theme) => {
     if (!userData || !unlockTheme) return;
 
-    const isUnlocked = userData.unlockedThemes?.includes(theme.name);
+    const isUnlocked = theme.name === 'classic' || userData.unlockedThemes?.includes(theme.name);
 
     if (isUnlocked) {
       updateUser?.({ theme: theme.name });
@@ -117,7 +116,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
         <CardContent>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-x-4 gap-y-6 pt-2">
             {allThemes.map((theme) => {
-              const isUnlocked = userData?.unlockedThemes?.includes(theme.name);
+              const isUnlocked = theme.name === 'classic' || userData?.unlockedThemes?.includes(theme.name);
               const isSelected = userData?.theme === theme.name;
               
               const background = theme.name === 'custom'
