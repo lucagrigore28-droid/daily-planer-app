@@ -80,9 +80,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const today = startOfDay(currentDate);
     const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today); // Mon=1, Sun=7
     
-    // Get start/end of the current week (Monday-Sunday)
     const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 });
     const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
+    const startOfNextWeek = addDays(startOfThisWeek, 7);
+    const endOfNextWeek = addDays(startOfNextWeek, 6);
 
     const activeTaskIds = new Set<string>();
     
@@ -100,15 +101,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             const earliestTask = sortedTasks[0];
             const taskDueDate = startOfDay(parseISO(earliestTask.dueDate));
 
-            // Check if due date is this week
             const isDueThisWeek = isWithinInterval(taskDueDate, { start: startOfThisWeek, end: endOfThisWeek });
-            
-            // Check if it's a valid "next week" task
-            const scheduledDays = userData.schedule[subjectId] || [];
-            const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5), 0); // Get last weekday class, default 0
-            const isNextWeekTaskReady = !isDueThisWeek && (lastDayOfClassThisWeek === 0 || currentDayOfWeek > lastDayOfClassThisWeek);
+            const isDueNextWeek = isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
 
-            if (isDueThisWeek || isNextWeekTaskReady) {
+            const scheduledDays = userData.schedule[subjectId] || [];
+            const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5), 0);
+            const lastClassHasPassed = (lastDayOfClassThisWeek === 0 || currentDayOfWeek > lastDayOfClassThisWeek);
+
+            const shouldUnlock = isDueThisWeek || (isDueNextWeek && lastClassHasPassed);
+
+            if (shouldUnlock) {
                  activeTaskIds.add(earliestTask.id);
             }
         }
