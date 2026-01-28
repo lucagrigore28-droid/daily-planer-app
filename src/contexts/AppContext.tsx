@@ -99,7 +99,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             const earliestTask = sortedTasks[0];
             const taskDueDate = startOfDay(parseISO(earliestTask.dueDate));
 
-            const isDueTodayOrBefore = !isAfter(taskDueDate, today);
+            // A task should be unlocked if it's the next one and is due today or tomorrow.
+            const isDueSoon = !isAfter(taskDueDate, addDays(today, 1));
 
             const isDueNextWeek = isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
 
@@ -108,7 +109,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             
             const lastClassHasPassed = (lastDayOfClassThisWeek === 0 || currentDayOfWeek >= lastDayOfClassThisWeek);
             
-            const shouldUnlock = isDueTodayOrBefore || (isDueNextWeek && lastClassHasPassed);
+            // It should be unlocked if it's due soon OR if the special weekend logic applies.
+            const shouldUnlock = isDueSoon || (isDueNextWeek && lastClassHasPassed);
 
             if (shouldUnlock) {
                  activeTaskIds.add(earliestTask.id);
