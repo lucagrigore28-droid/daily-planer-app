@@ -29,6 +29,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AllTasksView from './AllTasksView';
 import AlternatingTimelineView from './AlternatingTimelineView';
 
+const viewModes = {
+    daily: { icon: CalendarDays, label: 'Vizualizare Zilnică' },
+    timeline: { icon: List, label: 'Cronologie' },
+    'alternating-timeline': { icon: GitFork, label: 'Cronologie Alternantă' },
+};
+
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
@@ -36,7 +42,7 @@ export default function HomeworkDashboard() {
   const [initialSettingsTab, setInitialSettingsTab] = useState('profile');
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
-  const [tasksViewMode, setTasksViewMode] = useState<'daily' | 'timeline' | 'alternating-timeline'>('daily');
+  const [tasksViewMode, setTasksViewMode] = useState<keyof typeof viewModes>('daily');
   const [activeTab, setActiveTab] = useState('next-tasks');
 
   const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
@@ -95,6 +101,8 @@ export default function HomeworkDashboard() {
     return baseTabs;
   }, [isWeekendVisible]);
 
+  const CurrentViewIcon = viewModes[tasksViewMode].icon;
+
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
       <header className="mb-6 flex justify-between items-start gap-4">
@@ -124,29 +132,22 @@ export default function HomeworkDashboard() {
                 </Button>
             </div>
             {activeTab === 'next-tasks' && (
-                <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as 'daily' | 'timeline' | 'alternating-timeline') }}>
-                    <SelectTrigger className="w-auto gap-2">
-                        <SelectValue placeholder="Mod vizualizare" />
+                <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as keyof typeof viewModes) }}>
+                    <SelectTrigger className="w-12 h-12 sm:h-10 sm:w-auto gap-2 justify-center sm:justify-start">
+                        <div className="flex items-center gap-2">
+                            <CurrentViewIcon className="h-5 w-5 sm:h-4 sm:w-4" />
+                            <span className="hidden sm:inline">{viewModes[tasksViewMode].label}</span>
+                        </div>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="daily">
-                            <div className="flex items-center gap-2">
-                                <CalendarDays className="h-4 w-4" />
-                                <span>Vizualizare Zilnică</span>
-                            </div>
-                        </SelectItem>
-                        <SelectItem value="timeline">
-                            <div className="flex items-center gap-2">
-                                <List className="h-4 w-4" />
-                                <span>Cronologie</span>
-                            </div>
-                        </SelectItem>
-                         <SelectItem value="alternating-timeline">
-                            <div className="flex items-center gap-2">
-                                <GitFork className="h-4 w-4" />
-                                <span>Cronologie Alternantă</span>
-                            </div>
-                        </SelectItem>
+                        {Object.entries(viewModes).map(([value, { icon: Icon, label }]) => (
+                            <SelectItem key={value} value={value}>
+                                <div className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4" />
+                                    <span>{label}</span>
+                                </div>
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             )}
