@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
@@ -26,6 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import AllTasksView from './AllTasksView';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
@@ -34,6 +35,7 @@ export default function HomeworkDashboard() {
   const [initialSettingsTab, setInitialSettingsTab] = useState('profile');
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
+  const [tasksViewMode, setTasksViewMode] = useState<'daily' | 'all'>('daily');
 
   const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
@@ -129,38 +131,53 @@ export default function HomeworkDashboard() {
         
         <TabsContent value="next-tasks">
             <div className="w-full max-w-3xl mx-auto">
-                {displayedDay ? (
-                    <Card>
-                        <CardContent className="p-4">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                                    <CalendarIcon className="h-6 w-6 text-primary"/>
-                                    <span>{format(displayedDay, "EEEE, d MMMM", { locale: ro })}</span>
-                                </h2>
-                                <div className="flex items-center gap-2">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      onClick={handlePrevDay}
-                                    >
-                                        <ChevronLeft className="h-6 w-6" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={handleNextDay}>
-                                        <ChevronRight className="h-6 w-6" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <HomeworkList displayDate={displayedDay} />
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <Card>
-                        <CardContent className="p-6 text-center">
-                            <h3 className="text-xl font-semibold">Nicio temă viitoare</h3>
-                            <p className="text-muted-foreground">Nu ai nicio temă programată în curând. Bucură-te de timpul liber!</p>
-                        </CardContent>
-                    </Card>
-                )}
+              <div className="flex justify-center mb-4">
+                  <ToggleGroup type="single" value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as 'daily' | 'all') }} defaultValue="daily">
+                      <ToggleGroupItem value="daily" aria-label="Vizualizare zilnică">
+                          Zilnic
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="all" aria-label="Vezi toate temele">
+                          Toate
+                      </ToggleGroupItem>
+                  </ToggleGroup>
+              </div>
+
+              {tasksViewMode === 'daily' ? (
+                  displayedDay ? (
+                      <Card>
+                          <CardContent className="p-4">
+                              <div className="flex justify-between items-center mb-4">
+                                  <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                                      <CalendarIcon className="h-6 w-6 text-primary"/>
+                                      <span>{format(displayedDay, "EEEE, d MMMM", { locale: ro })}</span>
+                                  </h2>
+                                  <div className="flex items-center gap-2">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={handlePrevDay}
+                                      >
+                                          <ChevronLeft className="h-6 w-6" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon" onClick={handleNextDay}>
+                                          <ChevronRight className="h-6 w-6" />
+                                      </Button>
+                                  </div>
+                              </div>
+                              <HomeworkList displayDate={displayedDay} />
+                          </CardContent>
+                      </Card>
+                  ) : (
+                      <Card>
+                          <CardContent className="p-6 text-center">
+                              <h3 className="text-xl font-semibold">Nicio temă viitoare</h3>
+                              <p className="text-muted-foreground">Nu ai nicio temă programată în curând. Bucură-te de timpul liber!</p>
+                          </CardContent>
+                      </Card>
+                  )
+              ) : (
+                  <AllTasksView />
+              )}
             </div>
         </TabsContent>
 
