@@ -77,7 +77,7 @@ export default function StepFunctionality() {
         <div className="flex flex-col gap-2 rounded-lg border p-4">
           <Label className="font-semibold">Cod de testare</Label>
           <p className="text-sm text-muted-foreground mb-2">
-            Introdu un cod pentru a primi recompense de test. (Cod: DEVCOINS)
+            Introdu un cod pentru a primi recompense de test.
           </p>
           <div className="flex w-full max-w-sm items-center space-x-2">
             <Input 
