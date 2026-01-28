@@ -2,8 +2,8 @@
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
-import type { HomeworkTask, UserData, Subject, Schedule } from '@/lib/types';
-import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval } from 'date-fns';
+import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
+import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -20,6 +20,8 @@ const initialUserData: UserData = {
   theme: 'classic',
   customThemeColors: ['#A099FF', '#73A7AD'],
   weekendTabStartDay: 5, // Default to Friday
+  coins: 0,
+  unlockedThemes: ['classic'],
 };
 
 type AppContextType = {
@@ -46,6 +48,7 @@ type AppContextType = {
   pauseTimer: (taskId: string) => void;
   stopAndCompleteTimer: (taskId: string) => void;
   completeTaskWithTimer: (taskId: string) => void;
+  unlockTheme: (theme: Theme) => Promise<void>;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -241,17 +244,67 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [tasksCollectionRef]);
 
   const updateTask = useCallback(async (taskId: string, updates: Partial<HomeworkTask>) => {
-    if (user) {
-      const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-      const finalUpdates = { ...updates };
+    if (!user) return;
+    const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
 
+    // If this update is marking the task as complete, run a transaction
+    if (updates.isCompleted === true) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      try {
+        await runTransaction(firestore, async (transaction) => {
+          const taskDoc = await transaction.get(taskDocRef);
+          if (!taskDoc.exists() || taskDoc.data().isCompleted) {
+            // Task doesn't exist or is already completed.
+            // Still update it in case other properties are changing, but don't award points.
+            transaction.set(taskDocRef, updates, { merge: true });
+            return;
+          }
+          
+          const taskData = taskDoc.data() as HomeworkTask;
+          const userDoc = await transaction.get(userDocRef);
+          if (!userDoc.exists()) {
+             throw "User document does not exist!";
+          }
+          
+          const currentUserData = userDoc.data() as UserData;
+          const currentCoins = currentUserData.coins || 0;
+
+          const dueDate = startOfDay(new Date(taskData.dueDate));
+          const completionDate = startOfDay(new Date());
+          const daysEarly = differenceInCalendarDays(dueDate, completionDate);
+
+          let coinsEarned = 0;
+          if (daysEarly > 2) {
+            coinsEarned = 5;
+          } else if (daysEarly >= 1) {
+            coinsEarned = 3;
+          } else if (daysEarly >= 0) {
+            coinsEarned = 1;
+          }
+
+          const newCoins = currentCoins + coinsEarned;
+          
+          const finalUpdates = { ...taskData, ...updates };
+
+          transaction.set(taskDocRef, finalUpdates, { merge: true });
+          if(coinsEarned > 0) {
+            transaction.update(userDocRef, { coins: newCoins });
+          }
+        });
+      } catch (e) {
+        console.error("Task completion transaction failed: ", e);
+      }
+    } else {
+      // For any other update (not completing a task), a simple setDoc is fine.
+      const finalUpdates = { ...updates };
+      // Handle field deletions
       if ('plannedDate' in finalUpdates && (finalUpdates.plannedDate === undefined || finalUpdates.plannedDate === null)) {
         finalUpdates.plannedDate = deleteField() as any;
       }
       if ('estimatedTime' in finalUpdates && (finalUpdates.estimatedTime === undefined || finalUpdates.estimatedTime <= 0)) {
         finalUpdates.estimatedTime = deleteField() as any;
       }
-       if ('timerStartTime' in finalUpdates && (finalUpdates.timerStartTime === undefined || finalUpdates.timerStartTime === null)) {
+      if ('timerStartTime' in finalUpdates && (finalUpdates.timerStartTime === undefined || finalUpdates.timerStartTime === null)) {
         finalUpdates.timerStartTime = deleteField() as any;
       }
       
@@ -324,41 +377,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // This robustly finds next week's Monday, regardless of current day
     const daysUntilMonday = (1 - getDay(today) + 7) % 7;
     const nextMonday = addDays(today, daysUntilMonday === 0 ? 7 : daysUntilMonday);
-    const nextSunday = addDays(nextMonday, 6);
-    
-    const startOfNextWeek = nextMonday;
-    const endOfNextWeek = nextSunday;
+    const endOfNextWeek = addDays(nextMonday, 6);
 
-    // 1. Filter for all tasks due next week (completed or not)
+    const startOfNextWeek = nextMonday;
+
     const tasksInNextWeek = tasks.filter(task => {
       const taskDueDate = startOfDay(parseISO(task.dueDate));
       return isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
     });
     
-    // 2. Group tasks by subject and find the earliest one for each
     const earliestTasksBySubject = tasksInNextWeek.reduce((acc, task) => {
       const existingTask = acc[task.subjectId];
-      
       if (!existingTask || parseISO(task.dueDate) < parseISO(existingTask.dueDate)) {
         acc[task.subjectId] = task;
       }
       return acc;
     }, {} as Record<string, HomeworkTask>);
     
-    // 3. Apply the new logic: show task only after the last class of the current week
     const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today); // Mon=1, ..., Sun=7
     
     const finalTasks = Object.values(earliestTasksBySubject).filter(task => {
       const scheduledDays = userData.schedule[task.subjectId] || [];
-      
-      // If subject has no schedule, show it by default.
-      if (scheduledDays.length === 0) {
-        return true;
-      }
+      if (scheduledDays.length === 0) return true;
       
       const lastDayOfClassThisWeek = Math.max(...scheduledDays);
-      
-      // Show the task if the current day is past the last scheduled class day for this week.
       return currentDayOfWeek > lastDayOfClassThisWeek;
     });
 
@@ -407,6 +449,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     completeTaskWithTimer(taskId);
   }, [completeTaskWithTimer]);
 
+  const unlockTheme = useCallback(async (theme: Theme) => {
+    if (!user || !userData) return;
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const currentCoins = userData.coins || 0;
+    const currentUnlocked = userData.unlockedThemes || [];
+
+    if (currentCoins >= theme.cost && !currentUnlocked.includes(theme.name)) {
+        try {
+            await runTransaction(firestore, async (transaction) => {
+                const userDoc = await transaction.get(userDocRef);
+                if (!userDoc.exists()) {
+                    throw "User document does not exist!";
+                }
+
+                const data = userDoc.data() as UserData;
+                const newCoins = (data.coins || 0) - theme.cost;
+                const newUnlockedThemes = [...(data.unlockedThemes || []), theme.name];
+                
+                transaction.update(userDocRef, {
+                    coins: newCoins,
+                    unlockedThemes: newUnlockedThemes,
+                });
+            });
+        } catch (e) {
+            console.error("Theme unlock transaction failed: ", e);
+        }
+    }
+  }, [user, userData, firestore]);
+
   const memoizedUserData = useMemo(() => {
     if (isUserDataLoading || userData === undefined) return null;
     if (userData === null) return initialUserData;
@@ -437,6 +508,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     pauseTimer,
     stopAndCompleteTimer,
     completeTaskWithTimer,
+    unlockTheme,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

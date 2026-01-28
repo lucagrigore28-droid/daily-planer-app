@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useState, useEffect } from 'react';
@@ -24,6 +25,7 @@ import {
 import { Slider } from '../ui/slider';
 import TaskTimer from './TaskTimer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { isBefore, startOfDay } from 'date-fns';
 
 type HomeworkItemProps = {
   task: HomeworkTask;
@@ -36,6 +38,8 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const isOverdue = !task.isCompleted && isBefore(startOfDay(new Date(task.dueDate)), startOfDay(new Date()));
   
   const handleCompletionChange = (checked: boolean) => {
     context?.updateTask(task.id, { isCompleted: checked });
@@ -78,20 +82,34 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
           <Accordion type="single" collapsible>
             <AccordionItem value="item-1" className="border-b-0">
               <div className={cn("flex items-center gap-4")}>
-                <Checkbox
-                  id={`task-${task.id}`}
-                  checked={task.isCompleted}
-                  onCheckedChange={handleCompletionChange}
-                  className={cn(
-                      "h-6 w-6 rounded-full"
-                  )}
-                />
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex items-center">
+                                <Checkbox
+                                    id={`task-${task.id}`}
+                                    checked={task.isCompleted}
+                                    onCheckedChange={handleCompletionChange}
+                                    disabled={isOverdue}
+                                    className="h-6 w-6 rounded-full"
+                                />
+                            </div>
+                        </TooltipTrigger>
+                        {isOverdue && (
+                            <TooltipContent>
+                                <p>Termenul pentru această temă a expirat.</p>
+                            </TooltipContent>
+                        )}
+                    </Tooltip>
+                </TooltipProvider>
+
                 <div className="flex-1">
                   <Label 
                       htmlFor={`task-${task.id}`} 
                       className={cn(
                           "text-lg font-medium cursor-pointer transition-colors",
-                          task.isCompleted && "text-muted-foreground"
+                          task.isCompleted && "text-muted-foreground line-through",
+                          isOverdue && "cursor-not-allowed text-muted-foreground/50"
                       )}
                   >
                     {task.subjectName}
@@ -118,7 +136,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                                         e.stopPropagation(); 
                                         startTimer(task.id);
                                     }}
-                                    disabled={anotherTimerIsRunning}
+                                    disabled={anotherTimerIsRunning || isOverdue}
                                     className="mr-1"
                                     >
                                     <Timer className="h-5 w-5" />
@@ -132,7 +150,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                     </Tooltip>
                 </TooltipProvider>
 
-                {!task.isCompleted && <AccordionTrigger className="p-2 [&[data-state=open]>svg]:text-primary" />}
+                <AccordionTrigger disabled={isOverdue || task.isCompleted} className="p-2 [&[data-state=open]>svg]:text-primary" />
               </div>
               <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
                 <div className="space-y-4">

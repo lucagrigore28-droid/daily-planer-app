@@ -1,11 +1,5 @@
 
-export type Theme = {
-  name: string;
-  label: string;
-  className: string;
-  primary: string; // HSL value as string or hex
-  accent: string;  // HSL value as string or hex
-};
+import type { Theme } from './types';
 
 export const themes: Theme[] = [
   {
@@ -14,6 +8,7 @@ export const themes: Theme[] = [
     className: 'theme-classic',
     primary: '262 84% 60%',
     accent: '289 84% 65%',
+    cost: 0,
   },
   {
     name: 'orange',
@@ -21,6 +16,7 @@ export const themes: Theme[] = [
     className: 'theme-orange',
     primary: '24 94% 53%',
     accent: '45 93% 47%',
+    cost: 50,
   },
   {
     name: 'blue',
@@ -28,6 +24,7 @@ export const themes: Theme[] = [
     className: 'theme-blue',
     primary: '217 91% 60%',
     accent: '188 84% 53%',
+    cost: 50,
   },
   {
     name: 'green',
@@ -35,6 +32,7 @@ export const themes: Theme[] = [
     className: 'theme-green',
     primary: '142 76% 36%',
     accent: '158 64% 52%',
+    cost: 75,
   },
   {
     name: 'red',
@@ -42,6 +40,7 @@ export const themes: Theme[] = [
     className: 'theme-red',
     primary: '0 84% 60%',
     accent: '348 83% 60%',
+    cost: 75,
   },
   {
     name: 'cyan',
@@ -49,6 +48,7 @@ export const themes: Theme[] = [
     className: 'theme-cyan',
     primary: '180 80% 45%',
     accent: '240 70% 70%',
+    cost: 100,
   },
   {
     name: 'pink',
@@ -56,6 +56,7 @@ export const themes: Theme[] = [
     className: 'theme-pink',
     primary: '340 100% 90%',
     accent: '0 0% 100%',
+    cost: 100,
   },
   {
     name: 'graphite',
@@ -63,5 +64,6 @@ export const themes: Theme[] = [
     className: 'theme-graphite',
     primary: '220 10% 50%',
     accent: '220 10% 70%',
+    cost: 125,
   },
 ];

@@ -6,7 +6,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { format, getDay, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight, Settings } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Settings, Coins } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import AddTaskDialog from './AddTaskDialog';
 import { CalendarIcon } from 'lucide-react';
@@ -75,6 +75,10 @@ export default function HomeworkDashboard() {
             <p className="text-lg text-muted-foreground">
               Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
             </p>
+          </div>
+          <div className="flex items-center gap-2 bg-background/50 rounded-full px-3 py-1 border self-start mt-1">
+            <Coins className="h-5 w-5 text-yellow-500" />
+            <span className="font-bold text-lg">{userData.coins || 0}</span>
           </div>
         </div>
         <div className="flex flex-col items-center gap-2">
