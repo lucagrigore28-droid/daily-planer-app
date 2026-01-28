@@ -441,19 +441,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5));
       if (!lastDayOfClassThisWeek) return true;
   
-      return currentDayOfWeek > lastDayOfClassThisWeek;
+      return currentDayOfWeek >= lastDayOfClassThisWeek;
     });
   
-    // Find the earliest task for each subject
-    const earliestTasksBySubject = relevantTasks.reduce((acc, task) => {
-      const existingTask = acc[task.subjectId];
-      if (!existingTask || parseISO(task.dueDate) < parseISO(existingTask.dueDate)) {
-        acc[task.subjectId] = task;
-      }
-      return acc;
-    }, {} as Record<string, HomeworkTask>);
-  
-    return Object.values(earliestTasksBySubject);
+    return relevantTasks;
   
   }, [displayableTasks, currentDate, userData]);
 
