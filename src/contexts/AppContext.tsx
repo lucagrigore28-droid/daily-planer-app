@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
-import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays } from 'date-fns';
+import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -78,7 +78,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!allTasks || !userData) return [];
 
     const today = startOfDay(currentDate);
-    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today); // Mon=1, Sun=7
+    const tomorrow = addDays(today, 1);
+    
+    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today);
     
     const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
     const endOfNextWeek = endOfWeek(startOfNextWeek, { weekStartsOn: 1 });
@@ -99,27 +101,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             const earliestTask = sortedTasks[0];
             const taskDueDate = startOfDay(parseISO(earliestTask.dueDate));
 
-            // A task should be unlocked if it's the next one and is due today or tomorrow.
-            const isDueSoon = !isAfter(taskDueDate, addDays(today, 1));
+            // REGULAR UNLOCK RULE: Unlock if the due date is in the past, today, or tomorrow.
+            const shouldUnlockRegular = isBefore(taskDueDate, tomorrow) || isSameDay(taskDueDate, tomorrow);
 
+            // WEEKEND UNLOCK RULE: Also unlock if it's for next week and the last class for this week has passed.
             const isDueNextWeek = isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
-
             const scheduledDays = userData.schedule[subjectId] || [];
             const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5), 0);
+            const weekendUnlock = isDueNextWeek && (lastDayOfClassThisWeek > 0 && currentDayOfWeek >= lastDayOfClassThisWeek);
             
-            const lastClassHasPassed = (lastDayOfClassThisWeek === 0 || currentDayOfWeek >= lastDayOfClassThisWeek);
-            
-            // It should be unlocked if it's due soon OR if the special weekend logic applies.
-            const shouldUnlock = isDueSoon || (isDueNextWeek && lastClassHasPassed);
-
-            if (shouldUnlock) {
+            if (shouldUnlockRegular || weekendUnlock) {
                  activeTaskIds.add(earliestTask.id);
             }
         }
     }
 
     return allTasks.map(task => {
-        const isLocked = !task.isManual && !task.isCompleted && !activeTaskIds.has(task.id);
+        if (task.isManual || task.isCompleted) {
+            return { ...task, isLocked: false };
+        }
+        // For automatic, uncompleted tasks, check if their ID is in the set of unlocked tasks.
+        const isLocked = !activeTaskIds.has(task.id);
         return { ...task, isLocked };
     });
   }, [allTasks, userData, currentDate]);
