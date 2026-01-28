@@ -51,19 +51,19 @@ export const themes: Theme[] = [
     cost: 75,
   },
   {
-    name: 'blue',
-    label: 'Ocean',
-    className: 'theme-blue',
-    primary: '217 91% 60%',
-    accent: '188 84% 53%',
-    cost: 75,
-  },
-  {
     name: 'cyan',
     label: 'Neon',
     className: 'theme-cyan',
     primary: '180 80% 45%',
     accent: '240 70% 70%',
+    cost: 100,
+  },
+  {
+    name: 'litoral',
+    label: 'Litoral',
+    className: 'theme-litoral',
+    primary: '175 70% 45%',
+    accent: '50 95% 60%',
     cost: 100,
   },
 ];
