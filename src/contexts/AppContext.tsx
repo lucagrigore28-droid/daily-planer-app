@@ -317,36 +317,53 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [currentDate, tasks, userData]);
 
   const getWeekendTasks = useCallback(() => {
-    if (!tasks || !userData) return [];
-  
+    if (!tasks || !userData || !userData.schedule) return [];
+
     const today = startOfDay(currentDate);
-  
-    // Determine the start of the current week (assuming Monday is the first day)
-    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 });
-  
-    // Determine the start and end of next week
-    const startOfNextWeek = addDays(startOfThisWeek, 7);
-    const endOfNextWeek = addDays(startOfNextWeek, 6);
-  
-    // Filter for tasks that fall within the next week
+
+    // This robustly finds next week's Monday, regardless of current day
+    const daysUntilMonday = (1 - getDay(today) + 7) % 7;
+    const nextMonday = addDays(today, daysUntilMonday === 0 ? 7 : daysUntilMonday);
+    const nextSunday = addDays(nextMonday, 6);
+    
+    const startOfNextWeek = nextMonday;
+    const endOfNextWeek = nextSunday;
+
+    // 1. Filter for all tasks due next week (completed or not)
     const tasksInNextWeek = tasks.filter(task => {
       const taskDueDate = startOfDay(parseISO(task.dueDate));
       return isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
     });
-  
-    // Group tasks by subject and find the earliest one for each
+    
+    // 2. Group tasks by subject and find the earliest one for each
     const earliestTasksBySubject = tasksInNextWeek.reduce((acc, task) => {
       const existingTask = acc[task.subjectId];
-  
-      // If we haven't seen this subject yet, or if the current task is earlier, update it.
+      
       if (!existingTask || parseISO(task.dueDate) < parseISO(existingTask.dueDate)) {
         acc[task.subjectId] = task;
       }
       return acc;
     }, {} as Record<string, HomeworkTask>);
-  
-    // Return the filtered list of tasks
-    return Object.values(earliestTasksBySubject);
+    
+    // 3. Apply the new logic: show task only after the last class of the current week
+    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today); // Mon=1, ..., Sun=7
+    
+    const finalTasks = Object.values(earliestTasksBySubject).filter(task => {
+      const scheduledDays = userData.schedule[task.subjectId] || [];
+      
+      // If subject has no schedule, show it by default.
+      if (scheduledDays.length === 0) {
+        return true;
+      }
+      
+      const lastDayOfClassThisWeek = Math.max(...scheduledDays);
+      
+      // Show the task if the current day is past the last scheduled class day for this week.
+      return currentDayOfWeek > lastDayOfClassThisWeek;
+    });
+
+    return finalTasks;
+
   }, [tasks, currentDate, userData]);
 
   const startTimer = useCallback(async (taskId: string) => {
