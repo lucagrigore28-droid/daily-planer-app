@@ -20,6 +20,7 @@ export type HomeworkTask = {
   timeSpent?: number; // in milliseconds
   timerStartTime?: number; // timestamp in milliseconds
   coinsAwarded?: boolean;
+  isLocked?: boolean;
 };
 
 export type UserData = {
@@ -33,4 +34,13 @@ export type UserData = {
   weekendTabStartDay?: number; // 1 for Monday, 7 for Sunday
   coins: number;
   unlockedThemes: string[];
+};
+
+export type Theme = {
+  name: string;
+  label: string;
+  className: string;
+  primary: string;
+  accent: string;
+  cost: number;
 };

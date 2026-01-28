@@ -125,7 +125,7 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
                 : { backgroundImage: `linear-gradient(to bottom right, hsl(${theme.primary}), hsl(${theme.accent}))` };
 
               return (
-                <div key={theme.name} className="flex flex-col items-center gap-2">
+                <div key={theme.name} className="flex flex-col items-center gap-2 text-center">
                   <button
                     onClick={() => handleThemeSelect(theme)}
                     className={cn(
@@ -149,9 +149,8 @@ export default function StepTheme({ onNext, onBack }: StepProps) {
                       </div>
                     )}
                   </button>
-                  {isUnlocked ? (
-                    <p className="text-center text-sm font-medium">{theme.label}</p>
-                  ) : (
+                  <p className="text-sm font-medium h-5">{theme.label}</p>
+                  {!isUnlocked && (
                     <div className="flex items-center gap-1.5 text-sm font-bold">
                        <Coins className="h-4 w-4 text-yellow-500" />
                        <span>{theme.cost}</span>

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
-import { CornerDownLeft, Trash2, Clock, Timer } from 'lucide-react';
+import { CornerDownLeft, Trash2, Clock, Timer, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -39,6 +39,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  const isLocked = task.isLocked;
   const isOverdue = !task.isCompleted && isBefore(startOfDay(new Date(task.dueDate)), startOfDay(new Date()));
   
   const handleCompletionChange = (checked: boolean) => {
@@ -75,13 +76,14 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   return (
     <>
       <Card className={cn(
-        "transition-all duration-300 hover:shadow-md hover:-translate-y-0.5",
-         task.isCompleted ? 'border-gradient' : 'bg-card'
+        "transition-all duration-300",
+        isLocked ? "bg-muted/50" : "hover:shadow-md hover:-translate-y-0.5",
+        task.isCompleted ? 'border-gradient' : 'bg-card'
       )}>
         <div className="p-3">
           <Accordion type="single" collapsible>
             <AccordionItem value="item-1" className="border-b-0">
-              <div className={cn("flex items-center gap-4")}>
+              <div className={cn("flex items-center gap-4", isLocked && "opacity-60")}>
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -90,14 +92,19 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                                     id={`task-${task.id}`}
                                     checked={task.isCompleted}
                                     onCheckedChange={handleCompletionChange}
-                                    disabled={isOverdue}
+                                    disabled={isOverdue || isLocked}
                                     className="h-6 w-6 rounded-full"
                                 />
                             </div>
                         </TooltipTrigger>
-                        {isOverdue && (
+                        {isOverdue && !isLocked && (
                             <TooltipContent>
                                 <p>Termenul pentru această temă a expirat.</p>
+                            </TooltipContent>
+                        )}
+                        {isLocked && (
+                            <TooltipContent>
+                                <p>Finalizează tema anterioară la această materie pentru a o debloca.</p>
                             </TooltipContent>
                         )}
                     </Tooltip>
@@ -107,9 +114,10 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                   <Label 
                       htmlFor={`task-${task.id}`} 
                       className={cn(
-                          "text-lg font-medium cursor-pointer transition-colors",
+                          "text-lg font-medium transition-colors",
+                          isLocked ? "cursor-not-allowed" : "cursor-pointer",
                           task.isCompleted && "text-muted-foreground",
-                          isOverdue && "cursor-not-allowed text-muted-foreground/50"
+                          (isOverdue || isLocked) && "cursor-not-allowed text-muted-foreground/50"
                       )}
                   >
                     {task.subjectName}
@@ -123,34 +131,42 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                       </div>
                   )}
                 </div>
+                
+                {isLocked ? (
+                    <div className="flex items-center justify-end w-[72px]">
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                ) : (
+                    <>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        {!task.isCompleted && (
+                                            <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation(); 
+                                                startTimer(task.id);
+                                            }}
+                                            disabled={anotherTimerIsRunning || isOverdue}
+                                            className="mr-1"
+                                            >
+                                            <Timer className="h-5 w-5" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{anotherTimerIsRunning ? 'Un alt timer este deja activ' : 'Pornește cronometru'}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
 
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div>
-                                {!task.isCompleted && (
-                                    <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => {
-                                        e.stopPropagation(); 
-                                        startTimer(task.id);
-                                    }}
-                                    disabled={anotherTimerIsRunning || isOverdue}
-                                    className="mr-1"
-                                    >
-                                    <Timer className="h-5 w-5" />
-                                    </Button>
-                                )}
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>{anotherTimerIsRunning ? 'Un alt timer este deja activ' : 'Pornește cronometru'}</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <AccordionTrigger disabled={isOverdue || task.isCompleted} className="p-2 [&[data-state=open]>svg]:text-primary" />
+                        <AccordionTrigger disabled={isOverdue || task.isCompleted} className="p-2 [&[data-state=open]>svg]:text-primary" />
+                    </>
+                )}
               </div>
               <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
                 <div className="space-y-4">

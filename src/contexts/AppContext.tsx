@@ -77,35 +77,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const displayableTasks = useMemo(() => {
     if (!allTasks) return [];
 
-    const visibleTasksMap = new Map<string, HomeworkTask>();
-
-    // Rule A & B: Add all completed and manual tasks
-    allTasks.forEach(task => {
-        if (task.isCompleted || task.isManual) {
-            visibleTasksMap.set(task.id, task);
-        }
-    });
-
-    // Rule C: Find the next upcoming automatic task for each subject
-    const automaticIncompleteTasks = allTasks.filter(task => !task.isManual && !task.isCompleted);
+    const activeTaskIds = new Set<string>();
     
+    const automaticIncompleteTasks = allTasks.filter(task => !task.isManual && !task.isCompleted);
     const tasksBySubject = automaticIncompleteTasks.reduce((acc, task) => {
         acc[task.subjectId] = acc[task.subjectId] || [];
         acc[task.subjectId].push(task);
         return acc;
     }, {} as Record<string, HomeworkTask[]>);
-
+    
     for (const subjectId in tasksBySubject) {
-        // Sort to find the earliest
-        tasksBySubject[subjectId].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-        
-        const nextTaskForSubject = tasksBySubject[subjectId][0];
-        if (nextTaskForSubject) {
-            visibleTasksMap.set(nextTaskForSubject.id, nextTaskForSubject);
+        const sortedTasks = tasksBySubject[subjectId].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        if (sortedTasks.length > 0) {
+            activeTaskIds.add(sortedTasks[0].id);
         }
     }
-    
-    return Array.from(visibleTasksMap.values());
+
+    return allTasks.map(task => {
+        const isLocked = !task.isManual && !task.isCompleted && !activeTaskIds.has(task.id);
+        return { ...task, isLocked };
+    });
   }, [allTasks]);
 
 
@@ -378,7 +369,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!displayableTasks || !userData) return null;
     const today = startOfDay(currentDate);
     
-    const incompleteTasks = displayableTasks.filter(task => !task.isCompleted);
+    const incompleteTasks = displayableTasks.filter(task => !task.isCompleted && !task.isLocked);
     
     // Get all future dates that have tasks
     const futureDates = incompleteTasks.reduce((acc, task) => {
