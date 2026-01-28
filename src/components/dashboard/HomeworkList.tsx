@@ -58,7 +58,7 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
       if (plannedTasks.length === 0) {
            return (
             <div className="py-4 text-center text-sm text-muted-foreground">
-                <p>Nicio temă planificată pentru azi.</p>
+                <p>Nicio temă planificată pentru această zi.</p>
             </div>
            );
       }
@@ -83,7 +83,7 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
                     <CardContent className="p-6 text-center">
                         <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
                         <h3 className="text-xl font-semibold">Felicitări!</h3>
-                        <p className="text-muted-foreground">Ai terminat tot ce ți-ai propus pentru azi.</p>
+                        <p className="text-muted-foreground">Ai terminat tot ce ți-ai propus pentru această zi.</p>
                     </CardContent>
                 </Card>
             )}
@@ -104,12 +104,12 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
       {/* Due Tasks Section */}
       {dueTasks.length > 0 && (
         <div>
-            <h3 className="text-lg font-semibold mb-2">Teme pentru azi</h3>
+            <h3 className="text-lg font-semibold mb-2">Teme cu termen limită</h3>
             {allDueTasksCompleted && (
                 <Card className='mb-4'>
                     <CardContent className="p-6 text-center">
                         <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
-                        <h3 className="text-xl font-semibold">Gata pentru azi!</h3>
+                        <h3 className="text-xl font-semibold">Teme finalizate!</h3>
                         <p className="text-muted-foreground">Toate temele pentru această zi sunt finalizate. Bravo!</p>
                     </CardContent>
                 </Card>
@@ -126,7 +126,7 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
       {plannedTasks.length > 0 && (
         <div>
           {dueTasks.length > 0 && <Separator className="my-6" />}
-          <h3 className="text-lg font-semibold mb-2">Teme planificate pentru azi</h3>
+          <h3 className="text-lg font-semibold mb-2">Teme planificate</h3>
            <div className="space-y-3">
                 {plannedTasks.map(task => (
                     <HomeworkItem key={task.id} task={task} />
