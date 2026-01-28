@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -30,6 +31,7 @@ export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [initialSettingsTab, setInitialSettingsTab] = useState('profile');
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
 
@@ -53,6 +55,23 @@ export default function HomeworkDashboard() {
   const handleNextDay = () => {
     if (displayedDay) {
       setDisplayedDay(addDays(displayedDay, 1));
+    }
+  };
+
+  const handleGoToStore = () => {
+    setIsCoinInfoOpen(false);
+    // Short delay to allow the first dialog to close before opening the next
+    setTimeout(() => {
+      setInitialSettingsTab('appearance');
+      setIsSettingsOpen(true);
+    }, 150);
+  };
+  
+  const handleSettingsToggle = (isOpen: boolean) => {
+    setIsSettingsOpen(isOpen);
+    if (!isOpen) {
+      // Reset the initial tab when the dialog is closed, so it opens on 'Profile' next time by default
+      setInitialSettingsTab('profile');
     }
   };
 
@@ -161,28 +180,37 @@ export default function HomeworkDashboard() {
       </Tabs>
       
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
-      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      <SettingsDialog open={isSettingsOpen} onOpenChange={handleSettingsToggle} initialTab={initialSettingsTab} />
 
       <AlertDialog open={isCoinInfoOpen} onOpenChange={setIsCoinInfoOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ce sunt Monedele?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
+             <div className="flex flex-col items-center text-center gap-2">
+                <Coins className="h-12 w-12 text-yellow-500" />
+                <AlertDialogTitle>Sistemul de Monede</AlertDialogTitle>
+                 <div className="font-bold text-2xl flex items-center gap-2">
+                    <span>Ai</span>
+                    <Coins className="h-5 w-5 text-yellow-500" />
+                    <span>{userData.coins || 0}</span>
+                </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogDescription className="space-y-2 text-center pt-2">
               <p>
-                Monedele sunt recompense pe care le câștigi pentru finalizarea temelor la timp. Cu cât termini o temă mai devreme, cu atât primești mai multe monede!
+                Câștigi monede pentru finalizarea temelor înainte de termen. Cu cât termini mai devreme, cu atât recompensa e mai mare!
               </p>
-              <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
-                <li><span className="font-semibold">Finalizată cu peste 2 zile înainte:</span> 5 monede</li>
-                <li><span className="font-semibold">Finalizată cu 1-2 zile înainte:</span> 3 monede</li>
-                <li><span className="font-semibold">Finalizată în ziua termenului:</span> 1 monedă</li>
+              <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-left">
+                <li><span className="font-semibold">Finalizată cu peste 2 zile înainte:</span> 10 monede</li>
+                <li><span className="font-semibold">Finalizată cu 2 zile înainte:</span> 7 monede</li>
+                <li><span className="font-semibold">Finalizată cu 1 zi înainte:</span> 5 monede</li>
               </ul>
               <p>
-                Folosește monedele în secțiunea 'Aspect' din Setări pentru a debloca teme de culori noi și pentru a-ți personaliza aplicația.
+                Folosește monedele în Magazin pentru a debloca teme de culori noi și pentru a-ți personaliza aplicația!
               </p>
             </AlertDialogDescription>
-          </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction>Am înțeles!</AlertDialogAction>
+            <AlertDialogCancel>Închide</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGoToStore}>Mergi la Magazin</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

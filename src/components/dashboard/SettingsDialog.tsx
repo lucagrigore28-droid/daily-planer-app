@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 type SettingsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: string;
 };
 
 const TABS = [
@@ -150,10 +151,18 @@ const AppearanceSettings = () => {
 };
 
 
-export default function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
+export default function SettingsDialog({ open, onOpenChange, initialTab = 'profile' }: SettingsDialogProps) {
   const context = useContext(AppContext);
-  const [activeTab, setActiveTab] = useState(TABS[0].value);
+  const [activeTab, setActiveTab] = useState(initialTab);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    // When the dialog is opened, sync the active tab with the initialTab prop.
+    // This is useful for opening the dialog to a specific tab from outside.
+    if (open) {
+      setActiveTab(initialTab);
+    }
+  }, [open, initialTab]);
   
   if (!context) return null;
 
