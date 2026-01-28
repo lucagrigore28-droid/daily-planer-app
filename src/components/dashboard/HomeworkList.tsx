@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext, useMemo } from 'react';
@@ -70,7 +69,6 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
 
       return (
           <div>
-            <h3 className="text-lg font-semibold mb-2">Teme planificate</h3>
             <div className="mb-4">
                 <div className="flex justify-between items-center mb-1 text-sm font-medium">
                     <span className="text-muted-foreground">Progres</span>
@@ -104,7 +102,6 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
       {/* Due Tasks Section */}
       {dueTasks.length > 0 && (
         <div>
-            <h3 className="text-lg font-semibold mb-2">Teme cu termen limită</h3>
             {allDueTasksCompleted && (
                 <Card className='mb-4'>
                     <CardContent className="p-6 text-center">
@@ -126,7 +123,6 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
       {plannedTasks.length > 0 && (
         <div>
           {dueTasks.length > 0 && <Separator className="my-6" />}
-          <h3 className="text-lg font-semibold mb-2">Teme planificate</h3>
            <div className="space-y-3">
                 {plannedTasks.map(task => (
                     <HomeworkItem key={task.id} task={task} />
