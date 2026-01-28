@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
@@ -423,6 +422,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!displayableTasks || !userData || !userData.schedule) return [];
   
     return displayableTasks.filter(task => {
+        // Do not show locked tasks in the weekend planner
+        if (task.isLocked) {
+            return false;
+        }
+        
         if (!task.isManual) {
             const today = startOfDay(currentDate);
             const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today);
@@ -554,6 +558,3 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    
-    
