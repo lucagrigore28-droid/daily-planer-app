@@ -7,6 +7,7 @@ import HomeworkItem from './HomeworkItem';
 import { CheckCircle2, CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function AllTasksView() {
   const context = useContext(AppContext);
@@ -35,33 +36,39 @@ export default function AllTasksView() {
   }
   
   return (
-    <div className="flow-root">
-      <ul className="-mb-8">
-        {allVisibleTasks.map((task, taskIdx) => (
-          <li key={task.id}>
-            <div className="relative pb-8">
-              {taskIdx !== allVisibleTasks.length - 1 ? (
-                <span className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-border" aria-hidden="true" />
-              ) : null}
-              <div className="relative flex items-start space-x-4">
-                <div>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary ring-8 ring-background">
-                    <CalendarClock className="h-5 w-5 text-primary-foreground" />
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1 pt-1.5">
-                  <div className="text-sm font-semibold text-muted-foreground">
-                    {format(new Date(task.dueDate), "EEEE, d MMMM", { locale: ro })}
-                  </div>
-                  <div className="mt-2">
-                    <HomeworkItem task={task} />
-                  </div>
-                </div>
-              </div>
+    <div className="relative py-4">
+      {/* The vertical line */}
+      <div className="absolute top-0 border-border border-2 h-full" style={{ left: '50%', transform: 'translateX(-50%)' }} />
+
+      {allVisibleTasks.map((task, taskIdx) => {
+        const isLeft = taskIdx % 2 !== 0;
+
+        return (
+          <div key={task.id} className={cn(
+            "mb-8 flex justify-between items-center w-full",
+            isLeft && "flex-row-reverse"
+          )}>
+            {/* Spacer */}
+            <div className="order-1 w-5/12" />
+
+            {/* Dot */}
+            <div className="z-10 flex items-center order-1 bg-primary ring-8 ring-background shadow-xl w-8 h-8 rounded-full">
+              <CalendarClock className="h-5 w-5 text-primary-foreground mx-auto" />
             </div>
-          </li>
-        ))}
-      </ul>
+
+            {/* Content */}
+            <div className="order-1 w-5/12 px-1 md:px-4">
+               <p className={cn(
+                 "mb-2 text-sm sm:text-base font-semibold text-muted-foreground",
+                 isLeft ? "text-right" : "text-left"
+               )}>
+                {format(new Date(task.dueDate), "EEEE, d MMMM", { locale: ro })}
+              </p>
+              <HomeworkItem task={task} />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
