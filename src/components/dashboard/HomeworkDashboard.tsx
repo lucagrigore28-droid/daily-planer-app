@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
@@ -121,16 +122,14 @@ export default function HomeworkDashboard() {
           </Button>
         </div>
         <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                    <Settings className="h-6 w-6" />
-                    <span className="sr-only">Setări</span>
-                </Button>
-                <Button onClick={() => setAddTaskOpen(true)} size="icon" variant="default" className="w-12 h-12">
-                    <Plus className="h-6 w-6" />
-                    <span className="sr-only">Adaugă temă</span>
-                </Button>
-            </div>
+            <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                <Settings className="h-6 w-6" />
+                <span className="sr-only">Setări</span>
+            </Button>
+            <Button onClick={() => setAddTaskOpen(true)} size="icon" variant="default" className="w-12 h-12">
+                <Plus className="h-6 w-6" />
+                <span className="sr-only">Adaugă temă</span>
+            </Button>
             {activeTab === 'next-tasks' && (
                 <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as keyof typeof viewModes) }}>
                     <SelectTrigger className="w-12 h-12 sm:h-10 sm:w-auto gap-2 justify-center sm:justify-start">
