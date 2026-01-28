@@ -4,10 +4,11 @@ import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
-import { CheckCircle2, CalendarClock } from 'lucide-react';
+import { CheckCircle2, CalendarClock, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function AlternatingTimelineView() {
   const context = useContext(AppContext);
@@ -64,7 +65,32 @@ export default function AlternatingTimelineView() {
                )}>
                 {format(new Date(task.dueDate), "EEEE, d MMMM", { locale: ro })}
               </p>
-              <HomeworkItem task={task} />
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Card className={cn(
+                    "cursor-pointer transition-shadow hover:shadow-md",
+                    task.isCompleted && "bg-muted/50 border-dashed"
+                  )}>
+                    <CardContent className="p-3 flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "font-semibold truncate",
+                          task.isCompleted && "line-through text-muted-foreground"
+                        )}>{task.subjectName}</p>
+                        {task.description && (
+                          <p className="text-xs text-muted-foreground truncate">{task.description}</p>
+                        )}
+                      </div>
+                      <MoreHorizontal className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    </CardContent>
+                  </Card>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align={isLeft ? 'end' : 'start'}>
+                  <HomeworkItem task={task} />
+                </PopoverContent>
+              </Popover>
+
             </div>
           </div>
         );
