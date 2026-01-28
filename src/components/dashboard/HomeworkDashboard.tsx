@@ -60,11 +60,8 @@ export default function HomeworkDashboard() {
 
   const handleGoToStore = () => {
     setIsCoinInfoOpen(false);
-    // Short delay to allow the first dialog to close before opening the next
-    setTimeout(() => {
-      setInitialSettingsTab('appearance');
-      setIsSettingsOpen(true);
-    }, 150);
+    setInitialSettingsTab('appearance');
+    setIsSettingsOpen(true);
   };
   
   const handleSettingsToggle = (isOpen: boolean) => {
