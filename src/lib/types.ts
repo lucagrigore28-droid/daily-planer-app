@@ -19,6 +19,7 @@ export type HomeworkTask = {
   estimatedTime?: number; // in minutes
   timeSpent?: number; // in milliseconds
   timerStartTime?: number; // timestamp in milliseconds
+  coinsAwarded?: boolean;
 };
 
 export type UserData = {

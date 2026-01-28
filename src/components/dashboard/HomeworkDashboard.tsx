@@ -16,12 +16,22 @@ import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
 import SettingsDialog from './SettingsDialog';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
+  const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
 
   const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
@@ -76,10 +86,10 @@ export default function HomeworkDashboard() {
               Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
             </p>
           </div>
-          <div className="flex items-center gap-2 bg-background/50 rounded-full px-3 py-1 border self-start mt-1">
+          <Button variant="ghost" onClick={() => setIsCoinInfoOpen(true)} className="flex items-center gap-2 bg-background/50 rounded-full px-3 py-1 border self-start mt-1 h-auto">
             <Coins className="h-5 w-5 text-yellow-500" />
             <span className="font-bold text-lg">{userData.coins || 0}</span>
-          </div>
+          </Button>
         </div>
         <div className="flex flex-col items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
@@ -152,6 +162,30 @@ export default function HomeworkDashboard() {
       
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
       <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+
+      <AlertDialog open={isCoinInfoOpen} onOpenChange={setIsCoinInfoOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ce sunt Monedele?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Monedele sunt recompense pe care le câștigi pentru finalizarea temelor la timp. Cu cât termini o temă mai devreme, cu atât primești mai multe monede!
+              </p>
+              <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
+                <li><span className="font-semibold">Finalizată cu peste 2 zile înainte:</span> 5 monede</li>
+                <li><span className="font-semibold">Finalizată cu 1-2 zile înainte:</span> 3 monede</li>
+                <li><span className="font-semibold">Finalizată în ziua termenului:</span> 1 monedă</li>
+              </ul>
+              <p>
+                Folosește monedele în secțiunea 'Aspect' din Setări pentru a debloca teme de culori noi și pentru a-ți personaliza aplicația.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Am înțeles!</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
