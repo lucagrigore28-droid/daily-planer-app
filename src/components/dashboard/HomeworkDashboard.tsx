@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
@@ -5,7 +6,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { format, getDay, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight, Settings, Coins } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Settings, Coins, CalendarDays, List } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import AddTaskDialog from './AddTaskDialog';
 import { CalendarIcon } from 'lucide-react';
@@ -25,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AllTasksView from './AllTasksView';
 
 export default function HomeworkDashboard() {
@@ -131,15 +132,26 @@ export default function HomeworkDashboard() {
         
         <TabsContent value="next-tasks">
             <div className="w-full max-w-3xl mx-auto">
-              <div className="flex justify-center mb-4">
-                  <ToggleGroup type="single" value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as 'daily' | 'all') }} defaultValue="daily">
-                      <ToggleGroupItem value="daily" aria-label="Vizualizare zilnică">
-                          Zilnic
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="all" aria-label="Vezi toate temele">
-                          Toate
-                      </ToggleGroupItem>
-                  </ToggleGroup>
+              <div className="flex justify-end mb-4">
+                 <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as 'daily' | 'all') }}>
+                    <SelectTrigger className="w-auto gap-2">
+                        <SelectValue placeholder="Mod vizualizare" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="daily">
+                            <div className="flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4" />
+                                <span>Vizualizare Zilnică</span>
+                            </div>
+                        </SelectItem>
+                        <SelectItem value="all">
+                            <div className="flex items-center gap-2">
+                                <List className="h-4 w-4" />
+                                <span>Toate Temele</span>
+                            </div>
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
               </div>
 
               {tasksViewMode === 'daily' ? (
