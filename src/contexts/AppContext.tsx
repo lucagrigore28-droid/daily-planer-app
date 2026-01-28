@@ -247,57 +247,52 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
 
-    // If this update is marking the task as complete, run a transaction
     if (updates.isCompleted === true) {
       const userDocRef = doc(firestore, 'users', user.uid);
       try {
         await runTransaction(firestore, async (transaction) => {
           const taskDoc = await transaction.get(taskDocRef);
-          if (!taskDoc.exists() || taskDoc.data().isCompleted) {
-            // Task doesn't exist or is already completed.
-            // Still update it in case other properties are changing, but don't award points.
-            transaction.set(taskDocRef, updates, { merge: true });
+          if (!taskDoc.exists()) {
             return;
           }
-          
+
           const taskData = taskDoc.data() as HomeworkTask;
-          const userDoc = await transaction.get(userDocRef);
-          if (!userDoc.exists()) {
-             throw "User document does not exist!";
+          
+          // Only award coins if the task is being completed for the first time.
+          if (!taskData.isCompleted) {
+            const userDoc = await transaction.get(userDocRef);
+            if (userDoc.exists()) {
+              const currentUserData = userDoc.data() as UserData;
+              const currentCoins = currentUserData.coins || 0;
+
+              const dueDate = startOfDay(new Date(taskData.dueDate));
+              const completionDate = startOfDay(new Date());
+              const daysEarly = differenceInCalendarDays(dueDate, completionDate);
+
+              let coinsEarned = 0;
+              if (daysEarly > 2) {
+                coinsEarned = 5;
+              } else if (daysEarly >= 1) {
+                coinsEarned = 3;
+              } else if (daysEarly >= 0) {
+                coinsEarned = 1;
+              }
+
+              if (coinsEarned > 0) {
+                const newCoins = currentCoins + coinsEarned;
+                transaction.update(userDocRef, { coins: newCoins });
+              }
+            }
           }
           
-          const currentUserData = userDoc.data() as UserData;
-          const currentCoins = currentUserData.coins || 0;
-
-          const dueDate = startOfDay(new Date(taskData.dueDate));
-          const completionDate = startOfDay(new Date());
-          const daysEarly = differenceInCalendarDays(dueDate, completionDate);
-
-          let coinsEarned = 0;
-          if (daysEarly > 2) {
-            coinsEarned = 5;
-          } else if (daysEarly >= 1) {
-            coinsEarned = 3;
-          } else if (daysEarly >= 0) {
-            coinsEarned = 1;
-          }
-
-          const newCoins = currentCoins + coinsEarned;
-          
-          const finalUpdates = { ...taskData, ...updates };
-
-          transaction.set(taskDocRef, finalUpdates, { merge: true });
-          if(coinsEarned > 0) {
-            transaction.update(userDocRef, { coins: newCoins });
-          }
+          // Always apply the update to the task document itself.
+          transaction.set(taskDocRef, updates, { merge: true });
         });
       } catch (e) {
         console.error("Task completion transaction failed: ", e);
       }
     } else {
-      // For any other update (not completing a task), a simple setDoc is fine.
       const finalUpdates = { ...updates };
-      // Handle field deletions
       if ('plannedDate' in finalUpdates && (finalUpdates.plannedDate === undefined || finalUpdates.plannedDate === null)) {
         finalUpdates.plannedDate = deleteField() as any;
       }
@@ -311,6 +306,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(taskDocRef, finalUpdates, { merge: true });
     }
   }, [firestore, user]);
+
 
   const deleteTask = useCallback(async (taskId: string) => {
     if (user) {
@@ -373,38 +369,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!tasks || !userData || !userData.schedule) return [];
 
     const today = startOfDay(currentDate);
-
-    // This robustly finds next week's Monday, regardless of current day
-    const daysUntilMonday = (1 - getDay(today) + 7) % 7;
-    const nextMonday = addDays(today, daysUntilMonday === 0 ? 7 : daysUntilMonday);
-    const endOfNextWeek = addDays(nextMonday, 6);
-
-    const startOfNextWeek = nextMonday;
-
-    const tasksInNextWeek = tasks.filter(task => {
-      const taskDueDate = startOfDay(parseISO(task.dueDate));
-      return isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
-    });
+    const dayOfWeek = getDay(today); // Sunday is 0, Monday is 1, ...
     
-    const earliestTasksBySubject = tasksInNextWeek.reduce((acc, task) => {
-      const existingTask = acc[task.subjectId];
-      if (!existingTask || parseISO(task.dueDate) < parseISO(existingTask.dueDate)) {
-        acc[task.subjectId] = task;
-      }
-      return acc;
+    // Calculate the last day of the current week (Sunday)
+    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 }); // weekStartsOn: 1 for Monday
+
+    // Calculate the start and end of next week
+    const startOfNextWeek = addDays(endOfThisWeek, 1);
+    const endOfNextWeek = addDays(startOfNextWeek, 6);
+
+    const relevantTasks = tasks.filter(task => {
+        // Exclude tasks already completed.
+        if (task.isCompleted) return false;
+
+        // Check if the task's due date is within next week.
+        const taskDueDate = startOfDay(parseISO(task.dueDate));
+        const isDueNextWeek = isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
+        if (!isDueNextWeek) return false;
+
+        // Check if the last class for this subject in the current week has passed.
+        const scheduledDays = userData.schedule[task.subjectId] || [];
+        if (scheduledDays.length === 0) return true; // If no schedule, always show.
+
+        const lastDayOfClassThisWeek = Math.max(...scheduledDays); // Mon=1, ..., Fri=5
+        const currentDayOfWeekAdjusted = dayOfWeek === 0 ? 7 : dayOfWeek; // Mon=1, ..., Sun=7
+
+        return currentDayOfWeekAdjusted > lastDayOfClassThisWeek;
+    });
+
+    const earliestTasksBySubject = relevantTasks.reduce((acc, task) => {
+        const existingTask = acc[task.subjectId];
+        if (!existingTask || parseISO(task.dueDate) < parseISO(existingTask.dueDate)) {
+            acc[task.subjectId] = task;
+        }
+        return acc;
     }, {} as Record<string, HomeworkTask>);
-    
-    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today); // Mon=1, ..., Sun=7
-    
-    const finalTasks = Object.values(earliestTasksBySubject).filter(task => {
-      const scheduledDays = userData.schedule[task.subjectId] || [];
-      if (scheduledDays.length === 0) return true;
-      
-      const lastDayOfClassThisWeek = Math.max(...scheduledDays);
-      return currentDayOfWeek > lastDayOfClassThisWeek;
-    });
 
-    return finalTasks;
+    return Object.values(earliestTasksBySubject);
 
   }, [tasks, currentDate, userData]);
 
