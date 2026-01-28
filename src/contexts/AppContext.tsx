@@ -75,7 +75,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
 
   const displayableTasks = useMemo(() => {
-    if (!allTasks) return [];
+    if (!allTasks || !userData) return [];
+
+    const today = startOfDay(currentDate);
+    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today); // Mon=1, Sun=7
+    
+    // Get start/end of the current week (Monday-Sunday)
+    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 });
+    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
 
     const activeTaskIds = new Set<string>();
     
@@ -88,8 +95,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     
     for (const subjectId in tasksBySubject) {
         const sortedTasks = tasksBySubject[subjectId].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        
         if (sortedTasks.length > 0) {
-            activeTaskIds.add(sortedTasks[0].id);
+            const earliestTask = sortedTasks[0];
+            const taskDueDate = startOfDay(parseISO(earliestTask.dueDate));
+
+            // Check if due date is this week
+            const isDueThisWeek = isWithinInterval(taskDueDate, { start: startOfThisWeek, end: endOfThisWeek });
+            
+            // Check if it's a valid "next week" task
+            const scheduledDays = userData.schedule[subjectId] || [];
+            const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5), 0); // Get last weekday class, default 0
+            const isNextWeekTaskReady = !isDueThisWeek && (lastDayOfClassThisWeek === 0 || currentDayOfWeek > lastDayOfClassThisWeek);
+
+            if (isDueThisWeek || isNextWeekTaskReady) {
+                 activeTaskIds.add(earliestTask.id);
+            }
         }
     }
 
@@ -97,7 +118,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const isLocked = !task.isManual && !task.isCompleted && !activeTaskIds.has(task.id);
         return { ...task, isLocked };
     });
-  }, [allTasks]);
+  }, [allTasks, userData, currentDate]);
 
 
   useEffect(() => {
