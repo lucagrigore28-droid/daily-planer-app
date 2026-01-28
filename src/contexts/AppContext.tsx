@@ -418,35 +418,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [currentDate, displayableTasks, userData]);
 
   const getWeekendTasks = useCallback(() => {
-    if (!displayableTasks || !userData || !userData.schedule) return [];
-  
+    if (!allTasks || !userData || !userData.schedule) return [];
+
     const today = startOfDay(currentDate);
-    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today); // Mon=1, Sun=7
-    
-    // Define start and end of next week
-    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 });
-    const startOfNextWeek = addDays(startOfThisWeek, 7);
-    const endOfNextWeek = addDays(startOfNextWeek, 6); // end of day sunday
-  
-    const relevantTasks = displayableTasks.filter(task => {
-      // Check if the task's due date is within next week.
-      const taskDueDate = startOfDay(parseISO(task.dueDate));
-      const isDueNextWeek = isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
-      if (!isDueNextWeek) return false;
-  
-      // Check if the last class for this subject in the current week has passed.
-      const scheduledDays = userData.schedule[task.subjectId] || [];
-      if (scheduledDays.length === 0) return true; 
-  
+    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today);
+
+    const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+    const endOfNextWeek = endOfWeek(startOfNextWeek, { weekStartsOn: 1 });
+
+    const weekendPlanningTasks: HomeworkTask[] = [];
+
+    for (const subject of userData.subjects) {
+      const scheduledDays = userData.schedule[subject.id] || [];
+      if (scheduledDays.length === 0) continue;
+
       const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5));
-      if (!lastDayOfClassThisWeek) return true;
-  
-      return currentDayOfWeek >= lastDayOfClassThisWeek;
-    });
-  
-    return relevantTasks;
-  
-  }, [displayableTasks, currentDate, userData]);
+      if (currentDayOfWeek < lastDayOfClassThisWeek) continue;
+
+      const subjectTasks = allTasks
+        .filter(task =>
+          task.subjectId === subject.id &&
+          !task.isCompleted &&
+          isWithinInterval(startOfDay(parseISO(task.dueDate)), { start: startOfNextWeek, end: endOfNextWeek })
+        )
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+      if (subjectTasks.length > 0) {
+        // We need to find this task in `displayableTasks` to get its `isLocked` status
+        const earliestTask = subjectTasks[0];
+        const displayableVersion = displayableTasks.find(t => t.id === earliestTask.id);
+        if (displayableVersion) {
+            weekendPlanningTasks.push(displayableVersion);
+        }
+      }
+    }
+    
+    return weekendPlanningTasks;
+  }, [displayableTasks, allTasks, userData, currentDate]);
 
   const startTimer = useCallback(async (taskId: string) => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -553,3 +561,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
