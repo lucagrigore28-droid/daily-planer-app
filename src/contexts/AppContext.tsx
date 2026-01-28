@@ -62,7 +62,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
 
   const tasksCollectionRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
-  const { data: tasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
+  const { data: allTasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [areTasksSynced, setAreTasksSynced] = useState(false);
@@ -74,12 +74,47 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
 
+  const displayableTasks = useMemo(() => {
+    if (!allTasks) return [];
+
+    const visibleTasksMap = new Map<string, HomeworkTask>();
+
+    // Rule A & B: Add all completed and manual tasks
+    allTasks.forEach(task => {
+        if (task.isCompleted || task.isManual) {
+            visibleTasksMap.set(task.id, task);
+        }
+    });
+
+    // Rule C: Find the next upcoming automatic task for each subject
+    const automaticIncompleteTasks = allTasks.filter(task => !task.isManual && !task.isCompleted);
+    
+    const tasksBySubject = automaticIncompleteTasks.reduce((acc, task) => {
+        acc[task.subjectId] = acc[task.subjectId] || [];
+        acc[task.subjectId].push(task);
+        return acc;
+    }, {} as Record<string, HomeworkTask[]>);
+
+    for (const subjectId in tasksBySubject) {
+        // Sort to find the earliest
+        tasksBySubject[subjectId].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+        
+        const nextTaskForSubject = tasksBySubject[subjectId][0];
+        if (nextTaskForSubject) {
+            visibleTasksMap.set(nextTaskForSubject.id, nextTaskForSubject);
+        }
+    }
+    
+    return Array.from(visibleTasksMap.values());
+  }, [allTasks]);
+
+
   useEffect(() => {
-    if (tasks) {
-      const runningTask = tasks.find(t => !!t.timerStartTime);
+    if (allTasks) {
+      const runningTask = allTasks.find(t => !!t.timerStartTime);
       setActiveTimerTaskId(runningTask ? runningTask.id : null);
     }
-  }, [tasks]);
+  }, [allTasks]);
 
 
   useEffect(() => {
@@ -142,14 +177,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [userData?.theme, userData?.customThemeColors]);
 
   const doSync = useCallback(async () => {
-    if (!user || !userData || !tasks || syncInProgress.current) return;
+    if (!user || !userData || !allTasks || syncInProgress.current) return;
 
     syncInProgress.current = true;
     try {
       const today = startOfDay(new Date());
       const batch = writeBatch(firestore);
 
-      const automaticTasks = tasks.filter(t => !t.isManual);
+      const automaticTasks = allTasks.filter(t => !t.isManual);
       const existingTasks = new Map<string, string>(); // Map "subjectId_dateString" to "taskId"
 
       automaticTasks.forEach(task => {
@@ -200,15 +235,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setAreTasksSynced(true);
       }
     }
-  }, [firestore, user, userData, tasks]);
+  }, [firestore, user, userData, allTasks]);
 
   useEffect(() => {
-    if (isDataLoaded && userData?.setupComplete && tasks !== null) {
+    if (isDataLoaded && userData?.setupComplete && allTasks !== null) {
       doSync();
-    } else if (isDataLoaded && (!userData?.setupComplete || tasks === null)) {
+    } else if (isDataLoaded && (!userData?.setupComplete || allTasks === null)) {
       setAreTasksSynced(true);
     }
-  }, [isDataLoaded, userData?.setupComplete, userData?.schedule, userData?.subjects, tasks, doSync]);
+  }, [isDataLoaded, userData?.setupComplete, userData?.schedule, userData?.subjects, allTasks, doSync]);
   
   const createUserDocument = useCallback(async (user: any, name: string) => {
     if (!user) return;
@@ -340,10 +375,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [auth]);
 
   const getNextDayWithTasks = useCallback(() => {
-    if (!tasks || !userData) return null;
+    if (!displayableTasks || !userData) return null;
     const today = startOfDay(currentDate);
     
-    const incompleteTasks = tasks.filter(task => !task.isCompleted);
+    const incompleteTasks = displayableTasks.filter(task => !task.isCompleted);
     
     // Get all future dates that have tasks
     const futureDates = incompleteTasks.reduce((acc, task) => {
@@ -366,10 +401,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   
     return null;
-  }, [currentDate, tasks, userData]);
+  }, [currentDate, displayableTasks, userData]);
 
   const getWeekendTasks = useCallback(() => {
-    if (!tasks || !userData || !userData.schedule) return [];
+    if (!displayableTasks || !userData || !userData.schedule) return [];
   
     const today = startOfDay(currentDate);
     const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today); // Mon=1, Sun=7
@@ -379,7 +414,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const startOfNextWeek = addDays(startOfThisWeek, 7);
     const endOfNextWeek = addDays(startOfNextWeek, 6); // end of day sunday
   
-    const relevantTasks = tasks.filter(task => {
+    const relevantTasks = displayableTasks.filter(task => {
       // Check if the task's due date is within next week.
       const taskDueDate = startOfDay(parseISO(task.dueDate));
       const isDueNextWeek = isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
@@ -406,7 +441,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
     return Object.values(earliestTasksBySubject);
   
-  }, [tasks, currentDate, userData]);
+  }, [displayableTasks, currentDate, userData]);
 
   const startTimer = useCallback(async (taskId: string) => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -418,7 +453,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [updateTask]);
 
   const pauseTimer = useCallback((taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
+    const task = allTasks?.find(t => t.id === taskId);
     if (task && task.timerStartTime) {
       const elapsed = Date.now() - task.timerStartTime;
       const newTimeSpent = (task.timeSpent || 0) + elapsed;
@@ -427,10 +462,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         timerStartTime: null 
       });
     }
-  }, [tasks, updateTask]);
+  }, [allTasks, updateTask]);
   
   const completeTaskWithTimer = useCallback((taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
+    const task = allTasks?.find(t => t.id === taskId);
     if (task) {
       let finalTimeSpent = task.timeSpent || 0;
       if (task.timerStartTime) {
@@ -443,7 +478,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         isCompleted: true
       });
     }
-  }, [tasks, updateTask]);
+  }, [allTasks, updateTask]);
 
   const stopAndCompleteTimer = useCallback((taskId: string) => {
     completeTaskWithTimer(taskId);
@@ -486,7 +521,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
   const value: AppContextType = {
     userData: memoizedUserData,
-    tasks: tasks || [],
+    tasks: displayableTasks,
     updateUser,
     updateSubjects,
     addTask,
