@@ -57,7 +57,7 @@ export default function RootLayout({
             </AppProvider>
           </ThemeProvider>
         </FirebaseClientProvider>
-        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="lazyOnload" />
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="lazyOnload" crossOrigin="anonymous" />
       </body>
     </html>
   );
