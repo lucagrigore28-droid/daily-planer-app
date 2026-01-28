@@ -195,7 +195,8 @@ export default function HomeworkDashboard() {
                 </div>
             </div>
           </AlertDialogHeader>
-          <AlertDialogDescription className="space-y-2 text-center pt-2">
+          <AlertDialogDescription asChild>
+            <div className="space-y-2 text-center pt-2 text-sm text-muted-foreground">
               <p>
                 Câștigi monede pentru finalizarea temelor înainte de termen. Cu cât termini mai devreme, cu atât recompensa e mai mare!
               </p>
@@ -207,6 +208,7 @@ export default function HomeworkDashboard() {
               <p>
                 Folosește monedele în Magazin pentru a debloca teme de culori noi și pentru a-ți personaliza aplicația!
               </p>
+            </div>
             </AlertDialogDescription>
           <AlertDialogFooter>
             <AlertDialogCancel>Închide</AlertDialogCancel>
