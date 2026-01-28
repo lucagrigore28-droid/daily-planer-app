@@ -49,6 +49,7 @@ type AppContextType = {
   stopAndCompleteTimer: (taskId: string) => void;
   completeTaskWithTimer: (taskId: string) => void;
   unlockTheme: (theme: Theme) => Promise<void>;
+  addCoins: (amount: number) => Promise<void>;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -419,42 +420,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [currentDate, displayableTasks, userData]);
 
   const getWeekendTasks = useCallback(() => {
-    if (!allTasks || !userData || !userData.schedule) return [];
+    if (!displayableTasks || !userData || !userData.schedule) return [];
+  
+    return displayableTasks.filter(task => {
+        if (!task.isManual) {
+            const today = startOfDay(currentDate);
+            const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today);
+            const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
+            const endOfNextWeek = endOfWeek(startOfNextWeek, { weekStartsOn: 1 });
+            
+            const isDueNextWeek = isWithinInterval(startOfDay(parseISO(task.dueDate)), { start: startOfNextWeek, end: endOfNextWeek });
+            if (!isDueNextWeek) return false;
 
-    const today = startOfDay(currentDate);
-    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today);
+            const scheduledDays = userData.schedule[task.subjectId] || [];
+            if (scheduledDays.length === 0) return false;
 
-    const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
-    const endOfNextWeek = endOfWeek(startOfNextWeek, { weekStartsOn: 1 });
-
-    const weekendPlanningTasks: HomeworkTask[] = [];
-
-    for (const subject of userData.subjects) {
-      const scheduledDays = userData.schedule[subject.id] || [];
-      if (scheduledDays.length === 0) continue;
-
-      const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5));
-      if (currentDayOfWeek < lastDayOfClassThisWeek) continue;
-
-      const subjectTasks = allTasks
-        .filter(task =>
-          task.subjectId === subject.id &&
-          isWithinInterval(startOfDay(parseISO(task.dueDate)), { start: startOfNextWeek, end: endOfNextWeek })
-        )
-        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-
-      if (subjectTasks.length > 0) {
-        // We need to find this task in `displayableTasks` to get its `isLocked` status
-        const earliestTask = subjectTasks[0];
-        const displayableVersion = displayableTasks.find(t => t.id === earliestTask.id);
-        if (displayableVersion) {
-            weekendPlanningTasks.push(displayableVersion);
+            const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5), 0);
+            return currentDayOfWeek >= lastDayOfClassThisWeek;
         }
-      }
-    }
-    
-    return weekendPlanningTasks;
-  }, [displayableTasks, allTasks, userData, currentDate]);
+        return false;
+    });
+  }, [displayableTasks, userData, currentDate]);
 
   const startTimer = useCallback(async (taskId: string) => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -525,6 +511,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
     }
   }, [user, userData, firestore]);
+  
+  const addCoins = useCallback(async (amount: number) => {
+    if (!userData) return;
+    const currentCoins = userData.coins || 0;
+    await updateUser({ coins: currentCoins + amount });
+  }, [userData, updateUser]);
 
   const memoizedUserData = useMemo(() => {
     if (isUserDataLoading || userData === undefined) return null;
@@ -557,6 +549,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     stopAndCompleteTimer,
     completeTaskWithTimer,
     unlockTheme,
+    addCoins,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
