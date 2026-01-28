@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
-import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay } from 'date-fns';
+import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -77,46 +77,76 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const displayableTasks = useMemo(() => {
     if (!allTasks || !userData) return [];
 
-    const today = startOfDay(currentDate);
-    const tomorrow = addDays(today, 1);
-    
-    const currentDayOfWeek = getDay(today) === 0 ? 7 : getDay(today);
-    
-    const startOfNextWeek = startOfWeek(addDays(today, 7), { weekStartsOn: 1 });
-    const endOfNextWeek = endOfWeek(startOfNextWeek, { weekStartsOn: 1 });
-
     const activeTaskIds = new Set<string>();
-    
-    const automaticIncompleteTasks = allTasks.filter(task => !task.isManual && !task.isCompleted);
-    const tasksBySubject = automaticIncompleteTasks.reduce((acc, task) => {
-        acc[task.subjectId] = acc[task.subjectId] || [];
-        acc[task.subjectId].push(task);
-        return acc;
-    }, {} as Record<string, HomeworkTask[]>);
-    
-    for (const subjectId in tasksBySubject) {
-        const sortedTasks = tasksBySubject[subjectId].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    const allSubjectIds = userData.subjects.map(s => s.id);
+    const today = startOfDay(currentDate);
+
+    for (const subjectId of allSubjectIds) {
+        // 1. Get all tasks for this subject, sorted by due date.
+        const subjectTasks = allTasks
+            .filter(task => task.subjectId === subjectId)
+            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+        if (subjectTasks.length === 0) {
+            continue;
+        }
+
+        // 2. Find the index of the first incomplete task.
+        const firstIncompleteIndex = subjectTasks.findIndex(task => !task.isCompleted);
+
+        // If all tasks for this subject are complete, do nothing.
+        if (firstIncompleteIndex === -1) {
+            continue;
+        }
         
-        if (sortedTasks.length > 0) {
-            const earliestTask = sortedTasks[0];
-            const taskDueDate = startOfDay(parseISO(earliestTask.dueDate));
+        const taskToEvaluate = subjectTasks[firstIncompleteIndex];
 
-            // REGULAR UNLOCK RULE: Unlock if the due date is in the past, today, or tomorrow.
-            const shouldUnlockRegular = isBefore(taskDueDate, tomorrow) || isSameDay(taskDueDate, tomorrow);
+        // 3. Check if this is the very first task ever for this subject.
+        // If it's the first task in the chronological list, it's always unlocked.
+        if (firstIncompleteIndex === 0) {
+            activeTaskIds.add(taskToEvaluate.id);
+            continue; // Move to the next subject
+        }
 
-            // WEEKEND UNLOCK RULE: Also unlock if it's for next week and the last class for this week has passed.
-            const isDueNextWeek = isWithinInterval(taskDueDate, { start: startOfNextWeek, end: endOfNextWeek });
-            const scheduledDays = userData.schedule[subjectId] || [];
-            const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5), 0);
-            const weekendUnlock = isDueNextWeek && (lastDayOfClassThisWeek > 0 && currentDayOfWeek >= lastDayOfClassThisWeek);
-            
-            if (shouldUnlockRegular || weekendUnlock) {
-                 activeTaskIds.add(earliestTask.id);
+        // 4. If it's NOT the first task ever, apply the assignment day logic.
+        const taskDueDate = startOfDay(parseISO(taskToEvaluate.dueDate));
+        const scheduledDays = userData.schedule[subjectId] || [];
+
+        if (scheduledDays.length === 0) {
+            // No schedule for this subject, so unlock to avoid permanent lock
+            activeTaskIds.add(taskToEvaluate.id);
+            continue;
+        }
+
+        // 5. Find the assignment date. Go backwards from the day before the due date.
+        let assignmentDate = null;
+        let currentDateToCheck = subDays(taskDueDate, 1);
+        
+        // Loop for a reasonable amount of time (e.g., 2 weeks) to find the last class day.
+        for (let i = 0; i < 14; i++) {
+            const dayOfWeek = getDay(currentDateToCheck) === 0 ? 7 : getDay(currentDateToCheck); // Mon=1...Sun=7
+            if (scheduledDays.includes(dayOfWeek)) {
+                assignmentDate = currentDateToCheck;
+                break; // Found it
             }
+            currentDateToCheck = subDays(currentDateToCheck, 1);
+        }
+        
+        // 6. If an assignment date was found, check if today is on or after it.
+        if (assignmentDate) {
+            if (isAfter(today, assignmentDate) || isSameDay(today, assignmentDate)) {
+                activeTaskIds.add(taskToEvaluate.id);
+            }
+        } else {
+            // If no assignment date could be found (e.g., schedule is empty or task is very far in the future),
+            // let's default to unlocking it to avoid permanent locks. This is a safe fallback.
+            activeTaskIds.add(taskToEvaluate.id);
         }
     }
 
+    // Finally, map all tasks to set the isLocked property based on our logic.
     return allTasks.map(task => {
+        // Manual and completed tasks are never locked.
         if (task.isManual || task.isCompleted) {
             return { ...task, isLocked: false };
         }
