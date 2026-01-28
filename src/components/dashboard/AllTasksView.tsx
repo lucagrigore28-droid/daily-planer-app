@@ -4,7 +4,7 @@ import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 
@@ -35,23 +35,33 @@ export default function AllTasksView() {
   }
   
   return (
-    <Card>
-        <CardContent className="p-4">
-            <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4">
-                Toate temele active
-            </h2>
-            <div className="space-y-4">
-                {allVisibleTasks.map(task => (
-                     <div key={task.id} className="flex items-center justify-between gap-4">
-                        <div className="flex-grow"><HomeworkItem task={task} /></div>
-                        <div className="flex-shrink-0 w-28 text-right text-sm text-muted-foreground">
-                            <p className="font-semibold">{format(new Date(task.dueDate), "EEEE", { locale: ro })}</p>
-                            <p>{format(new Date(task.dueDate), "d MMMM", { locale: ro })}</p>
-                        </div>
-                     </div>
-                ))}
+    <div className="flow-root">
+      <ul className="-mb-8">
+        {allVisibleTasks.map((task, taskIdx) => (
+          <li key={task.id}>
+            <div className="relative pb-8">
+              {taskIdx !== allVisibleTasks.length - 1 ? (
+                <span className="absolute left-4 top-4 -ml-px h-full w-0.5 bg-border" aria-hidden="true" />
+              ) : null}
+              <div className="relative flex items-start space-x-4">
+                <div>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary ring-8 ring-background">
+                    <CalendarClock className="h-5 w-5 text-primary-foreground" />
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1 pt-1.5">
+                  <div className="text-sm font-semibold text-muted-foreground">
+                    {format(new Date(task.dueDate), "EEEE, d MMMM", { locale: ro })}
+                  </div>
+                  <div className="mt-2">
+                    <HomeworkItem task={task} />
+                  </div>
+                </div>
+              </div>
             </div>
-        </CardContent>
-    </Card>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
