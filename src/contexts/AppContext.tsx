@@ -106,6 +106,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
             const scheduledDays = userData.schedule[subjectId] || [];
             const lastDayOfClassThisWeek = Math.max(...scheduledDays.filter(d => d <= 5), 0);
+            
             const lastClassHasPassed = (lastDayOfClassThisWeek === 0 || currentDayOfWeek >= lastDayOfClassThisWeek);
 
             const shouldUnlock = isDueThisWeek || (isDueNextWeek && lastClassHasPassed);
@@ -438,7 +439,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const subjectTasks = allTasks
         .filter(task =>
           task.subjectId === subject.id &&
-          !task.isCompleted &&
           isWithinInterval(startOfDay(parseISO(task.dueDate)), { start: startOfNextWeek, end: endOfNextWeek })
         )
         .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
@@ -562,4 +562,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
+    
     
