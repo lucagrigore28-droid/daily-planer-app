@@ -37,6 +37,7 @@ export default function HomeworkDashboard() {
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
   const [tasksViewMode, setTasksViewMode] = useState<'daily' | 'timeline' | 'alternating-timeline'>('daily');
+  const [activeTab, setActiveTab] = useState('next-tasks');
 
   const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
@@ -111,29 +112,19 @@ export default function HomeworkDashboard() {
             <span className="font-bold text-lg">{userData.coins || 0}</span>
           </Button>
         </div>
-        <div className="flex flex-col items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                <Settings className="h-6 w-6" />
-                <span className="sr-only">Setări</span>
-            </Button>
-            <Button onClick={() => setAddTaskOpen(true)} size="icon" variant="default" className="w-12 h-12">
-                <Plus className="h-6 w-6" />
-                <span className="sr-only">Adaugă temă</span>
-            </Button>
-        </div>
-      </header>
-      
-      <Tabs defaultValue="next-tasks" className="w-full">
-        <TabsList className={cn("grid w-full max-w-lg mx-auto mb-6", `grid-cols-${tabs.length}`)}>
-          {tabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
-          ))}
-        </TabsList>
-        
-        <TabsContent value="next-tasks">
-            <div className="w-full max-w-3xl mx-auto">
-              <div className="flex justify-end mb-4">
-                 <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as 'daily' | 'timeline' | 'alternating-timeline') }}>
+        <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                    <Settings className="h-6 w-6" />
+                    <span className="sr-only">Setări</span>
+                </Button>
+                <Button onClick={() => setAddTaskOpen(true)} size="icon" variant="default" className="w-12 h-12">
+                    <Plus className="h-6 w-6" />
+                    <span className="sr-only">Adaugă temă</span>
+                </Button>
+            </div>
+            {activeTab === 'next-tasks' && (
+                <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as 'daily' | 'timeline' | 'alternating-timeline') }}>
                     <SelectTrigger className="w-auto gap-2">
                         <SelectValue placeholder="Mod vizualizare" />
                     </SelectTrigger>
@@ -158,8 +149,19 @@ export default function HomeworkDashboard() {
                         </SelectItem>
                     </SelectContent>
                 </Select>
-              </div>
-
+            )}
+        </div>
+      </header>
+      
+      <Tabs defaultValue="next-tasks" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className={cn("grid w-full max-w-lg mx-auto mb-6", `grid-cols-${tabs.length}`)}>
+          {tabs.map(tab => (
+            <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+          ))}
+        </TabsList>
+        
+        <TabsContent value="next-tasks">
+            <div className="w-full max-w-3xl mx-auto">
               {tasksViewMode === 'daily' ? (
                   displayedDay ? (
                       <Card>
