@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
@@ -34,6 +33,7 @@ export default function HomeworkDashboard() {
   const [initialSettingsTab, setInitialSettingsTab] = useState('profile');
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
+  const [pendingSettingsOpen, setPendingSettingsOpen] = useState(false);
 
   const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
@@ -44,6 +44,15 @@ export default function HomeworkDashboard() {
       setDisplayedDay(nextDay ? startOfDay(nextDay) : startOfDay(new Date()));
     }
   }, [areTasksSynced, isDataLoaded, displayedDay, getNextDayWithTasks]);
+
+  useEffect(() => {
+    // This effect handles the sequential opening of the settings dialog
+    // after the coin info dialog has fully closed.
+    if (!isCoinInfoOpen && pendingSettingsOpen) {
+      setIsSettingsOpen(true);
+      setPendingSettingsOpen(false); // Reset the intent
+    }
+  }, [isCoinInfoOpen, pendingSettingsOpen]);
 
 
   const handlePrevDay = () => {
@@ -59,9 +68,9 @@ export default function HomeworkDashboard() {
   };
 
   const handleGoToStore = () => {
-    setIsCoinInfoOpen(false);
     setInitialSettingsTab('appearance');
-    setIsSettingsOpen(true);
+    setPendingSettingsOpen(true); // Set the intent to open settings
+    setIsCoinInfoOpen(false); // Start by closing the current dialog
   };
   
   const handleSettingsToggle = (isOpen: boolean) => {
