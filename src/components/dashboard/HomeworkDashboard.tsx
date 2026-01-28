@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useContext, useEffect, useMemo, useState } from 'react';
@@ -159,10 +158,15 @@ export default function HomeworkDashboard() {
                       <Card>
                           <CardContent className="p-4">
                               <div className="flex justify-between items-center mb-4">
-                                  <h2 className="flex items-center gap-3 text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                                      <CalendarIcon className="h-6 w-6 text-primary"/>
-                                      <span>{format(displayedDay, "EEEE, d MMMM", { locale: ro })}</span>
-                                  </h2>
+                                  <div className="flex items-center gap-4">
+                                      <CalendarIcon className="h-10 w-10 text-primary"/>
+                                      <div>
+                                          <h2 className="text-base text-muted-foreground">Teme pentru</h2>
+                                          <h3 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                                              {format(displayedDay, "EEEE, d MMMM", { locale: ro })}
+                                          </h3>
+                                      </div>
+                                  </div>
                                   <div className="flex items-center gap-2">
                                       <Button 
                                         variant="ghost" 
