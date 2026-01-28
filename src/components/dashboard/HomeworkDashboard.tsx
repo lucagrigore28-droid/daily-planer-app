@@ -5,7 +5,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { format, getDay, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight, Settings, Coins, CalendarDays, List } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Settings, Coins, CalendarDays, List, GitFork } from 'lucide-react';
 import HomeworkList from './HomeworkList';
 import AddTaskDialog from './AddTaskDialog';
 import { CalendarIcon } from 'lucide-react';
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AllTasksView from './AllTasksView';
+import AlternatingTimelineView from './AlternatingTimelineView';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
@@ -35,7 +36,7 @@ export default function HomeworkDashboard() {
   const [initialSettingsTab, setInitialSettingsTab] = useState('profile');
   const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
-  const [tasksViewMode, setTasksViewMode] = useState<'daily' | 'all'>('daily');
+  const [tasksViewMode, setTasksViewMode] = useState<'daily' | 'timeline' | 'alternating-timeline'>('daily');
 
   const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
@@ -132,7 +133,7 @@ export default function HomeworkDashboard() {
         <TabsContent value="next-tasks">
             <div className="w-full max-w-3xl mx-auto">
               <div className="flex justify-end mb-4">
-                 <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as 'daily' | 'all') }}>
+                 <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as 'daily' | 'timeline' | 'alternating-timeline') }}>
                     <SelectTrigger className="w-auto gap-2">
                         <SelectValue placeholder="Mod vizualizare" />
                     </SelectTrigger>
@@ -143,10 +144,16 @@ export default function HomeworkDashboard() {
                                 <span>Vizualizare Zilnică</span>
                             </div>
                         </SelectItem>
-                        <SelectItem value="all">
+                        <SelectItem value="timeline">
                             <div className="flex items-center gap-2">
                                 <List className="h-4 w-4" />
-                                <span>Toate Temele</span>
+                                <span>Cronologie</span>
+                            </div>
+                        </SelectItem>
+                         <SelectItem value="alternating-timeline">
+                            <div className="flex items-center gap-2">
+                                <GitFork className="h-4 w-4" />
+                                <span>Cronologie Alternantă</span>
                             </div>
                         </SelectItem>
                     </SelectContent>
@@ -191,8 +198,10 @@ export default function HomeworkDashboard() {
                           </CardContent>
                       </Card>
                   )
-              ) : (
+              ) : tasksViewMode === 'timeline' ? (
                   <AllTasksView />
+              ) : (
+                  <AlternatingTimelineView />
               )}
             </div>
         </TabsContent>

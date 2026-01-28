@@ -7,17 +7,20 @@ import HomeworkItem from './HomeworkItem';
 import { CheckCircle2, CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
-export default function AllTasksView() {
+export default function AlternatingTimelineView() {
   const context = useContext(AppContext);
   const { tasks } = context!;
 
   const allVisibleTasks = useMemo(() => {
     if (!tasks) return [];
     
+    // Filter for incomplete and unlocked tasks, then sort by due date
     return tasks
       .filter(task => !task.isCompleted && !task.isLocked)
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
   }, [tasks]);
 
   if (allVisibleTasks.length === 0) {
@@ -35,21 +38,30 @@ export default function AllTasksView() {
   return (
     <div className="relative py-4">
       {/* The vertical line */}
-      <div className="absolute top-0 left-12 border-border border-2 h-full" />
+      <div className="absolute top-0 border-border border-2 h-full" style={{ left: '50%', transform: 'translateX(-50%)' }} />
 
-      {allVisibleTasks.map((task) => {
+      {allVisibleTasks.map((task, taskIdx) => {
+        const isLeft = taskIdx % 2 !== 0;
+
         return (
-          <div key={task.id} className="mb-8 flex items-center w-full">
-            {/* Spacer & Dot */}
-            <div className="w-24 flex-shrink-0 flex justify-center">
-                <div className="z-10 flex items-center bg-primary ring-8 ring-background shadow-xl w-8 h-8 rounded-full">
-                  <CalendarClock className="h-5 w-5 text-primary-foreground mx-auto" />
-                </div>
+          <div key={task.id} className={cn(
+            "mb-8 flex justify-between items-center w-full",
+            isLeft && "flex-row-reverse"
+          )}>
+            {/* Spacer */}
+            <div className="order-1 w-5/12" />
+
+            {/* Dot */}
+            <div className="z-10 flex items-center order-1 bg-primary ring-8 ring-background shadow-xl w-8 h-8 rounded-full">
+              <CalendarClock className="h-5 w-5 text-primary-foreground mx-auto" />
             </div>
 
             {/* Content */}
-            <div className="flex-grow pr-4">
-               <p className="mb-2 text-sm sm:text-base font-semibold text-muted-foreground">
+            <div className="order-1 w-5/12 px-1 md:px-4">
+               <p className={cn(
+                 "mb-2 text-sm sm:text-base font-semibold text-muted-foreground",
+                 isLeft ? "text-right" : "text-left"
+               )}>
                 {format(new Date(task.dueDate), "EEEE, d MMMM", { locale: ro })}
               </p>
               <HomeworkItem task={task} />
