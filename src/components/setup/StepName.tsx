@@ -46,12 +46,12 @@ export default function StepName({ onNext, onBack }: StepProps) {
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Cum te numești?</CardTitle>
-        <CardDescription>
+        <CardTitle className="font-headline text-2xl fade-in-up">Cum te numești?</CardTitle>
+        <CardDescription style={{ animationDelay: '100ms' }} className="fade-in-up">
           Acest nume va fi folosit pentru a personaliza experiența ta în aplicație.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent style={{ animationDelay: '200ms' }} className="fade-in-up">
         <div className="space-y-2">
           <Label htmlFor="name">Numele tău</Label>
           <Input
@@ -66,7 +66,7 @@ export default function StepName({ onNext, onBack }: StepProps) {
         </div>
       </CardContent>
        {showNavButtons && (
-          <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+          <CardFooter style={{ animationDelay: '300ms' }} className="fade-in-up flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
              {onBack && <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">Înapoi</Button>}
             <Button onClick={handleContinue} disabled={!name.trim()} className="w-full sm:w-auto sm:ml-auto">Continuă</Button>
           </CardFooter>

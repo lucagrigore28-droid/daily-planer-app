@@ -158,4 +158,20 @@
   .animate-coin-fly {
       animation: coin-fly 1.2s ease-in forwards;
   }
+
+  @keyframes slide-in-from-right {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-slide-in-from-right {
+    animation: slide-in-from-right 0.4s ease-out forwards;
+  }
+  
+  @keyframes slide-in-from-left {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  .animate-slide-in-from-left {
+    animation: slide-in-from-left 0.4s ease-out forwards;
+  }
 }

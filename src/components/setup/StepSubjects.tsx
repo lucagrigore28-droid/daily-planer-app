@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useMemo, useEffect } from 'react';
@@ -84,13 +83,13 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardContent className="pt-6">
-        <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm mb-6">
+        <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm mb-6 fade-in-up">
             <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Selectează-ți materiile
             </h2>
-             <p className="text-sm text-muted-foreground mt-1">Bifează materiile din orarul tău. Poți adăuga și materii personalizate.</p>
+             <p style={{ animationDelay: '100ms' }} className="text-sm text-muted-foreground mt-1 fade-in-up">Bifează materiile din orarul tău. Poți adăuga și materii personalizate.</p>
         </div>
-        <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+        <div style={{ animationDelay: '200ms' }} className="grid grid-cols-2 gap-x-12 gap-y-4 fade-in-up">
           {allSubjectNames.map(subjectName => {
             const isChecked = localSubjects.some(s => s.name === subjectName);
             const subjectIsCustom = !PREDEFINED_SUBJECTS.includes(subjectName);
@@ -114,7 +113,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
             );
           })}
         </div>
-        <div className="mt-6 flex items-center space-x-2">
+        <div style={{ animationDelay: '300ms' }} className="mt-6 flex items-center space-x-2 fade-in-up">
           <Input
             placeholder="Altă materie..."
             value={customSubject}
@@ -127,7 +126,7 @@ export default function StepSubjects({ onNext, onBack }: StepProps) {
         </div>
       </CardContent>
       {showNavButtons && (
-        <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+        <CardFooter style={{ animationDelay: '400ms' }} className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 fade-in-up">
           <Button variant="ghost" onClick={handleBack} className="w-full sm:w-auto">Înapoi</Button>
           <Button onClick={handleNext} disabled={localSubjects.length === 0} className="w-full sm:w-auto">Continuă</Button>
         </CardFooter>

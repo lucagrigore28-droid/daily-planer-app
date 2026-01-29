@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useMemo, useEffect } from 'react';
@@ -62,14 +61,14 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardContent className="pt-6">
-        <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm mb-6">
+        <div className="rounded-lg border bg-card/90 p-4 backdrop-blur-sm mb-6 fade-in-up">
             <h2 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Setează-ți orarul săptămânal
             </h2>
         </div>
         <div className="space-y-6">
-          {subjects.map(subject => (
-            <div key={subject.id} className="overflow-x-auto pb-2">
+          {subjects.map((subject, index) => (
+            <div key={subject.id} className="overflow-x-auto pb-2 fade-in-up" style={{ animationDelay: `${100 + index * 100}ms` }}>
               <Label className="text-base font-medium">{subject.name}</Label>
               <ToggleGroup
                 type="multiple"
@@ -87,14 +86,14 @@ export default function StepSchedule({ onNext, onBack }: StepProps) {
             </div>
           ))}
            {subjects.length === 0 && (
-            <p className="text-center text-muted-foreground pt-8">
+            <p className="text-center text-muted-foreground pt-8 fade-in-up" style={{ animationDelay: '100ms' }}>
               Mai întâi adaugă materii în tab-ul anterior pentru a le vedea aici.
             </p>
           )}
         </div>
       </CardContent>
       {showNavButtons ? (
-        <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+        <CardFooter className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2 fade-in-up" style={{ animationDelay: '500ms' }}>
           <Button variant="ghost" onClick={onBack} className="w-full sm:w-auto">Înapoi</Button>
           <Button onClick={handleNext} className="w-full sm:w-auto">Finalizează</Button>
         </CardFooter>
