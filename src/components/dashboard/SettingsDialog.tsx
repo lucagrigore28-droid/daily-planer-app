@@ -10,7 +10,7 @@ import StepSubjects from '@/components/setup/StepSubjects';
 import StepSchedule from '@/components/setup/StepSchedule';
 import StepTheme from '@/components/setup/StepTheme';
 import StepFunctionality from '@/components/setup/StepFunctionality';
-import { User, Book, Calendar, Palette, LogOut, Trash2, SlidersHorizontal } from 'lucide-react';
+import { User, Book, Calendar, Palette, LogOut, Trash2, SlidersHorizontal, FileText } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +28,8 @@ import ThemeToggle from '../ThemeToggle';
 import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+
 
 type SettingsDialogProps = {
   open: boolean;
@@ -112,10 +114,18 @@ const UserAccount = () => {
                     </Avatar>
                     <span className="font-medium text-sm text-muted-foreground">{email}</span>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleLogout} className="self-start">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Deconectare
-                </Button>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                    <Button variant="ghost" size="sm" onClick={handleLogout} className="self-start">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Deconectare
+                    </Button>
+                     <Button asChild variant="link" size="sm" className="p-0 h-auto self-start text-muted-foreground">
+                        <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                           <FileText className="h-4 w-4" />
+                           Politică de Confidențialitate
+                        </Link>
+                    </Button>
+                </div>
             </div>
         </div>
     )
