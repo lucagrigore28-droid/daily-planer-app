@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
-import { CornerDownLeft, Trash2, Clock, Timer, Lock, Coins } from 'lucide-react';
+import { CornerDownLeft, Trash2, Clock, Timer, Lock, Coins, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -33,20 +33,37 @@ type HomeworkItemProps = {
 
 export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
-  const { updateTask, startTimer, activeTimerTaskId, lastCoinReward, setLastCoinReward } = context!;
+  const { 
+    updateTask, 
+    startTimer, 
+    activeTimerTaskId, 
+    lastCoinReward, 
+    setLastCoinReward,
+    lastCompletedTaskIdForProgress,
+    setLastCompletedTaskIdForProgress
+  } = context!;
   const [description, setDescription] = useState(task.description);
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [coinReward, setCoinReward] = useState<{ amount: number; key: number } | null>(null);
+  const [showStar, setShowStar] = useState<boolean>(false);
 
   useEffect(() => {
     if (lastCoinReward && lastCoinReward.taskId === task.id) {
-        // Use a key to re-trigger animation if it happens back-to-back
         setCoinReward({ amount: lastCoinReward.amount, key: Date.now() });
-        setLastCoinReward(null); // Clear context immediately
+        setLastCoinReward(null);
     }
   }, [lastCoinReward, task.id, setLastCoinReward]);
+
+  useEffect(() => {
+    if (lastCompletedTaskIdForProgress && lastCompletedTaskIdForProgress === task.id) {
+      setShowStar(true);
+      setLastCompletedTaskIdForProgress(null); // Reset context
+      const timer = setTimeout(() => setShowStar(false), 1200); // Animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [lastCompletedTaskIdForProgress, task.id, setLastCompletedTaskIdForProgress]);
 
   const isLocked = task.isLocked;
   const isOverdue = !task.isCompleted && isBefore(startOfDay(new Date(task.dueDate)), startOfDay(new Date()));
@@ -109,6 +126,13 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                                         <div className="animate-coin-fly flex items-center gap-1 font-bold text-yellow-500 text-lg">
                                             <Coins className="h-5 w-5" />
                                             <span>+{coinReward.amount}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {showStar && (
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="animate-star-fly">
+                                            <Star className="h-6 w-6 text-yellow-400 fill-yellow-400" />
                                         </div>
                                     </div>
                                 )}

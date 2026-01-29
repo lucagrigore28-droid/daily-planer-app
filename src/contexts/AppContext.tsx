@@ -54,6 +54,8 @@ type AppContextType = {
   addCoins: (amount: number) => void;
   lastCoinReward: { taskId: string; amount: number } | null;
   setLastCoinReward: (reward: { taskId: string; amount: number } | null) => void;
+  lastCompletedTaskIdForProgress: string | null;
+  setLastCompletedTaskIdForProgress: (taskId: string | null) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -73,6 +75,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [areTasksSynced, setAreTasksSynced] = useState(false);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<string | null>(null);
   const [lastCoinReward, setLastCoinReward] = useState<{ taskId: string; amount: number } | null>(null);
+  const [lastCompletedTaskIdForProgress, setLastCompletedTaskIdForProgress] = useState<string | null>(null);
   
   // Use a ref to track sync status and prevent re-runs
   const syncInProgress = useRef(false);
@@ -331,6 +334,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     // Optimistic update for completion
     if (updates.isCompleted === true) {
+      setLastCompletedTaskIdForProgress(taskId);
       const taskData = allTasks?.find(t => t.id === taskId);
       
       // Check to prevent re-awarding coins on re-renders or double-clicks
@@ -601,6 +605,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addCoins,
     lastCoinReward,
     setLastCoinReward,
+    lastCompletedTaskIdForProgress,
+    setLastCompletedTaskIdForProgress,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
