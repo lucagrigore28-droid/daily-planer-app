@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useContext, useState, useEffect, useRef } from 'react';
+import React, { useContext, useState, useEffect, useRef, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
@@ -25,9 +24,9 @@ export default function AllTasksView() {
   const { tasks } = context!;
 
   // Get the list of tasks that *should* be visible (uncompleted ones)
-  const currentVisibleTasks = tasks
+  const currentVisibleTasks = useMemo(() => tasks
     .filter(task => !task.isCompleted && !task.isLocked)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()), [tasks]);
 
   const [displayedTasks, setDisplayedTasks] = useState<HomeworkTask[]>(currentVisibleTasks);
 
