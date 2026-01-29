@@ -17,28 +17,23 @@ export default function Logo({ className }: { className?: string }) {
           <stop offset="100%" style={{stopColor:"hsl(var(--accent))", stopOpacity:1}} />
         </linearGradient>
       </defs>
-      <g fill="none" stroke="url(#logoGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round">
-        
-        {/* Inner shape with checkmark cutout */}
-        <path d="
-          M 31 30 
-          H 69 
-          C 72.3137 30 75 32.6863 75 36 
-          V 41 
-          H 25 
-          V 36 
-          C 25 32.6863 27.6863 30 31 30 Z
+      <path d="
+        M 31 30 
+        H 69 
+        C 72.3137 30 75 32.6863 75 36 
+        V 41 
+        H 25 
+        V 36 
+        C 25 32.6863 27.6863 30 31 30 Z
 
-          M 25 47
-          V 69
-          C 25 72.3137 27.6863 75 31 75
-          H 69
-          C 72.3137 75 75 72.3137 75 69
-          V 47
-          H 60 L 48 62 L 40 54 H 25 Z
-        " fill="url(#logoGradient)" stroke="none"/>
-        
-      </g>
+        M 25 47
+        V 69
+        C 25 72.3137 27.6863 75 31 75
+        H 69
+        C 72.3137 75 75 72.3137 75 69
+        V 47
+        H 60 L 48 62 L 40 54 H 25 Z
+      " fill="url(#logoGradient)" />
     </svg>
   );
 }
