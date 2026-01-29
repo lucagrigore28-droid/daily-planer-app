@@ -14,7 +14,15 @@ import { OneSignalInitializer } from '@/components/OneSignalInitializer';
 export const metadata: Metadata = {
   title: 'Daily Planner Pro',
   description: 'Planificatorul tău inteligent pentru teme.',
-  manifest: '/manifest.json',
+  manifest: '/site.webmanifest',
+  icons: {
+    icon: [
+        { url: '/favicon.ico', sizes: 'any', rel: 'icon' },
+        { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+        { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: '/apple-touch-icon.png',
+  }
 };
 
 export const viewport: Viewport = {
@@ -41,7 +49,6 @@ export default function RootLayout({
   return (
     <html lang="ro" suppressHydrationWarning>
       <head>
-        <link rel="apple-touch-icon" href="/web-app-manifest-192x192.png" />
       </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <FirebaseClientProvider>
