@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
@@ -77,50 +78,62 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
 
   const displayableTasks = useMemo(() => {
-    if (!allTasks || !userData) return [];
+    if (!allTasks || !userData || !userData.schedule) return [];
 
-    const activeTaskIds = new Set<string>();
-    const allSubjectIds = userData.subjects.map(s => s.id);
-    const today = startOfDay(currentDate);
+    const unlockedTaskIds = new Set<string>();
 
-    for (const subjectId of allSubjectIds) {
-        // 1. Get all tasks for this subject, sorted by due date.
-        const subjectTasks = allTasks
-            .filter(task => task.subjectId === subjectId)
-            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    for (const subject of userData.subjects) {
+      const subjectTasks = allTasks
+        .filter(task => task.subjectId === subject.id)
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-        if (subjectTasks.length === 0) {
-            continue;
+      if (subjectTasks.length === 0) continue;
+
+      // Find the first incomplete task. This is always a candidate for being unlocked.
+      const firstIncompleteTask = subjectTasks.find(task => !task.isCompleted);
+
+      if (firstIncompleteTask) {
+         // The very first task of a subject series is always unlocked, regardless of date.
+         unlockedTaskIds.add(firstIncompleteTask.id);
+      }
+      
+      // For subsequent tasks, they are unlocked one by one as the previous one is completed,
+      // but only after the scheduled class day has passed.
+      for (let i = 0; i < subjectTasks.length - 1; i++) {
+        const currentTask = subjectTasks[i];
+        const nextTask = subjectTasks[i + 1];
+
+        // If the current task is completed, the next one is a candidate for unlocking.
+        if (currentTask.isCompleted) {
+          const scheduledDays = userData.schedule[currentTask.subjectId] || [];
+          if (scheduledDays.length > 0) {
+            const dueDateOfNext = startOfDay(new Date(nextTask.dueDate));
+            // Find the last class day *before* the next task is due. This is when it was 'assigned'.
+            let lastClassDayBeforeNextDue: Date | null = null;
+
+            // Iterate backwards from the day before the due date to find the most recent class day.
+            for (let d = 1; d <= 7; d++) {
+                const checkDate = subDays(dueDateOfNext, d);
+                const dayOfWeek = getDay(checkDate) === 0 ? 7 : getDay(checkDate);
+                if (scheduledDays.includes(dayOfWeek)) {
+                    lastClassDayBeforeNextDue = checkDate;
+                    break;
+                }
+            }
+            
+            // The task unlocks if today is on or after the 'assignment' day.
+            if (lastClassDayBeforeNextDue && !isBefore(startOfDay(currentDate), lastClassDayBeforeNextDue)) {
+              unlockedTaskIds.add(nextTask.id);
+            }
+          }
         }
-
-        // 2. Find the index of the first incomplete task.
-        const firstIncompleteIndex = subjectTasks.findIndex(task => !task.isCompleted);
-
-        // If all tasks for this subject are complete, do nothing.
-        if (firstIncompleteIndex === -1) {
-            continue;
-        }
-        
-        const taskToEvaluate = subjectTasks[firstIncompleteIndex];
-        
-        // 3. The very first task of a series is always unlocked.
-        activeTaskIds.add(taskToEvaluate.id);
-
-        // 4. For subsequent tasks, they are only unlocked after the previous one is completed and the assignment day has passed.
-        // This is implicitly handled by `useCollection` refiring and this memo recalculating.
-        // The check for `firstIncompleteIndex` ensures we only ever unlock one task per subject at a time.
+      }
     }
 
-    // Finally, map all tasks to set the isLocked property based on our logic.
-    return allTasks.map(task => {
-        // Manual and completed tasks are never locked.
-        if (task.isManual || task.isCompleted) {
-            return { ...task, isLocked: false };
-        }
-        // For automatic, uncompleted tasks, check if their ID is in the set of unlocked tasks.
-        const isLocked = !activeTaskIds.has(task.id);
-        return { ...task, isLocked };
-    });
+    return allTasks.map(task => ({
+      ...task,
+      isLocked: !task.isManual && !task.isCompleted && !unlockedTaskIds.has(task.id),
+    }));
   }, [allTasks, userData, currentDate]);
 
 
@@ -310,52 +323,49 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
     if (!user) return;
     const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-    const userDocRef = doc(firestore, 'users', user.uid);
 
     if (updates.isCompleted === true) {
-      runTransaction(firestore, async (transaction) => {
-        const taskDoc = await transaction.get(taskDocRef);
-        if (!taskDoc.exists()) {
-          throw "Task does not exist!";
-        }
-
-        const taskData = taskDoc.data() as HomeworkTask;
+      const taskData = allTasks?.find(t => t.id === taskId);
+      
+      // Check to prevent re-awarding coins on re-renders or double-clicks
+      if (taskData && !taskData.isCompleted && !taskData.coinsAwarded && userData) {
+        const dueDate = startOfDay(new Date(taskData.dueDate));
+        const completionDate = startOfDay(new Date());
+        const daysEarly = differenceInCalendarDays(dueDate, completionDate);
         
-        if (!taskData.isCompleted && !taskData.coinsAwarded) {
-          const userDoc = await transaction.get(userDocRef);
-          if (userDoc.exists()) {
-            const currentUserData = userDoc.data() as UserData;
-            const currentCoins = currentUserData.coins || 0;
-            const dueDate = startOfDay(new Date(taskData.dueDate));
-            const completionDate = startOfDay(new Date());
-            const daysEarly = differenceInCalendarDays(dueDate, completionDate);
-            
-            let coinsEarned = 0;
-            if (daysEarly > 2) {
-              coinsEarned = 10;
-            } else if (daysEarly === 2) {
-              coinsEarned = 7;
-            } else if (daysEarly === 1) {
-              coinsEarned = 5;
-            }
+        let coinsEarned = 0;
+        if (daysEarly > 2) coinsEarned = 10;
+        else if (daysEarly === 2) coinsEarned = 7;
+        else if (daysEarly === 1) coinsEarned = 5;
 
-            if (coinsEarned > 0) {
-              transaction.update(userDocRef, { coins: currentCoins + coinsEarned });
-            }
-          }
-           transaction.update(taskDocRef, { ...updates, coinsAwarded: true });
-        } else {
-           transaction.update(taskDocRef, updates);
+        if (coinsEarned > 0) {
+          const userDocRef = doc(firestore, 'users', user.uid);
+          const currentCoins = userData.coins || 0;
+          // Non-blocking update for user coins
+          setDoc(userDocRef, { coins: currentCoins + coinsEarned }, { merge: true }).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: { coins: currentCoins + coinsEarned },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          });
         }
-      }).catch(serverError => {
-          const permissionError = new FirestorePermissionError({
+      }
+
+      // Optimistically update the task itself, marking coins as awarded
+      const taskUpdates = { ...updates, coinsAwarded: true };
+      setDoc(taskDocRef, taskUpdates, { merge: true }).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
             path: taskDocRef.path,
             operation: 'update',
-            requestResourceData: updates,
-          });
-          errorEmitter.emit('permission-error', permissionError);
+            requestResourceData: taskUpdates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       });
+
     } else {
+      // Handle other types of updates (e.g., changing description, plannedDate)
       const finalUpdates = { ...updates };
       if ('plannedDate' in finalUpdates && (finalUpdates.plannedDate === undefined || finalUpdates.plannedDate === null)) {
         finalUpdates.plannedDate = deleteField() as any;
@@ -375,7 +385,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         errorEmitter.emit('permission-error', permissionError);
       });
     }
-  }, [firestore, user]);
+  }, [firestore, user, allTasks, userData]);
 
 
   const deleteTask = useCallback((taskId: string) => {

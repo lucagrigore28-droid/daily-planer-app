@@ -48,6 +48,17 @@ export default function HomeworkDashboard() {
 
   const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
+  useEffect(() => {
+    const savedMode = localStorage.getItem('dailyPlannerPro_viewMode') as keyof typeof viewModes;
+    if (savedMode && viewModes[savedMode]) {
+        setTasksViewMode(savedMode);
+    }
+  }, []);
+
+  useEffect(() => {
+      localStorage.setItem('dailyPlannerPro_viewMode', tasksViewMode);
+  }, [tasksViewMode]);
+
    useEffect(() => {
     // This effect runs ONCE to set the initial day when data is loaded
     if (areTasksSynced && isDataLoaded && !displayedDay) {
