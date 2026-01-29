@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
@@ -10,22 +10,55 @@ import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import type { HomeworkTask } from '@/lib/types';
+
+// Helper hook to get the previous value
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T>();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
 
 export default function AlternatingTimelineView() {
   const context = useContext(AppContext);
   const { tasks } = context!;
 
-  const allVisibleTasks = useMemo(() => {
-    if (!tasks) return [];
-    
-    // Filter for incomplete and unlocked tasks, then sort by due date
-    return tasks
-      .filter(task => !task.isCompleted && !task.isLocked)
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+  const currentVisibleTasks = tasks
+    .filter(task => !task.isCompleted && !task.isLocked)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-  }, [tasks]);
+  const [displayedTasks, setDisplayedTasks] = useState<HomeworkTask[]>(currentVisibleTasks);
+  const prevTasks = usePrevious(currentVisibleTasks) || [];
 
-  if (allVisibleTasks.length === 0) {
+  useEffect(() => {
+    const prevTaskIds = new Set(prevTasks.map(t => t.id));
+    const currentTaskIds = new Set(currentVisibleTasks.map(t => t.id));
+
+    const disappearingTaskIds = [...prevTaskIds].filter(id => !currentTaskIds.has(id));
+
+    if (disappearingTaskIds.length > 0) {
+      const disappearingTasks = prevTasks
+        .filter(t => disappearingTaskIds.includes(t.id))
+        .map(t => ({ ...t, isDisappearing: true } as HomeworkTask));
+
+      const tasksToRender = [...currentVisibleTasks, ...disappearingTasks]
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      setDisplayedTasks(tasksToRender);
+
+      const timer = setTimeout(() => {
+        setDisplayedTasks(currentVisibleTasks);
+      }, 400);
+
+      return () => clearTimeout(timer);
+    } else {
+      setDisplayedTasks(currentVisibleTasks);
+    }
+  }, [currentVisibleTasks]);
+
+
+  if (displayedTasks.length === 0 && (!prevTasks || prevTasks.length === 0)) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -42,14 +75,15 @@ export default function AlternatingTimelineView() {
       {/* The vertical line */}
       <div className="absolute top-0 border-border border-2 h-full" style={{ left: '50%', transform: 'translateX(-50%)' }} />
 
-      {allVisibleTasks.map((task, taskIdx) => {
+      {displayedTasks.map((task, taskIdx) => {
         const isLeft = taskIdx % 2 !== 0;
 
         return (
           <div key={task.id} className={cn(
-            "mb-8 flex justify-between items-center w-full fade-in-up",
+            "mb-8 flex justify-between items-center w-full",
+            task.isDisappearing ? 'animate-fade-out-shrink' : 'fade-in-up',
             isLeft && "flex-row-reverse"
-          )} style={{ animationDelay: `${taskIdx * 75}ms` }}>
+          )} style={{ animationDelay: task.isDisappearing ? '0ms' : `${taskIdx * 75}ms` }}>
             {/* Spacer */}
             <div className="order-1 w-5/12" />
 

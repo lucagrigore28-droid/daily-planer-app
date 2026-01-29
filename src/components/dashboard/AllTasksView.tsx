@@ -1,27 +1,67 @@
 
 'use client';
 
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
 import { CheckCircle2, CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import type { HomeworkTask } from '@/lib/types';
+
+// Helper hook to get the previous value
+function usePrevious<T>(value: T): T | undefined {
+  const ref = useRef<T>();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+}
 
 export default function AllTasksView() {
   const context = useContext(AppContext);
   const { tasks } = context!;
 
-  const allVisibleTasks = useMemo(() => {
-    if (!tasks) return [];
-    
-    return tasks
-      .filter(task => !task.isCompleted && !task.isLocked)
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-  }, [tasks]);
+  // Get the list of tasks that *should* be visible (uncompleted ones)
+  const currentVisibleTasks = tasks
+    .filter(task => !task.isCompleted && !task.isLocked)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-  if (allVisibleTasks.length === 0) {
+  const [displayedTasks, setDisplayedTasks] = useState<HomeworkTask[]>(currentVisibleTasks);
+
+  const prevTasks = usePrevious(currentVisibleTasks) || [];
+
+  useEffect(() => {
+    const prevTaskIds = new Set(prevTasks.map(t => t.id));
+    const currentTaskIds = new Set(currentVisibleTasks.map(t => t.id));
+
+    // Find tasks that were in the previous list but not in the current one (i.e., just completed)
+    const disappearingTaskIds = [...prevTaskIds].filter(id => !currentTaskIds.has(id));
+
+    if (disappearingTaskIds.length > 0) {
+      const disappearingTasks = prevTasks
+        .filter(t => disappearingTaskIds.includes(t.id))
+        .map(t => ({ ...t, isDisappearing: true } as HomeworkTask));
+      
+      // Show the current tasks + the disappearing ones
+      const tasksToRender = [...currentVisibleTasks, ...disappearingTasks]
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      setDisplayedTasks(tasksToRender);
+
+      // After the animation, remove the disappearing tasks from the display list
+      const timer = setTimeout(() => {
+        setDisplayedTasks(currentVisibleTasks);
+      }, 400); // Match animation duration in globals.css
+
+      return () => clearTimeout(timer);
+    } else {
+      setDisplayedTasks(currentVisibleTasks);
+    }
+  }, [currentVisibleTasks]);
+
+  if (displayedTasks.length === 0 && (!prevTasks || prevTasks.length === 0)) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -38,12 +78,15 @@ export default function AllTasksView() {
       {/* The vertical line */}
       <div className="absolute top-0 left-12 border-border border-2 h-full" />
 
-      {allVisibleTasks.map((task, index) => {
+      {displayedTasks.map((task, index) => {
         return (
           <div 
             key={task.id} 
-            className="mb-8 flex items-center w-full fade-in-up"
-            style={{ animationDelay: `${index * 75}ms` }}
+            className={cn(
+              "mb-8 flex items-center w-full",
+              task.isDisappearing ? 'animate-fade-out-shrink' : 'fade-in-up'
+            )}
+            style={{ animationDelay: task.isDisappearing ? '0ms' : `${index * 75}ms` }}
           >
             {/* Spacer & Dot */}
             <div className="w-24 flex-shrink-0 flex justify-center">
