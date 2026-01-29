@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { format, getDay, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
@@ -45,18 +45,20 @@ export default function HomeworkDashboard() {
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
   const [tasksViewMode, setTasksViewMode] = useState<keyof typeof viewModes>('daily');
   const [activeTab, setActiveTab] = useState('next-tasks');
+  const isInitialMount = useRef(true);
 
   const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
 
   useEffect(() => {
-    const savedMode = localStorage.getItem('dailyPlannerPro_viewMode') as keyof typeof viewModes;
-    if (savedMode && viewModes[savedMode]) {
-        setTasksViewMode(savedMode);
-    }
-  }, []);
-
-  useEffect(() => {
+    if (isInitialMount.current) {
+      const savedMode = localStorage.getItem('dailyPlannerPro_viewMode') as keyof typeof viewModes;
+      if (savedMode && viewModes[savedMode]) {
+          setTasksViewMode(savedMode);
+      }
+      isInitialMount.current = false;
+    } else {
       localStorage.setItem('dailyPlannerPro_viewMode', tasksViewMode);
+    }
   }, [tasksViewMode]);
 
    useEffect(() => {
