@@ -55,8 +55,10 @@ function PlanningColumn({ title, date, tasks, onDragOver, onDrop, isDragging }: 
           isOver && isDragging && "bg-primary/20",
         )}
       >
-        {tasks.map(task => (
-            <DraggableHomeworkItem key={task.id} task={task} />
+        {tasks.map((task, index) => (
+            <div key={task.id} className="fade-in-up" style={{ animationDelay: `${index * 75}ms`}}>
+                <DraggableHomeworkItem task={task} />
+            </div>
         ))}
         {tasks.length === 0 && (
             <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
@@ -249,8 +251,12 @@ export default function WeekendView() {
                         <p className="text-muted-foreground mb-6">Finalizează prima temă de la fiecare materie pentru a fi cu un pas înainte.</p>
                     )}
                     <div className="space-y-4">
-                        {weekendTasks.map(task => (
-                             <div key={task.id} className="flex items-center justify-between">
+                        {weekendTasks.map((task, index) => (
+                             <div 
+                                key={task.id} 
+                                className="flex items-center justify-between fade-in-up"
+                                style={{ animationDelay: `${index * 75}ms` }}
+                             >
                                 <div className="flex-grow"><HomeworkItem task={task} /></div>
                                 <div className="ml-4 text-right text-sm text-muted-foreground">
                                     <p className="font-semibold">{format(new Date(task.dueDate), "EEEE", { locale: ro })}</p>
@@ -281,8 +287,10 @@ export default function WeekendView() {
                            isDragging && "border-2 border-dashed border-gray-400"
                         )}
                      >
-                        {plannedTasks.unplannedTasks.map(task => (
-                            <DraggableHomeworkItem key={task.id} task={task} />
+                        {plannedTasks.unplannedTasks.map((task, index) => (
+                            <div key={task.id} className="fade-in-up" style={{ animationDelay: `${index * 75}ms`}}>
+                                <DraggableHomeworkItem task={task} />
+                            </div>
                         ))}
                      </div>
                 </div>

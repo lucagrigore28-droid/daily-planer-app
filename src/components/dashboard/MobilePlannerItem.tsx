@@ -23,8 +23,12 @@ export function MobilePlannerItem({ title, tasks, onPlanDay }: MobilePlannerItem
                 <CardTitle>{title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {tasks.map(task => (
-                    <div key={task.id} className="space-y-2">
+                {tasks.map((task, index) => (
+                    <div 
+                        key={task.id} 
+                        className="space-y-2 fade-in-up" 
+                        style={{ animationDelay: `${index * 75}ms` }}
+                    >
                         <HomeworkItem task={task} />
                         <div className="flex items-center gap-2 justify-end">
                             <span className="text-sm text-muted-foreground mr-2">Alocă:</span>
@@ -76,5 +80,3 @@ export function MobilePlannerItem({ title, tasks, onPlanDay }: MobilePlannerItem
         </Card>
     )
 }
-
-    

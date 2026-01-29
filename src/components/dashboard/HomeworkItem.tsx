@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
-import { CornerDownLeft, Trash2, Clock, Timer, Lock } from 'lucide-react';
+import { CornerDownLeft, Trash2, Clock, Timer, Lock, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -33,11 +33,20 @@ type HomeworkItemProps = {
 
 export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
-  const { updateTask, startTimer, activeTimerTaskId } = context!;
+  const { updateTask, startTimer, activeTimerTaskId, lastCoinReward, setLastCoinReward } = context!;
   const [description, setDescription] = useState(task.description);
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [coinReward, setCoinReward] = useState<{ amount: number; key: number } | null>(null);
+
+  useEffect(() => {
+    if (lastCoinReward && lastCoinReward.taskId === task.id) {
+        // Use a key to re-trigger animation if it happens back-to-back
+        setCoinReward({ amount: lastCoinReward.amount, key: Date.now() });
+        setLastCoinReward(null); // Clear context immediately
+    }
+  }, [lastCoinReward, task.id, setLastCoinReward]);
 
   const isLocked = task.isLocked;
   const isOverdue = !task.isCompleted && isBefore(startOfDay(new Date(task.dueDate)), startOfDay(new Date()));
@@ -87,7 +96,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="flex items-center">
+                            <div className="relative flex items-center">
                                 <Checkbox
                                     id={`task-${task.id}`}
                                     checked={task.isCompleted}
@@ -95,6 +104,14 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                                     disabled={isOverdue || isLocked}
                                     className="h-6 w-6 rounded-full"
                                 />
+                                {coinReward && (
+                                    <div key={coinReward.key} className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div className="animate-coin-fly flex items-center gap-1 font-bold text-yellow-500 text-lg">
+                                            <Coins className="h-5 w-5" />
+                                            <span>+{coinReward.amount}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </TooltipTrigger>
                         {isOverdue && !isLocked && (
@@ -170,7 +187,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
               </div>
               <AccordionContent className="pl-12 pr-4 pt-2 animate-accordion-down">
                 <div className="space-y-4">
-                  <div className="grid gap-2">
+                  <div className="grid gap-2 fade-in-up" style={{animationDelay: '50ms'}}>
                       <Label htmlFor={`description-${task.id}`}>Descriere</Label>
                        <Textarea
                         id={`description-${task.id}`}
@@ -181,7 +198,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                        />
                   </div>
                   
-                   <div className="grid gap-2">
+                   <div className="grid gap-2 fade-in-up" style={{animationDelay: '150ms'}}>
                       <Label htmlFor={`estimated-time-${task.id}`}>Timp estimat (minute)</Label>
                       <div className="flex items-center gap-4 pt-2">
                            <Slider 
@@ -196,7 +213,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                           </div>
                       </div>
                    </div>
-                   <div className="flex justify-between items-center">
+                   <div className="flex justify-between items-center fade-in-up" style={{animationDelay: '250ms'}}>
                       <div>
                           {hasChanged && (
                             <Button size="sm" onClick={handleSaveDetails} disabled={isSaving}>

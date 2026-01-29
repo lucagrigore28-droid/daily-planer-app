@@ -144,4 +144,18 @@
   .text-shadow-elegant {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15);
   }
+
+   @keyframes coin-fly {
+    0% {
+        transform: translateY(0) scale(1.5);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-60px) translateX(120px) scale(0);
+        opacity: 0;
+    }
+  }
+  .animate-coin-fly {
+      animation: coin-fly 1.2s ease-in forwards;
+  }
 }

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext, useMemo } from 'react';
@@ -86,8 +87,10 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
                 </Card>
             )}
             <div className="space-y-3">
-                {plannedTasks.map(task => (
-                    <HomeworkItem key={task.id} task={task} />
+                {plannedTasks.map((task, index) => (
+                    <div key={task.id} className="fade-in-up" style={{ animationDelay: `${index * 75}ms` }}>
+                        <HomeworkItem task={task} />
+                    </div>
                 ))}
             </div>
           </div>
@@ -112,8 +115,10 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
                 </Card>
             )}
             <div className="space-y-3">
-                {dueTasks.map(task => (
-                    <HomeworkItem key={task.id} task={task} />
+                {dueTasks.map((task, index) => (
+                    <div key={task.id} className="fade-in-up" style={{ animationDelay: `${index * 75}ms` }}>
+                        <HomeworkItem task={task} />
+                    </div>
                 ))}
             </div>
         </div>
@@ -124,8 +129,10 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
         <div>
           {dueTasks.length > 0 && <Separator className="my-6" />}
            <div className="space-y-3">
-                {plannedTasks.map(task => (
-                    <HomeworkItem key={task.id} task={task} />
+                {plannedTasks.map((task, index) => (
+                    <div key={task.id} className="fade-in-up" style={{ animationDelay: `${index * 75}ms` }}>
+                        <HomeworkItem task={task} />
+                    </div>
                 ))}
             </div>
         </div>

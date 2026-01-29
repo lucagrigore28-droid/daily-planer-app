@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useContext, useMemo } from 'react';
@@ -37,9 +38,13 @@ export default function AllTasksView() {
       {/* The vertical line */}
       <div className="absolute top-0 left-12 border-border border-2 h-full" />
 
-      {allVisibleTasks.map((task) => {
+      {allVisibleTasks.map((task, index) => {
         return (
-          <div key={task.id} className="mb-8 flex items-center w-full">
+          <div 
+            key={task.id} 
+            className="mb-8 flex items-center w-full fade-in-up"
+            style={{ animationDelay: `${index * 75}ms` }}
+          >
             {/* Spacer & Dot */}
             <div className="w-24 flex-shrink-0 flex justify-center">
                 <div className="z-10 flex items-center bg-primary ring-8 ring-background shadow-xl w-8 h-8 rounded-full">

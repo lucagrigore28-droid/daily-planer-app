@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useContext, useMemo } from 'react';
@@ -46,9 +47,9 @@ export default function AlternatingTimelineView() {
 
         return (
           <div key={task.id} className={cn(
-            "mb-8 flex justify-between items-center w-full",
+            "mb-8 flex justify-between items-center w-full fade-in-up",
             isLeft && "flex-row-reverse"
-          )}>
+          )} style={{ animationDelay: `${taskIdx * 75}ms` }}>
             {/* Spacer */}
             <div className="order-1 w-5/12" />
 

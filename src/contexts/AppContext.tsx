@@ -52,6 +52,8 @@ type AppContextType = {
   completeTaskWithTimer: (taskId: string) => void;
   unlockTheme: (theme: Theme) => void;
   addCoins: (amount: number) => void;
+  lastCoinReward: { taskId: string; amount: number } | null;
+  setLastCoinReward: (reward: { taskId: string; amount: number } | null) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -70,6 +72,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [areTasksSynced, setAreTasksSynced] = useState(false);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<string | null>(null);
+  const [lastCoinReward, setLastCoinReward] = useState<{ taskId: string; amount: number } | null>(null);
   
   // Use a ref to track sync status and prevent re-runs
   const syncInProgress = useRef(false);
@@ -89,16 +92,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       if (subjectTasks.length === 0) continue;
 
-      // Find the first incomplete task. This is always a candidate for being unlocked.
-      const firstIncompleteTask = subjectTasks.find(task => !task.isCompleted);
+      // The very first task of a subject series is always unlocked.
+      unlockedTaskIds.add(subjectTasks[0].id);
 
-      if (firstIncompleteTask) {
-         // The very first task of a subject series is always unlocked, regardless of date.
-         unlockedTaskIds.add(firstIncompleteTask.id);
-      }
-      
-      // For subsequent tasks, they are unlocked one by one as the previous one is completed,
-      // but only after the scheduled class day has passed.
+      // For subsequent tasks, they are unlocked one by one.
       for (let i = 0; i < subjectTasks.length - 1; i++) {
         const currentTask = subjectTasks[i];
         const nextTask = subjectTasks[i + 1];
@@ -110,7 +107,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             const dueDateOfNext = startOfDay(new Date(nextTask.dueDate));
             // Find the last class day *before* the next task is due. This is when it was 'assigned'.
             let lastClassDayBeforeNextDue: Date | null = null;
-
+            
             // Iterate backwards from the day before the due date to find the most recent class day.
             for (let d = 1; d <= 7; d++) {
                 const checkDate = subDays(dueDateOfNext, d);
@@ -277,9 +274,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     
-    await setDoc(userDocRef, {
+    // Non-blocking write
+    setDoc(userDocRef, {
       ...initialUserData,
       name,
+    }).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: { ...initialUserData, name },
+        });
+        errorEmitter.emit('permission-error', permissionError);
     });
   }, [firestore]);
   
@@ -324,6 +329,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
 
+    // Optimistic update for completion
     if (updates.isCompleted === true) {
       const taskData = allTasks?.find(t => t.id === taskId);
       
@@ -339,6 +345,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         else if (daysEarly === 1) coinsEarned = 5;
 
         if (coinsEarned > 0) {
+          setLastCoinReward({ taskId, amount: coinsEarned });
           const userDocRef = doc(firestore, 'users', user.uid);
           const currentCoins = userData.coins || 0;
           // Non-blocking update for user coins
@@ -352,8 +359,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           });
         }
       }
-
-      // Optimistically update the task itself, marking coins as awarded
+      
       const taskUpdates = { ...updates, coinsAwarded: true };
       setDoc(taskDocRef, taskUpdates, { merge: true }).catch(serverError => {
         const permissionError = new FirestorePermissionError({
@@ -593,6 +599,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     completeTaskWithTimer,
     unlockTheme,
     addCoins,
+    lastCoinReward,
+    setLastCoinReward,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
