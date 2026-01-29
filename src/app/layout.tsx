@@ -41,7 +41,7 @@ export default function RootLayout({
   return (
     <html lang="ro" suppressHydrationWarning>
       <head>
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" href="/web-app-manifest-192x192.png" />
       </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <FirebaseClientProvider>
