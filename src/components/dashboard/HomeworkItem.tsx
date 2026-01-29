@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
-import { CornerDownLeft, Trash2, Clock, Timer, Lock, Coins, Star } from 'lucide-react';
+import { CornerDownLeft, Trash2, Clock, Timer, Lock, Coins, Star, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import { Slider } from '../ui/slider';
 import TaskTimer from './TaskTimer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { isBefore, startOfDay } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 type HomeworkItemProps = {
   task: HomeworkTask;
@@ -33,6 +34,7 @@ type HomeworkItemProps = {
 
 export default function HomeworkItem({ task }: HomeworkItemProps) {
   const context = useContext(AppContext);
+  const { toast } = useToast();
   const { 
     updateTask, 
     startTimer, 
@@ -85,6 +87,25 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     context?.deleteTask(task.id);
     setIsDeleteDialogOpen(false);
   }
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `Temă la ${task.subjectName}`,
+      text: `Hei, am de făcut o temă la ${task.subjectName}.\nDescriere: ${task.description || 'Nicio descriere'}\nTermen: ${new Date(task.dueDate).toLocaleDateString('ro-RO')}`,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error("Eroare la partajare:", err);
+      }
+    } else {
+        toast({
+            title: "Partajare nu este suportată",
+            description: "Browser-ul tău nu suportă funcția de partajare.",
+        });
+    }
+  };
   
   useEffect(() => {
     setDescription(task.description);
@@ -238,18 +259,24 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                       </div>
                    </div>
                    <div className="flex justify-between items-center fade-in-up" style={{animationDelay: '250ms'}}>
-                      <div>
+                      <div className="flex items-center gap-2">
                           {hasChanged && (
                             <Button size="sm" onClick={handleSaveDetails} disabled={isSaving}>
                                 <CornerDownLeft className="mr-2 h-4 w-4"/>
-                                {isSaving ? 'Se salvează...' : 'Salvează detaliile'}
+                                {isSaving ? 'Se salvează...' : 'Salvează'}
                             </Button>
                           )}
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Șterge
-                      </Button>
+                      <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" onClick={handleShare}>
+                            <Share2 className="mr-2 h-4 w-4" />
+                            Partajează
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Șterge
+                          </Button>
+                      </div>
                    </div>
                 </div>
               </AccordionContent>
