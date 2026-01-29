@@ -9,6 +9,8 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { themes } from '@/lib/themes';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 const initialUserData: UserData = {
   username: '',
@@ -26,7 +28,7 @@ const initialUserData: UserData = {
 type AppContextType = {
   userData: UserData | null;
   tasks: HomeworkTask[];
-  updateUser: (data: Partial<UserData>, oldUsername?: string) => Promise<void>;
+  updateUser: (data: Partial<UserData>, oldUsername?: string) => void;
   updateSubjects: (subjects: Subject[]) => void;
   addTask: (task: Omit<HomeworkTask, 'id'>) => void;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
@@ -47,8 +49,8 @@ type AppContextType = {
   pauseTimer: (taskId: string) => void;
   stopAndCompleteTimer: (taskId: string) => void;
   completeTaskWithTimer: (taskId: string) => void;
-  unlockTheme: (theme: Theme) => Promise<void>;
-  addCoins: (amount: number) => Promise<void>;
+  unlockTheme: (theme: Theme) => void;
+  addCoins: (amount: number) => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -100,48 +102,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
         
         const taskToEvaluate = subjectTasks[firstIncompleteIndex];
-
-        // 3. Check if this is the very first task ever for this subject.
-        // If it's the first task in the chronological list, it's always unlocked.
-        if (firstIncompleteIndex === 0) {
-            activeTaskIds.add(taskToEvaluate.id);
-            continue; // Move to the next subject
-        }
-
-        // 4. If it's NOT the first task ever, apply the assignment day logic.
-        const taskDueDate = startOfDay(parseISO(taskToEvaluate.dueDate));
-        const scheduledDays = userData.schedule[subjectId] || [];
-
-        if (scheduledDays.length === 0) {
-            // No schedule for this subject, so unlock to avoid permanent lock
-            activeTaskIds.add(taskToEvaluate.id);
-            continue;
-        }
-
-        // 5. Find the assignment date. Go backwards from the day before the due date.
-        let assignmentDate = null;
-        let currentDateToCheck = subDays(taskDueDate, 1);
         
-        // Loop for a reasonable amount of time (e.g., 2 weeks) to find the last class day.
-        for (let i = 0; i < 14; i++) {
-            const dayOfWeek = getDay(currentDateToCheck) === 0 ? 7 : getDay(currentDateToCheck); // Mon=1...Sun=7
-            if (scheduledDays.includes(dayOfWeek)) {
-                assignmentDate = currentDateToCheck;
-                break; // Found it
-            }
-            currentDateToCheck = subDays(currentDateToCheck, 1);
-        }
-        
-        // 6. If an assignment date was found, check if today is on or after it.
-        if (assignmentDate) {
-            if (isAfter(today, assignmentDate) || isSameDay(today, assignmentDate)) {
-                activeTaskIds.add(taskToEvaluate.id);
-            }
-        } else {
-            // If no assignment date could be found (e.g., schedule is empty or task is very far in the future),
-            // let's default to unlocking it to avoid permanent locks. This is a safe fallback.
-            activeTaskIds.add(taskToEvaluate.id);
-        }
+        // 3. The very first task of a series is always unlocked.
+        activeTaskIds.add(taskToEvaluate.id);
+
+        // 4. For subsequent tasks, they are only unlocked after the previous one is completed and the assignment day has passed.
+        // This is implicitly handled by `useCollection` refiring and this memo recalculating.
+        // The check for `firstIncompleteIndex` ensures we only ever unlock one task per subject at a time.
     }
 
     // Finally, map all tasks to set the isLocked property based on our logic.
@@ -303,7 +270,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [firestore]);
   
-  const updateUser = useCallback(async (data: Partial<UserData>) => {
+  const updateUser = useCallback((data: Partial<UserData>) => {
     if (!userDocRef) return;
     
     const updates = { ...data };
@@ -312,73 +279,83 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         updates.customThemeColors = deleteField() as any;
     }
 
-    await setDoc(userDocRef, updates, { merge: true });
+    setDoc(userDocRef, updates, { merge: true }).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'update',
+            requestResourceData: updates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
     
   }, [userDocRef]);
 
-  const updateSubjects = useCallback(async (subjects: Subject[]) => {
-      await updateUser({ subjects });
+  const updateSubjects = useCallback((subjects: Subject[]) => {
+      updateUser({ subjects });
   }, [updateUser]);
 
-  const addTask = useCallback(async (task: Omit<HomeworkTask, 'id'>) => {
+  const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
       if (tasksCollectionRef) {
-        await addDoc(tasksCollectionRef, task);
+        addDoc(tasksCollectionRef, task).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: tasksCollectionRef.path,
+                operation: 'create',
+                requestResourceData: task,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
       }
   }, [tasksCollectionRef]);
 
-  const updateTask = useCallback(async (taskId: string, updates: Partial<HomeworkTask>) => {
+  const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
     if (!user) return;
     const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
     const userDocRef = doc(firestore, 'users', user.uid);
 
-    // If the update is to complete the task, handle coin logic in a transaction.
     if (updates.isCompleted === true) {
-      try {
-        await runTransaction(firestore, async (transaction) => {
-          const taskDoc = await transaction.get(taskDocRef);
-          if (!taskDoc.exists()) {
-            throw "Task does not exist!";
-          }
+      runTransaction(firestore, async (transaction) => {
+        const taskDoc = await transaction.get(taskDocRef);
+        if (!taskDoc.exists()) {
+          throw "Task does not exist!";
+        }
 
-          const taskData = taskDoc.data() as HomeworkTask;
-          
-          // Only award coins if the task wasn't completed before this transaction
-          // and if coins haven't already been awarded.
-          if (!taskData.isCompleted && !taskData.coinsAwarded) {
-            const userDoc = await transaction.get(userDocRef);
-            if (userDoc.exists()) {
-              const currentUserData = userDoc.data() as UserData;
-              const currentCoins = currentUserData.coins || 0;
-              const dueDate = startOfDay(new Date(taskData.dueDate));
-              const completionDate = startOfDay(new Date());
-              const daysEarly = differenceInCalendarDays(dueDate, completionDate);
-              
-              let coinsEarned = 0;
-              if (daysEarly > 2) {
-                coinsEarned = 10;
-              } else if (daysEarly === 2) {
-                coinsEarned = 7;
-              } else if (daysEarly === 1) {
-                coinsEarned = 5;
-              }
-
-              if (coinsEarned > 0) {
-                transaction.update(userDocRef, { coins: currentCoins + coinsEarned });
-              }
+        const taskData = taskDoc.data() as HomeworkTask;
+        
+        if (!taskData.isCompleted && !taskData.coinsAwarded) {
+          const userDoc = await transaction.get(userDocRef);
+          if (userDoc.exists()) {
+            const currentUserData = userDoc.data() as UserData;
+            const currentCoins = currentUserData.coins || 0;
+            const dueDate = startOfDay(new Date(taskData.dueDate));
+            const completionDate = startOfDay(new Date());
+            const daysEarly = differenceInCalendarDays(dueDate, completionDate);
+            
+            let coinsEarned = 0;
+            if (daysEarly > 2) {
+              coinsEarned = 10;
+            } else if (daysEarly === 2) {
+              coinsEarned = 7;
+            } else if (daysEarly === 1) {
+              coinsEarned = 5;
             }
-             // Mark that coins have been awarded to prevent re-awarding.
-            transaction.update(taskDocRef, { ...updates, coinsAwarded: true });
-          } else {
-             // If task was already completed or coins awarded, just apply the updates.
-             transaction.update(taskDocRef, updates);
+
+            if (coinsEarned > 0) {
+              transaction.update(userDocRef, { coins: currentCoins + coinsEarned });
+            }
           }
-        });
-      } catch (e) {
-        console.error("Task completion transaction failed: ", e);
-      }
+           transaction.update(taskDocRef, { ...updates, coinsAwarded: true });
+        } else {
+           transaction.update(taskDocRef, updates);
+        }
+      }).catch(serverError => {
+          const permissionError = new FirestorePermissionError({
+            path: taskDocRef.path,
+            operation: 'update',
+            requestResourceData: updates,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      });
     } else {
-      // For any other update (like un-checking), just merge the changes.
-      // This will not touch the 'coinsAwarded' field if it's not in the updates object.
       const finalUpdates = { ...updates };
       if ('plannedDate' in finalUpdates && (finalUpdates.plannedDate === undefined || finalUpdates.plannedDate === null)) {
         finalUpdates.plannedDate = deleteField() as any;
@@ -389,15 +366,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if ('timerStartTime' in finalUpdates && (finalUpdates.timerStartTime === undefined || finalUpdates.timerStartTime === null)) {
         finalUpdates.timerStartTime = deleteField() as any;
       }
-      await setDoc(taskDocRef, finalUpdates, { merge: true });
+      setDoc(taskDocRef, finalUpdates, { merge: true }).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+          path: taskDocRef.path,
+          operation: 'update',
+          requestResourceData: finalUpdates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
     }
   }, [firestore, user]);
 
 
-  const deleteTask = useCallback(async (taskId: string) => {
+  const deleteTask = useCallback((taskId: string) => {
     if (user) {
         const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
-        await deleteDoc(taskDocRef);
+        deleteDoc(taskDocRef).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: taskDocRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
     }
   }, [firestore, user]);
 
@@ -520,39 +510,45 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     completeTaskWithTimer(taskId);
   }, [completeTaskWithTimer]);
 
-  const unlockTheme = useCallback(async (theme: Theme) => {
+  const unlockTheme = useCallback((theme: Theme) => {
     if (!user || !userData) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     const currentCoins = userData.coins || 0;
     const currentUnlocked = userData.unlockedThemes || [];
 
     if (currentCoins >= theme.cost && !currentUnlocked.includes(theme.name)) {
-        try {
-            await runTransaction(firestore, async (transaction) => {
-                const userDoc = await transaction.get(userDocRef);
-                if (!userDoc.exists()) {
-                    throw "User document does not exist!";
-                }
+        runTransaction(firestore, async (transaction) => {
+            const userDoc = await transaction.get(userDocRef);
+            if (!userDoc.exists()) {
+                throw "User document does not exist!";
+            }
 
-                const data = userDoc.data() as UserData;
-                const newCoins = (data.coins || 0) - theme.cost;
-                const newUnlockedThemes = [...(data.unlockedThemes || []), theme.name];
-                
-                transaction.update(userDocRef, {
-                    coins: newCoins,
-                    unlockedThemes: newUnlockedThemes,
-                });
+            const data = userDoc.data() as UserData;
+            const newCoins = (data.coins || 0) - theme.cost;
+            const newUnlockedThemes = [...(data.unlockedThemes || []), theme.name];
+            
+            transaction.update(userDocRef, {
+                coins: newCoins,
+                unlockedThemes: newUnlockedThemes,
             });
-        } catch (e) {
-            console.error("Theme unlock transaction failed: ", e);
-        }
+        }).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: {
+                    coins: (userData.coins || 0) - theme.cost,
+                    unlockedThemes: [...(userData.unlockedThemes || []), theme.name],
+                }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
     }
   }, [user, userData, firestore]);
   
-  const addCoins = useCallback(async (amount: number) => {
+  const addCoins = useCallback((amount: number) => {
     if (!userData) return;
     const currentCoins = userData.coins || 0;
-    await updateUser({ coins: currentCoins + amount });
+    updateUser({ coins: currentCoins + amount });
   }, [userData, updateUser]);
 
   const memoizedUserData = useMemo(() => {
