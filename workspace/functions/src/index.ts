@@ -25,7 +25,7 @@ import * as functions from "firebase-functions";
 export const dailyReminder = functions
     .region("europe-west1") // Using a European region
     .pubsub.topic("daily-reminder")
-    .onRun(async (context: functions.pubsub.Context) => {
+    .onRun(async (context) => {
     
     functions.logger.info("Hello from the simplified dailyReminder function!");
     
