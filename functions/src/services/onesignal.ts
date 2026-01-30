@@ -3,7 +3,7 @@
  */
 
 import * as OneSignal from "onesignal-node";
-import { app } from "firebase-functions/v1";
+import { config } from "firebase-functions";
 
 /**
  * A singleton service class for sending notifications via OneSignal.
@@ -13,11 +13,12 @@ export class OneSignalService {
   private client: OneSignal.Client;
 
   private constructor() {
-    const appId = app.getApp().options.environment?.ONESIGNAL_APP_ID;
-    const restApiKey = app.getApp().options.environment?.ONESIGNAL_REST_API_KEY;
+    const oneSignalConfig = config().onesignal;
+    const appId = oneSignalConfig?.app_id;
+    const restApiKey = oneSignalConfig?.rest_api_key;
 
     if (!appId || !restApiKey) {
-      throw new Error("OneSignal App ID or REST API Key is not configured in environment variables.");
+      throw new Error("OneSignal App ID or REST API Key is not configured. Run 'firebase functions:config:set onesignal.app_id=\"<YOUR_APP_ID>\" onesignal.rest_api_key=\"<YOUR_REST_API_KEY>\"'");
     }
 
     this.client = new OneSignal.Client(appId, restApiKey);
