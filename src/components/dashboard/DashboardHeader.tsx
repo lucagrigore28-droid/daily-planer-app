@@ -6,7 +6,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { format } from 'date-fns';
 import { ro } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Plus, Settings, Coins, CalendarDays, List, GitFork } from 'lucide-react';
+import { Plus, Settings, Coins, CalendarDays, List, GitFork, Bell } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TasksViewMode } from './TasksView';
 
@@ -34,7 +34,7 @@ export default function DashboardHeader({
     activeTab,
 }: DashboardHeaderProps) {
     const context = useContext(AppContext);
-    const { userData, currentDate } = context!;
+    const { userData, currentDate, testNotifications } = context!;
     const CurrentViewIcon = viewModes[tasksViewMode].icon;
 
     return (
@@ -54,10 +54,16 @@ export default function DashboardHeader({
                 </Button>
             </div>
             <div className="flex flex-col items-end gap-2">
-                <Button variant="ghost" size="icon" onClick={onOpenSettings}>
-                    <Settings className="h-6 w-6" />
-                    <span className="sr-only">Setări</span>
-                </Button>
+                 <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={testNotifications}>
+                        <Bell className="h-6 w-6" />
+                        <span className="sr-only">Testează Notificările</span>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={onOpenSettings}>
+                        <Settings className="h-6 w-6" />
+                        <span className="sr-only">Setări</span>
+                    </Button>
+                </div>
                 <Button onClick={onOpenAddTask} size="icon" variant="default" className="w-12 h-12">
                     <Plus className="h-6 w-6" />
                     <span className="sr-only">Adaugă temă</span>

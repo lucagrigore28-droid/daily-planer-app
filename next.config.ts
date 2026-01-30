@@ -5,7 +5,8 @@ const withPWA = withPWAInit({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: false,
+  sw: 'firebase-messaging-sw.js', // Specifică numele corect al service worker-ului
 });
 
 const nextConfig: NextConfig = {
