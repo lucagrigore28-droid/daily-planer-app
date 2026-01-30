@@ -12,6 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
+import { Bell, X } from 'lucide-react';
+import type { NotificationSettings } from '@/lib/types';
+
+const notificationTimes = Array.from({ length: 15 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`);
+
 
 export default function StepFunctionality() {
   const context = useContext(AppContext);
@@ -53,14 +58,24 @@ export default function StepFunctionality() {
 
   const handleNotificationToggle = async (checked: boolean) => {
     if (!checked) {
-      toast({
-        title: "Info",
-        description: "Pentru a dezactiva notificările, trebuie să revoci permisiunea din setările browser-ului pentru acest site."
-      });
-      return;
+       // If user is turning it off, we just clear the times from their settings
+       updateUser?.({ notificationSettings: {} });
+       toast({
+          title: "Notificări oprite",
+          description: "Orele pentru notificări au fost șterse."
+       });
+       if (notificationPermission !== 'denied') {
+          setNotificationPermission('default');
+       }
+       return;
     }
 
-    if (notificationPermission === 'granted') return;
+    if (notificationPermission === 'granted') {
+        if (!userData?.notificationSettings?.time1) {
+             updateUser?.({ notificationSettings: { ...userData?.notificationSettings, time1: '16:00' } });
+        }
+        return;
+    }
 
     try {
       const permission = await Notification.requestPermission();
@@ -69,7 +84,11 @@ export default function StepFunctionality() {
       if (permission === 'granted') {
         toast({ title: "Permisiune acordată!", description: "Se înregistrează dispozitivul..." });
         await registerForNotifications?.();
-        toast({ title: "Succes!", description: "Notificările au fost activate." });
+        // Set a default notification time if none is set
+        if (!userData?.notificationSettings?.time1) {
+            updateUser?.({ notificationSettings: { ...userData?.notificationSettings, time1: '16:00' } });
+        }
+        toast({ title: "Succes!", description: "Notificările au fost activate. Poți seta ora mai jos." });
       } else {
         toast({ title: "Permisiune refuzată", description: "Nu ai acordat permisiunea pentru notificări.", variant: "destructive" });
       }
@@ -85,6 +104,19 @@ export default function StepFunctionality() {
     }
   };
 
+  const handleTimeChange = (slot: keyof NotificationSettings, value: string) => {
+    const newSettings = { ...userData?.notificationSettings, [slot]: value };
+    updateUser?.({ notificationSettings: newSettings });
+  };
+  
+  const clearTime = (slot: keyof NotificationSettings) => {
+    const newSettings = { ...userData?.notificationSettings };
+    delete newSettings[slot];
+    updateUser?.({ notificationSettings: newSettings });
+  };
+
+  const areNotificationsEnabled = notificationPermission === 'granted' && (!!userData?.notificationSettings?.time1 || !!userData?.notificationSettings?.time2);
+
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardHeader>
@@ -95,23 +127,61 @@ export default function StepFunctionality() {
       </CardHeader>
       <CardContent className="space-y-6">
         
-        <div className="flex flex-col gap-2 rounded-lg border p-4">
-          <Label htmlFor="notifications-toggle" className="font-semibold">Notificări Zilnice</Label>
-          <p className="text-sm text-muted-foreground mb-2">
-            Primește remindere despre temele tale. Va trebui să acorzi permisiunea în browser.
-          </p>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="notifications-toggle"
-              checked={notificationPermission === 'granted'}
-              onCheckedChange={handleNotificationToggle}
-              disabled={notificationPermission === 'denied'}
-            />
-            <Label htmlFor="notifications-toggle">
-              {notificationPermission === 'granted' ? 'Activat' : 
-               notificationPermission === 'denied' ? 'Blocat' : 'Dezactivat'}
-            </Label>
-          </div>
+        <div className="flex flex-col gap-4 rounded-lg border p-4">
+            <div className='flex items-center justify-between'>
+                <div>
+                    <Label htmlFor="notifications-toggle" className="font-semibold text-base">Notificări Zilnice</Label>
+                    <p className="text-sm text-muted-foreground">
+                        Primește remindere despre temele tale.
+                    </p>
+                </div>
+                <Switch
+                  id="notifications-toggle"
+                  checked={areNotificationsEnabled}
+                  onCheckedChange={handleNotificationToggle}
+                  disabled={notificationPermission === 'denied'}
+                />
+            </div>
+
+            {notificationPermission === 'granted' && (
+                <div className="space-y-4 pt-4 border-t">
+                    <div className="flex items-center gap-4">
+                        <Bell className="h-5 w-5 text-primary" />
+                        <Label>Prima Notificare</Label>
+                        <Select value={userData?.notificationSettings?.time1} onValueChange={(val) => handleTimeChange('time1', val)}>
+                            <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Alege ora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {notificationTimes.map(time => <SelectItem key={`t1-${time}`} value={time}>{time}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="icon" onClick={() => clearTime('time1')} disabled={!userData?.notificationSettings?.time1}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                     <div className="flex items-center gap-4">
+                        <Bell className="h-5 w-5 text-accent" />
+                        <Label>A Doua Notificare</Label>
+                        <Select value={userData?.notificationSettings?.time2} onValueChange={(val) => handleTimeChange('time2', val)}>
+                            <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Alege ora" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {notificationTimes.map(time => <SelectItem key={`t2-${time}`} value={time}>{time}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="icon" onClick={() => clearTime('time2')} disabled={!userData?.notificationSettings?.time2}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
+             {notificationPermission === 'denied' && (
+                <p className="text-xs text-destructive pt-2 border-t">
+                    Notificările sunt blocate în setările browser-ului. Trebuie să le permiți manual pentru acest site pentru a le putea activa.
+                </p>
+             )}
         </div>
 
         <div className="flex flex-col gap-2 rounded-lg border p-4">

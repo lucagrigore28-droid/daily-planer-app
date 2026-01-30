@@ -1,4 +1,5 @@
 
+
 export type Subject = {
   id: string;
   name: string;
@@ -23,6 +24,11 @@ export type HomeworkTask = {
   isLocked?: boolean;
 };
 
+export type NotificationSettings = {
+  time1?: string; // HH:mm format, e.g., "16:00"
+  time2?: string; // HH:mm format, e.g., "18:00"
+};
+
 export type UserData = {
   username: string;
   name: string;
@@ -35,6 +41,7 @@ export type UserData = {
   coins: number;
   unlockedThemes: string[];
   fcmTokens?: string[];
+  notificationSettings?: NotificationSettings;
 };
 
 export type Theme = {

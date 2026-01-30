@@ -41,6 +41,20 @@
           "items": {
             "type": "string"
           }
+        },
+        "notificationSettings": {
+          "type": "object",
+          "description": "User's preferred notification times.",
+          "properties": {
+            "time1": {
+              "type": "string",
+              "description": "First notification time in HH:mm format (e.g., '16:00')."
+            },
+            "time2": {
+              "type": "string",
+              "description": "Second notification time in HH:mm format (e.g., '18:00')."
+            }
+          }
         }
       },
       "required": ["name", "setupComplete"]
