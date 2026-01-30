@@ -3,7 +3,7 @@
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
 import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
-import { useUser, useFirestore, useAuth } from '@/firebase';
+import { useUser, useFirestore, useAuth, useFirebaseApp } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField, FieldValue, arrayUnion } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
@@ -66,6 +66,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const auth = useAuth();
+  const firebaseApp = useFirebaseApp();
 
   const userDocRef = useMemo(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<UserData>(userDocRef);
@@ -85,12 +86,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
 
   const registerForNotifications = useCallback(async () => {
-    if (typeof window === 'undefined' || !user || !userDocRef || !userData) {
+    if (typeof window === 'undefined' || !user || !userDocRef || !userData || !firebaseApp) {
       throw new Error("Serviciile Firebase sau datele utilizatorului nu sunt pregătite.");
     }
 
     try {
-      const messaging = getMessaging();
+      const messaging = getMessaging(firebaseApp);
       const currentToken = await getToken(messaging);
 
       if (currentToken) {
@@ -111,9 +112,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error("FCM getToken failed:", error);
-      throw new Error("A eșuat înregistrarea pentru notificări. Verifică dacă ai activat 'Firebase Cloud Messaging API' în consola Google Cloud.");
+      throw new Error("A eșuat înregistrarea pentru notificări. Asigură-te că ai activat 'Firebase Cloud Messaging API' în consola Google Cloud.");
     }
-  }, [user, userDocRef, userData]);
+  }, [user, userDocRef, userData, firebaseApp]);
 
   const displayableTasks = useMemo(() => {
     if (!allTasks || !userData || !userData.schedule) return [];
