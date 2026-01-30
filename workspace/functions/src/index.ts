@@ -1,5 +1,6 @@
 
-import * as functions from "firebase-functions";
+import {onSchedule} from "firebase-functions/v2/pubsub";
+import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
 // Define simplified types here to match the frontend
@@ -27,11 +28,13 @@ const messaging = admin.messaging();
 
 /**
  * Runs every minute to check for and send scheduled notifications.
+ * This is a 2nd Gen Cloud Function.
  */
-export const scheduledNotificationDispatcher = functions
-    .region("europe-west1")
-    .pubsub.schedule("every 1 minute")
-    .onRun(async (context: functions.EventContext) => {
+export const scheduledNotificationDispatcher = onSchedule({
+    schedule: "every 1 minute",
+    region: "europe-west1",
+    timeZone: "Europe/Bucharest"
+  }, async (event) => {
       // Get current time in HH:mm format, in Romanian time zone
       const now = new Date();
       const currentTime = new Intl.DateTimeFormat("en-GB", {
@@ -42,7 +45,7 @@ export const scheduledNotificationDispatcher = functions
       }).format(now);
 
       // Firebase Functions logs time in UTC, so we log our target time for clarity
-      functions.logger.info(`Notification dispatcher (1-min interval) running. Current Romania time is ${currentTime}. Checking for notifications.`);
+      logger.info(`Notification dispatcher (1-min interval) running. Current Romania time is ${currentTime}. Checking for notifications.`);
 
       // Find users who should be notified at this exact time
       const time1Query = db.collection("users").where("notificationSettings.time1", "==", currentTime);
@@ -68,11 +71,11 @@ export const scheduledNotificationDispatcher = functions
       });
 
       if (usersToNotify.size === 0) {
-        functions.logger.info("No users to notify at this time. Exiting.");
+        logger.info("No users to notify at this time. Exiting.");
         return null;
       }
 
-      functions.logger.info(`Found ${usersToNotify.size} user(s) to notify.`);
+      logger.info(`Found ${usersToNotify.size} user(s) to notify.`);
       const promises: Promise<any>[] = [];
 
       usersToNotify.forEach((user, userId) => {
@@ -111,7 +114,7 @@ export const scheduledNotificationDispatcher = functions
               };
 
               const response = await messaging.sendEachForMulticast(message);
-              functions.logger.info(`Sent ${response.successCount} notifications to ${userId}.`);
+              logger.info(`Sent ${response.successCount} notifications to ${userId}.`);
 
               if (response.failureCount > 0) {
                 const tokensToRemove: string[] = [];
@@ -119,18 +122,18 @@ export const scheduledNotificationDispatcher = functions
                   if (!resp.success) {
                     const failedToken = user.fcmTokens![idx];
                     tokensToRemove.push(failedToken);
-                    functions.logger.warn(`Failed to send to token: ${failedToken}`, resp.error);
+                    logger.warn(`Failed to send to token: ${failedToken}`, resp.error);
                   }
                 });
                 if (tokensToRemove.length > 0) {
                   const updatedTokens = user.fcmTokens!.filter((token) => !tokensToRemove.includes(token));
                   await db.collection("users").doc(userId).update({fcmTokens: updatedTokens});
-                  functions.logger.info(`Cleaned ${tokensToRemove.length} invalid tokens for user ${userId}.`);
+                  logger.info(`Cleaned ${tokensToRemove.length} invalid tokens for user ${userId}.`);
                 }
               }
             }
           } catch (error) {
-            functions.logger.error(`Failed to process user ${userId}`, error);
+            logger.error(`Failed to process user ${userId}`, error);
           }
         })();
 
@@ -138,6 +141,6 @@ export const scheduledNotificationDispatcher = functions
       });
 
       await Promise.all(promises);
-      functions.logger.info("Notification dispatcher finished.");
+      logger.info("Notification dispatcher finished.");
       return null;
     });
