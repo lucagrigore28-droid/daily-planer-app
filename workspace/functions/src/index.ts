@@ -3,7 +3,6 @@ import * as functions from "firebase-functions";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
-// Define simplified types here to match the frontend
 interface HomeworkTask {
     subjectName: string;
     isCompleted: boolean;
@@ -21,19 +20,13 @@ interface UserData {
     notificationSettings?: NotificationSettings;
 }
 
-// Initialize the Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
 const messaging = admin.messaging();
 
-/**
- * Runs every minute to check for and send scheduled notifications.
- * This function uses the v1 syntax for maximum compatibility.
- */
 export const scheduledNotificationDispatcher = functions
-    .pubsub.schedule("* * * * *") // Use crontab syntax
+    .pubsub.schedule("* * * * *")
     .onRun(async (context) => {
-      // Get current time in HH:mm format, in Romanian time zone
       const now = new Date();
       const currentTime = new Intl.DateTimeFormat("en-GB", {
         hour: "2-digit",
@@ -42,33 +35,31 @@ export const scheduledNotificationDispatcher = functions
         hour12: false,
       }).format(now);
 
-      logger.info(`Notification dispatcher (1-min interval) running. Current Romania time is ${currentTime}. Checking for notifications.`);
-
-      // Find users who should be notified at this exact time
-      const time1Query = db.collection("users").where("notificationSettings.time1", "==", currentTime);
-      const time2Query = db.collection("users").where("notificationSettings.time2", "==", currentTime);
-
-      const [time1Snapshot, time2Snapshot] = await Promise.all([
-        time1Query.get(),
-        time2Query.get(),
-      ]);
+      logger.info(`Notification dispatcher running. Current Romania time: ${currentTime}.`);
 
       const usersToNotify = new Map<string, UserData>();
 
-      time1Snapshot.forEach((doc) => {
-        if (!usersToNotify.has(doc.id)) {
-          usersToNotify.set(doc.id, doc.data() as UserData);
-        }
-      });
+      try {
+        const usersSnapshot = await db.collection("users").get();
+        
+        usersSnapshot.forEach((doc) => {
+            const user = doc.data() as UserData;
+            if (user.notificationSettings) {
+                if (user.notificationSettings.time1 === currentTime || user.notificationSettings.time2 === currentTime) {
+                    if (!usersToNotify.has(doc.id)) {
+                        usersToNotify.set(doc.id, user);
+                    }
+                }
+            }
+        });
+      } catch (error) {
+        logger.error("Error fetching users collection:", error);
+        return null; // Exit if we can't even get the users
+      }
 
-      time2Snapshot.forEach((doc) => {
-        if (!usersToNotify.has(doc.id)) {
-          usersToNotify.set(doc.id, doc.data() as UserData);
-        }
-      });
 
       if (usersToNotify.size === 0) {
-        logger.info("No users to notify at this time. Exiting.");
+        logger.info("No users to notify at this time.");
         return null;
       }
 
@@ -76,9 +67,9 @@ export const scheduledNotificationDispatcher = functions
       const promises: Promise<any>[] = [];
 
       usersToNotify.forEach((user, userId) => {
-        // The same logic as before, just for the targeted users
         if (!user.setupComplete || !user.fcmTokens || user.fcmTokens.length === 0) {
-          return; // Skip if no tokens or setup not complete
+          logger.info(`Skipping user ${userId}: no setup or no FCM tokens.`);
+          return;
         }
 
         const taskPromise = (async () => {
@@ -87,53 +78,51 @@ export const scheduledNotificationDispatcher = functions
                 .where("isCompleted", "==", false)
                 .get();
 
-            if (!tasksSnapshot.empty) {
-              const incompleteTasks = tasksSnapshot.docs.map((doc) => doc.data() as HomeworkTask);
-              const subjectNames = [...new Set(incompleteTasks.map((task) => task.subjectName))];
-              const notification = {
-                title: "Reminder Teme",
-                body: `Salut, ${user.name}! Nu uita, mai ai de lucru la: ${subjectNames.join(", ")}.`,
-              };
-
-              // Explicitly check fcmTokens again to satisfy TypeScript inside the promise closure
-              if (!user.fcmTokens || user.fcmTokens.length === 0) {
+            if (tasksSnapshot.empty) {
+                logger.info(`User ${userId} has no incomplete tasks.`);
                 return;
-              }
+            }
 
-              const message = {
-                notification,
-                webpush: {
-                  notification: {
-                    tag: `daily-reminder-${userId}`,
-                  },
+            const incompleteTasks = tasksSnapshot.docs.map((doc) => doc.data() as HomeworkTask);
+            const subjectNames = [...new Set(incompleteTasks.map((task) => task.subjectName))];
+            
+            const notification = {
+              title: "Reminder Teme",
+              body: `Salut, ${user.name}! Nu uita, mai ai de lucru la: ${subjectNames.join(", ")}.`,
+            };
+
+            const message = {
+              notification,
+              webpush: {
+                notification: {
+                  tag: `daily-reminder-${userId}`,
                 },
-                tokens: user.fcmTokens,
-              };
+              },
+              tokens: user.fcmTokens,
+            };
 
-              const response = await messaging.sendEachForMulticast(message);
-              logger.info(`Sent ${response.successCount} notifications to ${userId}.`);
+            const response = await messaging.sendEachForMulticast(message);
+            logger.info(`Sent ${response.successCount} notifications to ${userId}.`);
 
-              if (response.failureCount > 0) {
-                const tokensToRemove: string[] = [];
-                response.responses.forEach((resp, idx) => {
-                  if (!resp.success) {
-                    const failedToken = user.fcmTokens![idx];
-                    tokensToRemove.push(failedToken);
-                    logger.warn(`Failed to send to token: ${failedToken}`, resp.error);
-                  }
-                });
-                if (tokensToRemove.length > 0) {
-                  const updatedTokens = user.fcmTokens!.filter((token) => !tokensToRemove.includes(token));
-                  await db.collection("users").doc(userId).update({fcmTokens: updatedTokens});
-                  logger.info(`Cleaned ${tokensToRemove.length} invalid tokens for user ${userId}.`);
+            if (response.failureCount > 0) {
+              const tokensToRemove: string[] = [];
+              response.responses.forEach((resp, idx) => {
+                if (!resp.success) {
+                  const failedToken = user.fcmTokens![idx];
+                  tokensToRemove.push(failedToken);
+                  logger.warn(`Failed to send to token: ${failedToken}`, resp.error);
                 }
+              });
+              if (tokensToRemove.length > 0) {
+                const updatedTokens = user.fcmTokens!.filter((token) => !tokensToRemove.includes(token));
+                await db.collection("users").doc(userId).update({fcmTokens: updatedTokens});
+                logger.info(`Cleaned ${tokensToRemove.length} invalid tokens for user ${userId}.`);
               }
             }
           } catch (error) {
             logger.error(`Failed to process user ${userId}`, error);
           }
         })();
-
         promises.push(taskPromise);
       });
 
