@@ -17,8 +17,7 @@ export function OneSignalInitializer() {
         (window as any).OneSignal = (window as any).OneSignal || [];
         (window as any).OneSignal.push(() => {
             (window as any).OneSignal.init({
-                // <<<<<<< PUNEȚI AICI APP ID-UL DE LA ONE SIGNAL >>>>>>>>>
-                appId: "b999f0f0-bbc1-4ecc-b1a3-bc7233785b01", 
+                appId: "400f3bbd-7ec3-4a64-9d86-c32333a167cb", 
                 allowLocalhostAsSecureOrigin: true,
             });
         });
