@@ -37,7 +37,6 @@ const messaging = admin.messaging();
  * This function uses the v1 syntax for maximum compatibility.
  */
 exports.scheduledNotificationDispatcher = functions
-    .region("europe-west1")
     .pubsub.schedule("* * * * *") // Use crontab syntax
     .onRun(async (context) => {
     // Get current time in HH:mm format, in Romanian time zone
