@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
-import { format, addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
+import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays, format } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField, FieldValue, arrayUnion } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -97,7 +96,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           console.log('Notification permission granted.');
           // TODO: Get the token here and save it.
           const currentToken = await getToken(messaging, {
-            vapidKey: 'BFt-59530A2_vj9hPZWdhx-mOhf575tEma23v1lX39iKk8qGqg4qTz8-6J6l1eL7f2f8Xj4eL4q2eY6w1oX3n4Y', // Replace with your VAPID key
+            vapidKey: 'BF0Vt7-ROf2xLX8NVjRKgSu2msXiDTSP-1F2ChaYu45GIRIWidZeG-UAXDNXghOMbg0OActXLVTTXxm0K98RsWQ',
           });
 
           if (currentToken) {
