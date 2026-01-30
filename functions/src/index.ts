@@ -31,7 +31,7 @@ const messaging = admin.messaging();
 export const scheduledNotificationDispatcher = functions
     .region("europe-west1")
     .pubsub.schedule("every 1 minute")
-    .onRun(async (context: any) => {
+    .onRun(async (context: functions.EventContext) => {
       // Get current time in HH:mm format, in Romanian time zone
       const now = new Date();
       const currentTime = new Intl.DateTimeFormat("en-GB", {
