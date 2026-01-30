@@ -8,6 +8,11 @@ export function OneSignalInitializer() {
 
     // Initialize OneSignal
     useEffect(() => {
+        if (!process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID) {
+            console.error("OneSignal App ID is not configured. Please set NEXT_PUBLIC_ONESIGNAL_APP_ID in your .env file.");
+            return;
+        }
+        
         // Prevents initialization on the server or if already initialized.
         if (typeof window === 'undefined' || (window as any)._oneSignalInitialized) {
             return;
@@ -17,7 +22,7 @@ export function OneSignalInitializer() {
         (window as any).OneSignal = (window as any).OneSignal || [];
         (window as any).OneSignal.push(() => {
             (window as any).OneSignal.init({
-                appId: "400f3bbd-7ec3-4a64-9d86-c32333a167cb", 
+                appId: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!, 
                 allowLocalhostAsSecureOrigin: true,
             });
         });
