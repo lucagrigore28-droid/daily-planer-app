@@ -91,9 +91,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       const messaging = getMessaging();
-      const currentToken = await getToken(messaging, {
-        vapidKey: 'BF0Vt7-ROf2xLX8NVjRKgSu2msXiDTSP-1F2ChaYu45GIRIWidZeG-UAXDNXghOMbg0OActXLVTTXxm0K98RsWQ',
-      });
+      const currentToken = await getToken(messaging);
 
       if (currentToken) {
         console.log('FCM Token obtained:', currentToken);
