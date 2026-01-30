@@ -64,8 +64,9 @@ export class OneSignalService {
     } catch (e) {
       // It's possible for the OneSignal API to throw an error if the user ID doesn't exist
       // (e.g., user uninstalled, etc.). We can safely ignore these errors.
-      if (e instanceof OneSignal.OneSignalApiError) {
-        console.warn(`OneSignal API Error for user ${userId}:`, e.body);
+      // Using a type guard to safely access properties on 'e', which is 'unknown'.
+      if (typeof e === 'object' && e !== null && 'body' in e) {
+        console.warn(`OneSignal API Error for user ${userId}:`, (e as { body: any }).body);
       } else if (e instanceof Error) {
         console.error(`An unexpected error occurred while sending OneSignal notification to user ${userId}:`, e.message);
       } else {
