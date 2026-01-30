@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-2">8. Contact</h2>
                         <p>
-                            Dacă aveți întrebări legate de această politică, ne puteți contacta la adresa de e-mail [introduceți aici o adresă de e-mail de contact].
+                            Dacă aveți întrebări legate de această politică, ne puteți contacta la adresa de e-mail lucagrigore28@gmail.com.
                         </p>
                     </section>
                      <div className="pt-4 text-center">
