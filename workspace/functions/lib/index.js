@@ -1,3 +1,4 @@
+
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -24,7 +25,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scheduledNotificationDispatcher = void 0;
-const pubsub_1 = require("firebase-functions/v2/pubsub");
+const pubsub = __importStar(require("firebase-functions/v2/pubsub"));
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 // Initialize the Firebase Admin SDK
@@ -35,7 +36,7 @@ const messaging = admin.messaging();
  * Runs every minute to check for and send scheduled notifications.
  * This is a 2nd Gen Cloud Function.
  */
-exports.scheduledNotificationDispatcher = (0, pubsub_1.onSchedule)({
+exports.scheduledNotificationDispatcher = pubsub.onSchedule({
     schedule: "every 1 minute",
     region: "europe-west1",
     timeZone: "Europe/Bucharest"
@@ -133,3 +134,4 @@ exports.scheduledNotificationDispatcher = (0, pubsub_1.onSchedule)({
     logger.info("Notification dispatcher finished.");
     return null;
 });
+//# sourceMappingURL=index.js.map

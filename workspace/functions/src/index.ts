@@ -1,5 +1,5 @@
 
-import {onSchedule} from "firebase-functions/v2/pubsub";
+import * as pubsub from "firebase-functions/v2/pubsub";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
@@ -30,7 +30,7 @@ const messaging = admin.messaging();
  * Runs every minute to check for and send scheduled notifications.
  * This is a 2nd Gen Cloud Function.
  */
-export const scheduledNotificationDispatcher = onSchedule({
+export const scheduledNotificationDispatcher = pubsub.onSchedule({
     schedule: "every 1 minute",
     region: "europe-west1",
     timeZone: "Europe/Bucharest"
