@@ -26,11 +26,11 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 /**
- * Runs every 15 minutes to check for and send scheduled notifications.
+ * Runs every minute to check for and send scheduled notifications.
  */
 export const scheduledNotificationDispatcher = functions
     .region("europe-west1")
-    .pubsub.schedule("every 15 minutes")
+    .pubsub.schedule("every 1 minute")
     .onRun(async (context) => {
       // Get current time in HH:mm format, in Romanian time zone
       const now = new Date();
@@ -42,7 +42,7 @@ export const scheduledNotificationDispatcher = functions
       }).format(now);
 
       // Firebase Functions logs time in UTC, so we log our target time for clarity
-      functions.logger.info(`Dispatcher running. Current Romania time is ${currentTime}. Checking for notifications.`);
+      functions.logger.info(`Notification dispatcher (1-min interval) running. Current Romania time is ${currentTime}. Checking for notifications.`);
 
       // Find users who should be notified at this exact time
       const time1Query = db.collection("users").where("notificationSettings.time1", "==", currentTime);

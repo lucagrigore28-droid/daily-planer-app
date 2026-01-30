@@ -15,9 +15,6 @@ import { Switch } from '@/components/ui/switch';
 import { Bell, X } from 'lucide-react';
 import type { NotificationSettings } from '@/lib/types';
 
-const notificationTimes = Array.from({ length: 15 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`);
-
-
 export default function StepFunctionality() {
   const context = useContext(AppContext);
   const { userData, updateUser, addCoins, registerForNotifications } = context || {};
@@ -148,14 +145,12 @@ export default function StepFunctionality() {
                     <div className="flex items-center gap-4">
                         <Bell className="h-5 w-5 text-primary" />
                         <Label>Prima Notificare</Label>
-                        <Select value={userData?.notificationSettings?.time1} onValueChange={(val) => handleTimeChange('time1', val)}>
-                            <SelectTrigger className="flex-1">
-                                <SelectValue placeholder="Alege ora" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {notificationTimes.map(time => <SelectItem key={`t1-${time}`} value={time}>{time}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <Input
+                            type="time"
+                            className="flex-1"
+                            value={userData?.notificationSettings?.time1 || ""}
+                            onChange={(e) => handleTimeChange('time1', e.target.value)}
+                        />
                         <Button variant="ghost" size="icon" onClick={() => clearTime('time1')} disabled={!userData?.notificationSettings?.time1}>
                             <X className="h-4 w-4" />
                         </Button>
@@ -163,14 +158,12 @@ export default function StepFunctionality() {
                      <div className="flex items-center gap-4">
                         <Bell className="h-5 w-5 text-accent" />
                         <Label>A Doua Notificare</Label>
-                        <Select value={userData?.notificationSettings?.time2} onValueChange={(val) => handleTimeChange('time2', val)}>
-                            <SelectTrigger className="flex-1">
-                                <SelectValue placeholder="Alege ora" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {notificationTimes.map(time => <SelectItem key={`t2-${time}`} value={time}>{time}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
+                        <Input
+                            type="time"
+                            className="flex-1"
+                            value={userData?.notificationSettings?.time2 || ""}
+                            onChange={(e) => handleTimeChange('time2', e.target.value)}
+                        />
                         <Button variant="ghost" size="icon" onClick={() => clearTime('time2')} disabled={!userData?.notificationSettings?.time2}>
                             <X className="h-4 w-4" />
                         </Button>
