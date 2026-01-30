@@ -61,6 +61,11 @@ export const dailyReminder = functions
                 title: "Reminder Teme",
                 body: `Salut, ${user.name}! Nu uita, mai ai de lucru la: ${subjectNames.join(", ")}.`,
               };
+              
+              // Explicitly check fcmTokens again to satisfy TypeScript inside the promise closure
+              if (!user.fcmTokens || user.fcmTokens.length === 0) {
+                return;
+              }
 
               const message = {
                 notification,
