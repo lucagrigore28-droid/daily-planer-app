@@ -42,24 +42,27 @@ export const scheduledNotificationDispatcher = functions
       try {
         const usersSnapshot = await db.collection("users").get();
         
+        logger.info(`Found ${usersSnapshot.size} total users in database. Checking for notification schedules...`);
+
         usersSnapshot.forEach((doc) => {
             const user = doc.data() as UserData;
             if (user.notificationSettings) {
                 if (user.notificationSettings.time1 === currentTime || user.notificationSettings.time2 === currentTime) {
                     if (!usersToNotify.has(doc.id)) {
                         usersToNotify.set(doc.id, user);
+                        logger.info(`User ${doc.id} (${user.name}) scheduled for notification at ${currentTime}.`);
                     }
                 }
             }
         });
       } catch (error) {
-        logger.error("Error fetching users collection:", error);
+        logger.error("FATAL: Error fetching users collection:", error);
         return null; // Exit if we can't even get the users
       }
 
 
       if (usersToNotify.size === 0) {
-        logger.info("No users to notify at this time.");
+        logger.info("No users to notify at this time. Exiting.");
         return null;
       }
 
@@ -79,7 +82,7 @@ export const scheduledNotificationDispatcher = functions
                 .get();
 
             if (tasksSnapshot.empty) {
-                logger.info(`User ${userId} has no incomplete tasks.`);
+                logger.info(`User ${userId} has no incomplete tasks. No notification will be sent.`);
                 return;
             }
 
@@ -102,9 +105,10 @@ export const scheduledNotificationDispatcher = functions
             };
 
             const response = await messaging.sendEachForMulticast(message);
-            logger.info(`Sent ${response.successCount} notifications to ${userId}.`);
+            logger.info(`Successfully sent ${response.successCount} notifications to ${userId}.`);
 
             if (response.failureCount > 0) {
+              logger.warn(`Encountered ${response.failureCount} failures for user ${userId}.`);
               const tokensToRemove: string[] = [];
               response.responses.forEach((resp, idx) => {
                 if (!resp.success) {
@@ -120,7 +124,7 @@ export const scheduledNotificationDispatcher = functions
               }
             }
           } catch (error) {
-            logger.error(`Failed to process user ${userId}`, error);
+            logger.error(`Failed to process notifications for user ${userId}`, error);
           }
         })();
         promises.push(taskPromise);
