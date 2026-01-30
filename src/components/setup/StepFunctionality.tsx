@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { AppContext } from '@/contexts/AppContext';
@@ -11,12 +11,22 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
 
 export default function StepFunctionality() {
   const context = useContext(AppContext);
-  const { userData, updateUser, addCoins } = context || {};
+  const { userData, updateUser, addCoins, registerForNotifications } = context || {};
   const { toast } = useToast();
   const [devCode, setDevCode] = useState('');
+  const [notificationPermission, setNotificationPermission] = useState<string>(
+    typeof window !== 'undefined' ? Notification.permission : 'default'
+  );
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   const weekendStartDay = userData?.weekendTabStartDay ?? 5;
 
@@ -41,6 +51,40 @@ export default function StepFunctionality() {
     }
   };
 
+  const handleNotificationToggle = async (checked: boolean) => {
+    if (!checked) {
+      toast({
+        title: "Info",
+        description: "Pentru a dezactiva notificările, trebuie să revoci permisiunea din setările browser-ului pentru acest site."
+      });
+      return;
+    }
+
+    if (notificationPermission === 'granted') return;
+
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+
+      if (permission === 'granted') {
+        toast({ title: "Permisiune acordată!", description: "Se înregistrează dispozitivul..." });
+        await registerForNotifications?.();
+        toast({ title: "Succes!", description: "Notificările au fost activate." });
+      } else {
+        toast({ title: "Permisiune refuzată", description: "Nu ai acordat permisiunea pentru notificări.", variant: "destructive" });
+      }
+    } catch (error: any) {
+      console.error("Error enabling notifications:", error);
+      toast({
+        title: "Eroare la activarea notificărilor",
+        description: error.message || "A apărut o problemă. Asigură-te că API-ul Firebase Cloud Messaging este activat în Google Cloud.",
+        variant: "destructive",
+        duration: 10000,
+      });
+      setNotificationPermission(Notification.permission); // Revert UI on failure
+    }
+  };
+
   return (
     <Card className="border-0 shadow-none bg-card/80 backdrop-blur-sm sm:border-solid sm:shadow-lg">
       <CardHeader>
@@ -50,6 +94,26 @@ export default function StepFunctionality() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        
+        <div className="flex flex-col gap-2 rounded-lg border p-4">
+          <Label htmlFor="notifications-toggle" className="font-semibold">Notificări Zilnice</Label>
+          <p className="text-sm text-muted-foreground mb-2">
+            Primește remindere despre temele tale. Va trebui să acorzi permisiunea în browser.
+          </p>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="notifications-toggle"
+              checked={notificationPermission === 'granted'}
+              onCheckedChange={handleNotificationToggle}
+              disabled={notificationPermission === 'denied'}
+            />
+            <Label htmlFor="notifications-toggle">
+              {notificationPermission === 'granted' ? 'Activat' : 
+               notificationPermission === 'denied' ? 'Blocat' : 'Dezactivat'}
+            </Label>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-2 rounded-lg border p-4">
           <Label htmlFor="weekend-start-day" className="font-semibold">Vizibilitate filă "Weekend"</Label>
           <p className="text-sm text-muted-foreground mb-2">

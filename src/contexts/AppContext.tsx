@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
 import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
-import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays, format } from 'date-fns';
+import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField, FieldValue, arrayUnion } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -57,6 +57,7 @@ type AppContextType = {
   setLastCoinReward: (reward: { taskId: string; amount: number } | null) => void;
   lastCompletedTaskIdForProgress: string | null;
   setLastCompletedTaskIdForProgress: (taskId: string | null) => void;
+  registerForNotifications: () => Promise<void>;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -83,45 +84,38 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
 
-  // Set up Firebase Cloud Messaging
-  useEffect(() => {
-    if (typeof window === 'undefined' || !user || !userDocRef) return;
-
-    const setupNotifications = async () => {
-      try {
-        const messaging = getMessaging();
-        const permission = await Notification.requestPermission();
-
-        if (permission === 'granted') {
-          console.log('Notification permission granted.');
-          // TODO: Get the token here and save it.
-          const currentToken = await getToken(messaging, {
-            vapidKey: 'BF0Vt7-ROf2xLX8NVjRKgSu2msXiDTSP-1F2ChaYu45GIRIWidZeG-UAXDNXghOMbg0OActXLVTTXxm0K98RsWQ',
-          });
-
-          if (currentToken) {
-            console.log('FCM Token:', currentToken);
-            // Save the token to the user's document
-            const currentTokens = userData?.fcmTokens || [];
-            if (!currentTokens.includes(currentToken)) {
-              await setDoc(userDocRef, { fcmTokens: arrayUnion(currentToken) }, { merge: true });
-            }
-          } else {
-            console.log('No registration token available. Request permission to generate one.');
-          }
-        } else {
-          console.log('Unable to get permission to notify.');
-        }
-      } catch (error) {
-        console.error('An error occurred while setting up notifications.', error);
-      }
-    };
-
-    if (userData?.setupComplete) {
-      setupNotifications();
+  const registerForNotifications = useCallback(async () => {
+    if (typeof window === 'undefined' || !user || !userDocRef || !userData) {
+      throw new Error("Serviciile Firebase sau datele utilizatorului nu sunt pregătite.");
     }
 
-  }, [user, userDocRef, userData?.setupComplete]);
+    try {
+      const messaging = getMessaging();
+      const currentToken = await getToken(messaging, {
+        vapidKey: 'BF0Vt7-ROf2xLX8NVjRKgSu2msXiDTSP-1F2ChaYu45GIRIWidZeG-UAXDNXghOMbg0OActXLVTTXxm0K98RsWQ',
+      });
+
+      if (currentToken) {
+        console.log('FCM Token obtained:', currentToken);
+        const currentTokens = userData.fcmTokens || [];
+        if (!currentTokens.includes(currentToken)) {
+          setDoc(userDocRef, { fcmTokens: arrayUnion(currentToken) }, { merge: true }).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'update',
+              requestResourceData: { fcmTokens: arrayUnion(currentToken) },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          });
+        }
+      } else {
+        throw new Error('Nu s-a putut obține un token pentru notificări de la Firebase.');
+      }
+    } catch (error) {
+      console.error("FCM getToken failed:", error);
+      throw new Error("A eșuat înregistrarea pentru notificări. Verifică dacă ai activat 'Firebase Cloud Messaging API' în consola Google Cloud.");
+    }
+  }, [user, userDocRef, userData]);
 
   const displayableTasks = useMemo(() => {
     if (!allTasks || !userData || !userData.schedule) return [];
@@ -630,6 +624,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setLastCoinReward,
     lastCompletedTaskIdForProgress,
     setLastCompletedTaskIdForProgress,
+    registerForNotifications,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
