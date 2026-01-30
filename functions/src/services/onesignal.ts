@@ -66,8 +66,10 @@ export class OneSignalService {
       // (e.g., user uninstalled, etc.). We can safely ignore these errors.
       if (e instanceof OneSignal.OneSignalApiError) {
         console.warn(`OneSignal API Error for user ${userId}:`, e.body);
+      } else if (e instanceof Error) {
+        console.error(`An unexpected error occurred while sending OneSignal notification to user ${userId}:`, e.message);
       } else {
-        console.error("An unexpected error occurred while sending OneSignal notification:", e);
+        console.error(`An unknown error occurred while sending OneSignal notification to user ${userId}:`, e);
       }
     }
   }

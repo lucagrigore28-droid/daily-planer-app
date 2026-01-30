@@ -24,7 +24,7 @@ const db = admin.firestore();
 export const dailyReminder = functions
     .region("europe-west1") // Using a European region
     .pubsub.topic("daily-reminder")
-    .onRun(async (context) => {
+    .onRun(async (context: functions.pubsub.Context) => {
     
     functions.logger.info("Starting daily reminder process for all users...");
     
