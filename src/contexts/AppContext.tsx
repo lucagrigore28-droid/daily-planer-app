@@ -60,14 +60,6 @@ type AppContextType = {
 
 export const AppContext = createContext<AppContextType | null>(null);
 
-// Helper to manage local notification timers
-const notificationTimers: NodeJS.Timeout[] = [];
-const clearScheduledNotifications = () => {
-  notificationTimers.forEach(clearTimeout);
-  notificationTimers.length = 0;
-};
-
-
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -136,80 +128,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       isLocked: !task.isManual && !task.isCompleted && !unlockedTaskIds.has(task.id),
     }));
   }, [allTasks, userData, currentDate]);
-
-  // --- Start Local Notification Logic ---
-  useEffect(() => {
-    if (!isDataLoaded || !userData?.setupComplete || !displayableTasks.length) {
-      return;
-    }
-
-    const scheduleNotifications = async () => {
-      if (!('Notification' in window)) {
-        console.log("This browser does not support desktop notification");
-        return;
-      }
-
-      if (Notification.permission === 'denied') {
-        return; // User has denied notifications
-      }
-
-      if (Notification.permission !== 'granted') {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          return;
-        }
-      }
-
-      // Clear any previously scheduled notifications by this app instance
-      clearScheduledNotifications();
-
-      const today = startOfDay(new Date());
-      const incompleteTasks = displayableTasks.filter(t => !t.isCompleted && isAfter(startOfDay(new Date(t.dueDate)), subDays(today,1)));
-      
-      const tasksByDay = incompleteTasks.reduce((acc, task) => {
-        const dateStr = format(new Date(task.dueDate), 'yyyy-MM-dd');
-        if (!acc[dateStr]) {
-          acc[dateStr] = [];
-        }
-        acc[dateStr].push(task.subjectName);
-        return acc;
-      }, {} as Record<string, string[]>);
-
-      Object.keys(tasksByDay).forEach(dateStr => {
-        const notificationDate = new Date(dateStr);
-        const subjectNames = [...new Set(tasksByDay[dateStr])];
-        
-        // Set notification time for 4 PM on the day of the tasks
-        const notificationTime = new Date(
-          notificationDate.getFullYear(),
-          notificationDate.getMonth(),
-          notificationDate.getDate(),
-          16, 0, 0
-        ).getTime();
-
-        const now = Date.now();
-
-        if (notificationTime > now) {
-          const delay = notificationTime - now;
-          const timerId = setTimeout(() => {
-            new Notification('Reminder Teme', {
-              body: `Nu uita, azi ai de lucru la: ${subjectNames.join(', ')}.`,
-              icon: '/apple-icon.png',
-              tag: `daily-planner-pro-reminder-${dateStr}`
-            });
-          }, delay);
-          notificationTimers.push(timerId);
-        }
-      });
-    };
-
-    scheduleNotifications();
-    
-    // Cleanup on unmount
-    return () => clearScheduledNotifications();
-
-  }, [isDataLoaded, userData?.setupComplete, displayableTasks]);
-  // --- End Local Notification Logic ---
 
   useEffect(() => {
     if (allTasks) {

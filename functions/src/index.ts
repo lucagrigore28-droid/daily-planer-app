@@ -1,7 +1,3 @@
-
-// Acest fișier nu mai este necesar, deoarece am trecut la un sistem de notificări locale,
-// care nu necesită o funcție pe server. Îl păstrăm pentru referință viitoare.
-/*
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { OneSignalService } from "./services/onesignal";
@@ -21,9 +17,12 @@ interface UserData {
 admin.initializeApp();
 const db = admin.firestore();
 
+/**
+ * A scheduled function that runs daily to send homework reminders to all users.
+ * This function should be triggered by a Cloud Scheduler job targeting the 'daily-reminder' Pub/Sub topic.
+ */
 export const dailyReminder = functions
     .region("europe-west1") // Using a European region
-    .runWith({ secrets: ["ONESIGNAL_APP_ID", "ONESIGNAL_REST_API_KEY"] })
     .pubsub.topic("daily-reminder")
     .onRun(async (context) => {
     
@@ -43,8 +42,9 @@ export const dailyReminder = functions
         const user = userDoc.data() as UserData;
         const userId = userDoc.id;
 
+        // Skip users who have not completed setup
         if (!user.setupComplete) {
-            return; 
+            return; // continue to next user
         }
 
         const taskPromise = (async () => {
@@ -53,8 +53,11 @@ export const dailyReminder = functions
                     .where("isCompleted", "==", false)
                     .get();
 
+                // Only send a notification if there are incomplete tasks
                 if (!tasksSnapshot.empty) {
                     const incompleteTasks = tasksSnapshot.docs.map(doc => doc.data() as HomeworkTask);
+                    
+                    // Get a unique list of subject names to avoid duplicates (e.g., "Matematică, Matematică")
                     const subjectNames = [...new Set(incompleteTasks.map(task => task.subjectName))];
 
                     const title = "Reminder Teme";
@@ -74,4 +77,3 @@ export const dailyReminder = functions
     functions.logger.info("Daily reminder process finished.");
     return null;
 });
-*/
