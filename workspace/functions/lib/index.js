@@ -1,4 +1,3 @@
-
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -25,7 +24,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scheduledNotificationDispatcher = void 0;
-const pubsub = __importStar(require("firebase-functions/v2/pubsub"));
+const functions = __importStar(require("firebase-functions"));
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 // Initialize the Firebase Admin SDK
@@ -34,13 +33,13 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 /**
  * Runs every minute to check for and send scheduled notifications.
- * This is a 2nd Gen Cloud Function.
+ * This function uses the v1 syntax for maximum compatibility.
  */
-exports.scheduledNotificationDispatcher = pubsub.onSchedule({
-    schedule: "every 1 minute",
-    region: "europe-west1",
-    timeZone: "Europe/Bucharest"
-}, async (event) => {
+exports.scheduledNotificationDispatcher = functions
+    .region("europe-west1")
+    .pubsub.schedule("every 1 minute")
+    .timeZone("Europe/Bucharest")
+    .onRun(async (context) => {
     // Get current time in HH:mm format, in Romanian time zone
     const now = new Date();
     const currentTime = new Intl.DateTimeFormat("en-GB", {
@@ -49,7 +48,6 @@ exports.scheduledNotificationDispatcher = pubsub.onSchedule({
         timeZone: "Europe/Bucharest",
         hour12: false,
     }).format(now);
-    // Firebase Functions logs time in UTC, so we log our target time for clarity
     logger.info(`Notification dispatcher (1-min interval) running. Current Romania time is ${currentTime}. Checking for notifications.`);
     // Find users who should be notified at this exact time
     const time1Query = db.collection("users").where("notificationSettings.time1", "==", currentTime);

@@ -1,5 +1,5 @@
 
-import * as pubsub from "firebase-functions/v2/pubsub";
+import * as functions from "firebase-functions";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
@@ -28,13 +28,13 @@ const messaging = admin.messaging();
 
 /**
  * Runs every minute to check for and send scheduled notifications.
- * This is a 2nd Gen Cloud Function.
+ * This function uses the v1 syntax for maximum compatibility.
  */
-export const scheduledNotificationDispatcher = pubsub.onSchedule({
-    schedule: "every 1 minute",
-    region: "europe-west1",
-    timeZone: "Europe/Bucharest"
-  }, async (event) => {
+export const scheduledNotificationDispatcher = functions
+    .region("europe-west1")
+    .pubsub.schedule("every 1 minute")
+    .timeZone("Europe/Bucharest")
+    .onRun(async (context) => {
       // Get current time in HH:mm format, in Romanian time zone
       const now = new Date();
       const currentTime = new Intl.DateTimeFormat("en-GB", {
@@ -44,7 +44,6 @@ export const scheduledNotificationDispatcher = pubsub.onSchedule({
         hour12: false,
       }).format(now);
 
-      // Firebase Functions logs time in UTC, so we log our target time for clarity
       logger.info(`Notification dispatcher (1-min interval) running. Current Romania time is ${currentTime}. Checking for notifications.`);
 
       // Find users who should be notified at this exact time
