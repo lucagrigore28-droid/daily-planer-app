@@ -4,6 +4,10 @@
       "source": "functions",
       "codebase": "default",
       "disallowLegacyRuntimeConfig": true,
+      "environment": {
+        "ONESIGNAL_APP_ID": "${env:ONESIGNAL_APP_ID}",
+        "ONESIGNAL_REST_API_KEY": "${env:ONESIGNAL_REST_API_KEY}"
+      },
       "ignore": [
         "node_modules",
         ".git",
