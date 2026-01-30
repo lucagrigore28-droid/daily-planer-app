@@ -1,3 +1,4 @@
+
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -38,7 +39,6 @@ const messaging = admin.messaging();
 exports.scheduledNotificationDispatcher = functions
     .region("europe-west1")
     .pubsub.schedule("every 1 minute")
-    .timeZone("Europe/Bucharest")
     .onRun(async (context) => {
     // Get current time in HH:mm format, in Romanian time zone
     const now = new Date();
