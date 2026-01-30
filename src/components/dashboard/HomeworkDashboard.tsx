@@ -123,7 +123,7 @@ export default function HomeworkDashboard() {
         <div className="flex items-center gap-4 rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
            <div>
             <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-shadow-elegant">
-              Salut, {userData.name}!
+              Salutare, {userData.name}!
             </h1>
             <p className="text-lg text-muted-foreground">
               Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
