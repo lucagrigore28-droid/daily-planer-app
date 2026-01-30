@@ -5,13 +5,14 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback, useM
 import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
 import { format, addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField, FieldValue, arrayUnion } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { themes } from '@/lib/themes';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { getMessaging, getToken } from 'firebase/messaging';
 
 const initialUserData: UserData = {
   username: '',
@@ -24,6 +25,7 @@ const initialUserData: UserData = {
   weekendTabStartDay: 5, // Default to Friday
   coins: 0,
   unlockedThemes: ['classic'],
+  fcmTokens: [],
 };
 
 type AppContextType = {
@@ -81,6 +83,46 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const initialSyncCompleted = useRef(false);
 
   const isDataLoaded = !isUserDataLoading && !isUserLoading;
+
+  // Set up Firebase Cloud Messaging
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user || !userDocRef) return;
+
+    const setupNotifications = async () => {
+      try {
+        const messaging = getMessaging();
+        const permission = await Notification.requestPermission();
+
+        if (permission === 'granted') {
+          console.log('Notification permission granted.');
+          // TODO: Get the token here and save it.
+          const currentToken = await getToken(messaging, {
+            vapidKey: 'BFt-59530A2_vj9hPZWdhx-mOhf575tEma23v1lX39iKk8qGqg4qTz8-6J6l1eL7f2f8Xj4eL4q2eY6w1oX3n4Y', // Replace with your VAPID key
+          });
+
+          if (currentToken) {
+            console.log('FCM Token:', currentToken);
+            // Save the token to the user's document
+            const currentTokens = userData?.fcmTokens || [];
+            if (!currentTokens.includes(currentToken)) {
+              await setDoc(userDocRef, { fcmTokens: arrayUnion(currentToken) }, { merge: true });
+            }
+          } else {
+            console.log('No registration token available. Request permission to generate one.');
+          }
+        } else {
+          console.log('Unable to get permission to notify.');
+        }
+      } catch (error) {
+        console.error('An error occurred while setting up notifications.', error);
+      }
+    };
+
+    if (userData?.setupComplete) {
+      setupNotifications();
+    }
+
+  }, [user, userDocRef, userData?.setupComplete]);
 
   const displayableTasks = useMemo(() => {
     if (!allTasks || !userData || !userData.schedule) return [];

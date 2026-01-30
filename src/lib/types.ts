@@ -34,6 +34,7 @@ export type UserData = {
   weekendTabStartDay?: number; // 1 for Monday, 7 for Sunday
   coins: number;
   unlockedThemes: string[];
+  fcmTokens?: string[];
 };
 
 export type Theme = {

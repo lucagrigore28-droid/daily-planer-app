@@ -7,7 +7,6 @@ import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import OneSignalInitializer from '@/components/OneSignalInitializer';
 
 
 export const metadata: Metadata = {
@@ -49,7 +48,6 @@ export default function RootLayout({
             enableSystem
           >
             <AppProvider>
-              <OneSignalInitializer />
               {children}
               <Toaster />
             </AppProvider>
