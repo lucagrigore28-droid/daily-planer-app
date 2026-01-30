@@ -60,6 +60,14 @@ type AppContextType = {
 
 export const AppContext = createContext<AppContextType | null>(null);
 
+// Helper to manage local notification timers
+const notificationTimers: NodeJS.Timeout[] = [];
+const clearScheduledNotifications = () => {
+  notificationTimers.forEach(clearTimeout);
+  notificationTimers.length = 0;
+};
+
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -77,7 +85,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [lastCoinReward, setLastCoinReward] = useState<{ taskId: string; amount: number } | null>(null);
   const [lastCompletedTaskIdForProgress, setLastCompletedTaskIdForProgress] = useState<string | null>(null);
   
-  // Use a ref to track sync status and prevent re-runs
   const syncInProgress = useRef(false);
   const initialSyncCompleted = useRef(false);
 
@@ -95,23 +102,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       if (subjectTasks.length === 0) continue;
 
-      // The very first task of a subject series is always unlocked.
       unlockedTaskIds.add(subjectTasks[0].id);
 
-      // For subsequent tasks, they are unlocked one by one.
       for (let i = 0; i < subjectTasks.length - 1; i++) {
         const currentTask = subjectTasks[i];
         const nextTask = subjectTasks[i + 1];
 
-        // If the current task is completed, the next one is a candidate for unlocking.
         if (currentTask.isCompleted) {
           const scheduledDays = userData.schedule[currentTask.subjectId] || [];
           if (scheduledDays.length > 0) {
             const dueDateOfNext = startOfDay(new Date(nextTask.dueDate));
-            // Find the last class day *before* the next task is due. This is when it was 'assigned'.
             let lastClassDayBeforeNextDue: Date | null = null;
             
-            // Iterate backwards from the day before the due date to find the most recent class day.
             for (let d = 1; d <= 7; d++) {
                 const checkDate = subDays(dueDateOfNext, d);
                 const dayOfWeek = getDay(checkDate) === 0 ? 7 : getDay(checkDate);
@@ -121,7 +123,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
             
-            // The task unlocks if today is on or after the 'assignment' day.
             if (lastClassDayBeforeNextDue && !isBefore(startOfDay(currentDate), lastClassDayBeforeNextDue)) {
               unlockedTaskIds.add(nextTask.id);
             }
@@ -136,6 +137,79 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, [allTasks, userData, currentDate]);
 
+  // --- Start Local Notification Logic ---
+  useEffect(() => {
+    if (!isDataLoaded || !userData?.setupComplete || !displayableTasks.length) {
+      return;
+    }
+
+    const scheduleNotifications = async () => {
+      if (!('Notification' in window)) {
+        console.log("This browser does not support desktop notification");
+        return;
+      }
+
+      if (Notification.permission === 'denied') {
+        return; // User has denied notifications
+      }
+
+      if (Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          return;
+        }
+      }
+
+      // Clear any previously scheduled notifications by this app instance
+      clearScheduledNotifications();
+
+      const today = startOfDay(new Date());
+      const incompleteTasks = displayableTasks.filter(t => !t.isCompleted && isAfter(startOfDay(new Date(t.dueDate)), subDays(today,1)));
+      
+      const tasksByDay = incompleteTasks.reduce((acc, task) => {
+        const dateStr = format(new Date(task.dueDate), 'yyyy-MM-dd');
+        if (!acc[dateStr]) {
+          acc[dateStr] = [];
+        }
+        acc[dateStr].push(task.subjectName);
+        return acc;
+      }, {} as Record<string, string[]>);
+
+      Object.keys(tasksByDay).forEach(dateStr => {
+        const notificationDate = new Date(dateStr);
+        const subjectNames = [...new Set(tasksByDay[dateStr])];
+        
+        // Set notification time for 4 PM on the day of the tasks
+        const notificationTime = new Date(
+          notificationDate.getFullYear(),
+          notificationDate.getMonth(),
+          notificationDate.getDate(),
+          16, 0, 0
+        ).getTime();
+
+        const now = Date.now();
+
+        if (notificationTime > now) {
+          const delay = notificationTime - now;
+          const timerId = setTimeout(() => {
+            new Notification('Reminder Teme', {
+              body: `Nu uita, azi ai de lucru la: ${subjectNames.join(', ')}.`,
+              icon: '/apple-icon.png',
+              tag: `daily-planner-pro-reminder-${dateStr}`
+            });
+          }, delay);
+          notificationTimers.push(timerId);
+        }
+      });
+    };
+
+    scheduleNotifications();
+    
+    // Cleanup on unmount
+    return () => clearScheduledNotifications();
+
+  }, [isDataLoaded, userData?.setupComplete, displayableTasks]);
+  // --- End Local Notification Logic ---
 
   useEffect(() => {
     if (allTasks) {
@@ -150,7 +224,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const body = document.body;
     const themeName = userData?.theme || 'classic';
   
-    // Clear all theme-related classes and styles first
     body.className = body.className.replace(/theme-\w+/g, '');
     body.classList.remove('theme-custom-active');
     body.style.removeProperty('--gradient-bg');
@@ -213,7 +286,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const batch = writeBatch(firestore);
 
       const automaticTasks = allTasks.filter(t => !t.isManual);
-      const existingTasks = new Map<string, string>(); // Map "subjectId_dateString" to "taskId"
+      const existingTasks = new Map<string, string>(); 
 
       automaticTasks.forEach(task => {
         const taskDate = startOfDay(parseISO(task.dueDate));
@@ -277,7 +350,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     
-    // Non-blocking write
     setDoc(userDocRef, {
       ...initialUserData,
       name,
@@ -332,12 +404,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
 
-    // Optimistic update for completion
     if (updates.isCompleted === true) {
       setLastCompletedTaskIdForProgress(taskId);
       const taskData = allTasks?.find(t => t.id === taskId);
       
-      // Check to prevent re-awarding coins on re-renders or double-clicks
       if (taskData && !taskData.isCompleted && !taskData.coinsAwarded && userData) {
         const dueDate = startOfDay(new Date(taskData.dueDate));
         const completionDate = startOfDay(new Date());
@@ -352,7 +422,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setLastCoinReward({ taskId, amount: coinsEarned });
           const userDocRef = doc(firestore, 'users', user.uid);
           const currentCoins = userData.coins || 0;
-          // Non-blocking update for user coins
           setDoc(userDocRef, { coins: currentCoins + coinsEarned }, { merge: true }).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
@@ -375,7 +444,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
     } else {
-      // Handle other types of updates (e.g., changing description, plannedDate)
       const finalUpdates = { ...updates };
       if ('plannedDate' in finalUpdates && (finalUpdates.plannedDate === undefined || finalUpdates.plannedDate === null)) {
         finalUpdates.plannedDate = deleteField() as any;
@@ -414,14 +482,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const resetData = useCallback(async () => {
     if (!user || !userDocRef) return;
     
-    // Delete all tasks
     const tasksCollectionRef = collection(firestore, 'users', user.uid, 'tasks');
     const tasksSnapshot = await getDocs(tasksCollectionRef);
     const batch = writeBatch(firestore);
     tasksSnapshot.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
 
-    // Reset user document
     await setDoc(userDocRef, { ...initialUserData, name: userData?.name || '' });
     
     window.location.reload();
@@ -438,7 +504,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     
     const incompleteTasks = displayableTasks.filter(task => !task.isCompleted && !task.isLocked);
     
-    // Get all future dates that have tasks
     const futureDates = incompleteTasks.reduce((acc, task) => {
         const dueDate = startOfDay(new Date(task.dueDate));
         if (!isBefore(dueDate, today)) {
@@ -465,7 +530,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!displayableTasks || !userData || !userData.schedule) return [];
   
     return displayableTasks.filter(task => {
-        // Do not show locked tasks in the weekend planner
         if (task.isLocked) {
             return false;
         }

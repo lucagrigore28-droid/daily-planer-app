@@ -7,8 +7,6 @@ import { Inter, Poppins } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import Script from 'next/script';
-import { OneSignalInitializer } from '@/components/OneSignalInitializer';
 
 
 export const metadata: Metadata = {
@@ -44,7 +42,6 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased", fontPoppins.variable, fontInter.variable)}>
         <FirebaseClientProvider>
-          <OneSignalInitializer />
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -56,7 +53,6 @@ export default function RootLayout({
             </AppProvider>
           </ThemeProvider>
         </FirebaseClientProvider>
-        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="lazyOnload" crossOrigin="anonymous" />
       </body>
     </html>
   );
