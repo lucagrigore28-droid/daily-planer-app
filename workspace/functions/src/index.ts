@@ -8,10 +8,16 @@ interface HomeworkTask {
     isCompleted: boolean;
 }
 
+interface NotificationSettings {
+  time1?: string;
+  time2?: string;
+}
+
 interface UserData {
     name: string;
     setupComplete: boolean;
-    fcmTokens?: string[]; // Array of FCM tokens for notifications
+    fcmTokens?: string[];
+    notificationSettings?: NotificationSettings;
 }
 
 // Initialize the Firebase Admin SDK
@@ -20,31 +26,59 @@ const db = admin.firestore();
 const messaging = admin.messaging();
 
 /**
- * A scheduled function that runs daily to send homework reminders to all users
- * using Firebase Cloud Messaging (FCM).
+ * Runs every minute to check for and send scheduled notifications.
  */
-export const dailyReminder = functions
+export const scheduledNotificationDispatcher = functions
     .region("europe-west1")
-    .pubsub.topic("daily-reminder")
+    .pubsub.schedule("every 1 minute")
     .onRun(async (context: functions.EventContext) => {
-      functions.logger.info("Starting daily reminder process (FCM)...");
+      // Get current time in HH:mm format, in Romanian time zone
+      const now = new Date();
+      const currentTime = new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Bucharest",
+        hour12: false,
+      }).format(now);
 
-      const usersSnapshot = await db.collection("users").get();
+      // Firebase Functions logs time in UTC, so we log our target time for clarity
+      functions.logger.info(`Notification dispatcher (1-min interval) running. Current Romania time is ${currentTime}. Checking for notifications.`);
 
-      if (usersSnapshot.empty) {
-        functions.logger.info("No users found. Exiting.");
+      // Find users who should be notified at this exact time
+      const time1Query = db.collection("users").where("notificationSettings.time1", "==", currentTime);
+      const time2Query = db.collection("users").where("notificationSettings.time2", "==", currentTime);
+
+      const [time1Snapshot, time2Snapshot] = await Promise.all([
+        time1Query.get(),
+        time2Query.get(),
+      ]);
+
+      const usersToNotify = new Map<string, UserData>();
+
+      time1Snapshot.forEach((doc) => {
+        if (!usersToNotify.has(doc.id)) {
+          usersToNotify.set(doc.id, doc.data() as UserData);
+        }
+      });
+
+      time2Snapshot.forEach((doc) => {
+        if (!usersToNotify.has(doc.id)) {
+          usersToNotify.set(doc.id, doc.data() as UserData);
+        }
+      });
+
+      if (usersToNotify.size === 0) {
+        functions.logger.info("No users to notify at this time. Exiting.");
         return null;
       }
 
+      functions.logger.info(`Found ${usersToNotify.size} user(s) to notify.`);
       const promises: Promise<any>[] = [];
 
-      usersSnapshot.forEach((userDoc) => {
-        const user = userDoc.data() as UserData;
-        const userId = userDoc.id;
-
-        // Skip users who haven't completed setup or have no notification tokens
+      usersToNotify.forEach((user, userId) => {
+        // The same logic as before, just for the targeted users
         if (!user.setupComplete || !user.fcmTokens || user.fcmTokens.length === 0) {
-          return;
+          return; // Skip if no tokens or setup not complete
         }
 
         const taskPromise = (async () => {
@@ -56,12 +90,11 @@ export const dailyReminder = functions
             if (!tasksSnapshot.empty) {
               const incompleteTasks = tasksSnapshot.docs.map((doc) => doc.data() as HomeworkTask);
               const subjectNames = [...new Set(incompleteTasks.map((task) => task.subjectName))];
-
               const notification = {
                 title: "Reminder Teme",
                 body: `Salut, ${user.name}! Nu uita, mai ai de lucru la: ${subjectNames.join(", ")}.`,
               };
-              
+
               // Explicitly check fcmTokens again to satisfy TypeScript inside the promise closure
               if (!user.fcmTokens || user.fcmTokens.length === 0) {
                 return;
@@ -71,7 +104,6 @@ export const dailyReminder = functions
                 notification,
                 webpush: {
                   notification: {
-                    // This tag ensures new notifications replace old ones
                     tag: `daily-reminder-${userId}`,
                   },
                 },
@@ -81,7 +113,6 @@ export const dailyReminder = functions
               const response = await messaging.sendEachForMulticast(message);
               functions.logger.info(`Sent ${response.successCount} notifications to ${userId}.`);
 
-              // Clean up invalid tokens
               if (response.failureCount > 0) {
                 const tokensToRemove: string[] = [];
                 response.responses.forEach((resp, idx) => {
@@ -91,10 +122,9 @@ export const dailyReminder = functions
                     functions.logger.warn(`Failed to send to token: ${failedToken}`, resp.error);
                   }
                 });
-
                 if (tokensToRemove.length > 0) {
                   const updatedTokens = user.fcmTokens!.filter((token) => !tokensToRemove.includes(token));
-                  await userDoc.ref.update({fcmTokens: updatedTokens});
+                  await db.collection("users").doc(userId).update({fcmTokens: updatedTokens});
                   functions.logger.info(`Cleaned ${tokensToRemove.length} invalid tokens for user ${userId}.`);
                 }
               }
@@ -108,6 +138,6 @@ export const dailyReminder = functions
       });
 
       await Promise.all(promises);
-      functions.logger.info("Daily reminder process finished.");
+      functions.logger.info("Notification dispatcher finished.");
       return null;
     });
