@@ -18,11 +18,11 @@ import type { PersonalEvent } from '@/lib/types';
 
 
 interface AddEventDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export default function AddEventDialog({ isOpen, onClose }: AddEventDialogProps) {
+export default function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
   const context = useContext(AppContext);
   const { toast } = useToast();
 
@@ -34,7 +34,7 @@ export default function AddEventDialog({ isOpen, onClose }: AddEventDialogProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       setTitle('');
       setDescription('');
       setDate(new Date());
@@ -42,7 +42,11 @@ export default function AddEventDialog({ isOpen, onClose }: AddEventDialogProps)
       setEndTime('');
       setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [open]);
+
+  const handleClose = () => {
+    onOpenChange(false);
+  }
 
   const handleSubmit = () => {
     if (!title || !date) {
@@ -75,11 +79,11 @@ export default function AddEventDialog({ isOpen, onClose }: AddEventDialogProps)
       title: 'Eveniment adăugat!',
       description: `"${title}" a fost adăugat în calendar.`,
     });
-    onClose();
+    handleClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Adaugă un Eveniment Nou</DialogTitle>
@@ -146,7 +150,7 @@ export default function AddEventDialog({ isOpen, onClose }: AddEventDialogProps)
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Anulează</Button>
+          <Button variant="outline" onClick={handleClose}>Anulează</Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? 'Se adaugă...' : 'Adaugă Eveniment'}
           </Button>

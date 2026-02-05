@@ -132,7 +132,7 @@ export default function HomeworkDashboard() {
       </Tabs>
       
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
-      <AddEventDialog isOpen={isAddEventOpen} onClose={() => setAddEventOpen(false)} />
+      <AddEventDialog open={isAddEventOpen} onOpenChange={setAddEventOpen} />
       <SettingsDialog open={isSettingsOpen} onOpenChange={handleSettingsToggle} initialTab={initialSettingsTab} />
 
       <AlertDialog open={isAddChoiceOpen} onOpenChange={setAddChoiceOpen}>
