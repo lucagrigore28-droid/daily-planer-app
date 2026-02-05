@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useRef } from 'react';
-import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
+import type { HomeworkTask, UserData, Subject, Schedule, Theme, PersonalEvent } from '@/lib/types';
 import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
 import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField, serverTimestamp } from 'firebase/firestore';
@@ -12,10 +12,8 @@ import { signOut } from 'firebase/auth';
 import { themes } from '@/lib/themes';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { getMessaging, getToken } from 'firebase/messaging';
 
 const initialUserData: UserData = {
-  username: '',
   name: '',
   subjects: [],
   schedule: {},
@@ -30,15 +28,17 @@ const initialUserData: UserData = {
 type AppContextType = {
   userData: UserData | null;
   tasks: HomeworkTask[];
-  updateUser: (data: Partial<UserData>, oldUsername?: string) => void;
+  events: PersonalEvent[];
+  updateUser: (data: Partial<UserData>) => void;
   updateSubjects: (subjects: Subject[]) => void;
   addTask: (task: Omit<HomeworkTask, 'id'>) => void;
+  addEvent: (event: Omit<PersonalEvent, 'id'>) => void;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
   deleteTask: (taskId: string) => void;
   resetData: () => Promise<void>;
   logout: () => Promise<void>;
   isDataLoaded: boolean;
-  areTasksSynced: boolean; // New flag
+  areTasksSynced: boolean;
   currentDate: Date;
   setCurrentDate: (date: Date) => void;
   getNextDayWithTasks: () => Date | null;
@@ -57,7 +57,6 @@ type AppContextType = {
   setLastCoinReward: (reward: { taskId: string; amount: number } | null) => void;
   lastCompletedTaskIdForProgress: string | null;
   setLastCompletedTaskIdForProgress: (taskId: string | null) => void;
-  testNotifications: () => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -73,17 +72,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const tasksCollectionRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'tasks') : null), [user, firestore]);
   const { data: allTasks, isLoading: areTasksLoading } = useCollection<HomeworkTask>(tasksCollectionRef);
 
+  const eventsCollectionRef = useMemo(() => (user ? collection(firestore, 'users', user.uid, 'events') : null), [user, firestore]);
+  const { data: allEvents, isLoading: areEventsLoading } = useCollection<PersonalEvent>(eventsCollectionRef);
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [areTasksSynced, setAreTasksSynced] = useState(false);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<string | null>(null);
   const [lastCoinReward, setLastCoinReward] = useState<{ taskId: string; amount: number } | null>(null);
   const [lastCompletedTaskIdForProgress, setLastCompletedTaskIdForProgress] = useState<string | null>(null);
   
-  // Use a ref to track sync status and prevent re-runs
   const syncInProgress = useRef(false);
   const initialSyncCompleted = useRef(false);
 
-  const isDataLoaded = !isUserDataLoading && !isUserLoading;
+  const isDataLoaded = !isUserDataLoading && !isUserLoading && !areTasksLoading && !areEventsLoading;
 
   const displayableTasks = useMemo(() => {
     if (!allTasks || !userData || !userData.schedule) return [];
@@ -97,23 +98,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       if (subjectTasks.length === 0) continue;
 
-      // The very first task of a subject series is always unlocked.
       unlockedTaskIds.add(subjectTasks[0].id);
 
-      // For subsequent tasks, they are unlocked one by one.
       for (let i = 0; i < subjectTasks.length - 1; i++) {
         const currentTask = subjectTasks[i];
         const nextTask = subjectTasks[i + 1];
 
-        // If the current task is completed, the next one is a candidate for unlocking.
         if (currentTask.isCompleted) {
           const scheduledDays = userData.schedule[currentTask.subjectId] || [];
           if (scheduledDays.length > 0) {
             const dueDateOfNext = startOfDay(new Date(nextTask.dueDate));
-            // Find the last class day *before* the next task is due. This is when it was 'assigned'.
             let lastClassDayBeforeNextDue: Date | null = null;
             
-            // Iterate backwards from the day before the due date to find the most recent class day.
             for (let d = 1; d <= 7; d++) {
                 const checkDate = subDays(dueDateOfNext, d);
                 const dayOfWeek = getDay(checkDate) === 0 ? 7 : getDay(checkDate);
@@ -123,7 +119,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
             
-            // The task unlocks if today is on or after the 'assignment' day.
             if (lastClassDayBeforeNextDue && !isBefore(startOfDay(currentDate), lastClassDayBeforeNextDue)) {
               unlockedTaskIds.add(nextTask.id);
             }
@@ -152,7 +147,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const body = document.body;
     const themeName = userData?.theme || 'classic';
   
-    // Clear all theme-related classes and styles first
     body.className = body.className.replace(/theme-\w+/g, '');
     body.classList.remove('theme-custom-active');
     body.style.removeProperty('--gradient-bg');
@@ -215,7 +209,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const batch = writeBatch(firestore);
 
       const automaticTasks = allTasks.filter(t => !t.isManual);
-      const existingTasks = new Map<string, string>(); // Map "subjectId_dateString" to "taskId"
+      const existingTasks = new Map<string, string>(); 
 
       automaticTasks.forEach(task => {
         const taskDate = startOfDay(parseISO(task.dueDate));
@@ -279,7 +273,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
     const userDocRef = doc(firestore, 'users', user.uid);
     
-    // Non-blocking write
     setDoc(userDocRef, {
       ...initialUserData,
       name,
@@ -319,7 +312,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
       if (tasksCollectionRef) {
-        addDoc(tasksCollectionRef, task).catch(serverError => {
+        addDoc(tasksCollectionRef, { ...task, createdAt: serverTimestamp() }).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: tasksCollectionRef.path,
                 operation: 'create',
@@ -330,16 +323,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
   }, [tasksCollectionRef]);
 
+  const addEvent = useCallback((event: Omit<PersonalEvent, 'id'>) => {
+    if (eventsCollectionRef) {
+        addDoc(eventsCollectionRef, { ...event, createdAt: serverTimestamp() }).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: eventsCollectionRef.path,
+                operation: 'create',
+                requestResourceData: event,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    }
+  }, [eventsCollectionRef]);
+
   const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
     if (!user) return;
     const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
 
-    // Optimistic update for completion
     if (updates.isCompleted === true) {
       setLastCompletedTaskIdForProgress(taskId);
       const taskData = allTasks?.find(t => t.id === taskId);
       
-      // Check to prevent re-awarding coins on re-renders or double-clicks
       if (taskData && !taskData.isCompleted && !taskData.coinsAwarded && userData) {
         const dueDate = startOfDay(new Date(taskData.dueDate));
         const completionDate = startOfDay(new Date());
@@ -354,7 +358,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setLastCoinReward({ taskId, amount: coinsEarned });
           const userDocRef = doc(firestore, 'users', user.uid);
           const currentCoins = userData.coins || 0;
-          // Non-blocking update for user coins
           setDoc(userDocRef, { coins: currentCoins + coinsEarned }, { merge: true }).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: userDocRef.path,
@@ -377,8 +380,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
     } else {
-      // Handle other types of updates (e.g., changing description, plannedDate)
-      const finalUpdates = { ...updates };
+      const finalUpdates: Partial<HomeworkTask> = { ...updates };
       if ('plannedDate' in finalUpdates && (finalUpdates.plannedDate === undefined || finalUpdates.plannedDate === null)) {
         finalUpdates.plannedDate = deleteField() as any;
       }
@@ -415,44 +417,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const resetData = useCallback(async () => {
     if (!user || !userDocRef) return;
-
     const tasksCollectionRef = collection(firestore, 'users', user.uid, 'tasks');
-    
-    let tasksSnapshot;
+    const eventsCollectionRef = collection(firestore, 'users', user.uid, 'events');
+  
     try {
-        tasksSnapshot = await getDocs(tasksCollectionRef);
+      const tasksSnapshot = await getDocs(tasksCollectionRef);
+      const eventsSnapshot = await getDocs(eventsCollectionRef);
+      const batch = writeBatch(firestore);
+  
+      tasksSnapshot.forEach(doc => batch.delete(doc.ref));
+      eventsSnapshot.forEach(doc => batch.delete(doc.ref));
+  
+      await batch.commit();
+  
+      const resetUserData = { ...initialUserData, name: userData?.name || '' };
+      await setDoc(userDocRef, resetUserData);
+  
+      window.location.reload();
+  
     } catch (serverError) {
-         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: tasksCollectionRef.path,
-            operation: 'list',
-        }));
-        return; // Stop execution
+      // Create a generic error for the batch operation
+      const permissionError = new FirestorePermissionError({
+        path: `users/${user.uid}`,
+        operation: 'write', // Batch involves deletes and a set
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      console.error('Failed to reset data:', serverError);
     }
-
-    const batch = writeBatch(firestore);
-    tasksSnapshot.forEach(doc => batch.delete(doc.ref));
-    
-    // Chain mutations with .then() and .catch()
-    batch.commit().then(() => {
-        const resetUserData = { ...initialUserData, name: userData?.name || '' };
-        setDoc(userDocRef, resetUserData)
-            .then(() => {
-                window.location.reload();
-            })
-            .catch(serverError => {
-                 errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'create',
-                    requestResourceData: resetUserData
-                }));
-            });
-    }).catch(serverError => {
-         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `users/${user.uid}/tasks`, // Representative path for batch
-            operation: 'delete',
-        }));
-    });
-  }, [firestore, user, userDocRef, userData]);
+  }, [firestore, user, userDocRef, userData?.name]);
   
   const logout = useCallback(async () => {
     await signOut(auth);
@@ -465,7 +457,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     
     const incompleteTasks = displayableTasks.filter(task => !task.isCompleted && !task.isLocked);
     
-    // Get all future dates that have tasks
     const futureDates = incompleteTasks.reduce((acc, task) => {
         const dueDate = startOfDay(new Date(task.dueDate));
         if (!isBefore(dueDate, today)) {
@@ -492,7 +483,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (!displayableTasks || !userData || !userData.schedule) return [];
   
     return displayableTasks.filter(task => {
-        // Do not show locked tasks in the weekend planner
         if (task.isLocked) {
             return false;
         }
@@ -516,51 +506,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [displayableTasks, userData, currentDate]);
 
-  const testNotifications = useCallback(async () => {
-    if (!user || !firestore) {
-      console.log("User or firestore not available");
-      return;
-    }
-
-    try {
-      // Get the messaging instance
-      const messaging = getMessaging();
-
-      // Request permission
-      const permission = await Notification.requestPermission();
-
-      if (permission === 'granted') {
-        console.log('Notification permission granted.');
-        
-        // Get the token
-        const currentToken = await getToken(messaging, { vapidKey: 'BLK_q2D0U8aDfrWNIdcHKlQLGQDgglv2t_HstiAu_qzfccKGrgiD8vxATQCGhI07Ch3oPzTjy8h-xx7ImfBTXQs' });
-        
-        if (currentToken) {
-          console.log('FCM Token:', currentToken);
-          
-          // Save the token to Firestore
-          const tokensCollectionRef = collection(firestore, 'fcmTokens', user.uid, 'tokens');
-          await addDoc(tokensCollectionRef, {
-            token: currentToken,
-            createdAt: serverTimestamp()
-          });
-          console.log('Token saved to Firestore.');
-          alert("Permisiune acordată! Token-ul a fost salvat. Vezi consola pentru detalii.");
-
-        } else {
-          console.log('No registration token available. Request new token.');
-          alert("Nu s-a putut obține un token. Încearcă din nou.");
-        }
-      } else {
-        console.log('Unable to get permission to notify.');
-        alert("Permisiune refuzată pentru notificări.");
-      }
-    } catch (error) {
-      console.error('An error occurred while retrieving token. ', error);
-      alert("A apărut o eroare la obținerea token-ului.");
-    }
-  }, [user, firestore]);
-
   const pauseTimer = useCallback((taskId: string) => {
     const task = allTasks?.find(t => t.id === taskId);
     if (task && task.timerStartTime) {
@@ -574,7 +519,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [allTasks, updateTask]);
 
   const startTimer = useCallback(async (taskId: string) => {
-    // If there's another timer running, pause it first
     if (activeTimerTaskId && activeTimerTaskId !== taskId) {
       pauseTimer(activeTimerTaskId);
     }
@@ -651,9 +595,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const value: AppContextType = {
     userData: memoizedUserData,
     tasks: displayableTasks,
+    events: allEvents || [],
     updateUser,
     updateSubjects,
     addTask,
+    addEvent,
     updateTask,
     deleteTask,
     resetData,
@@ -678,10 +624,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setLastCoinReward,
     lastCompletedTaskIdForProgress,
     setLastCompletedTaskIdForProgress,
-    testNotifications,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    

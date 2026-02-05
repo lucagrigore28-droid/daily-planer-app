@@ -45,6 +45,15 @@ service cloud.firestore {
         // to all tasks within their own 'tasks' subcollection.
         allow read, write: if isOwner(userId);
       }
+      
+      // Rules for the 'events' subcollection within a user's document.
+      match /events/{eventId} {
+
+        // READ, WRITE rules:
+        // A user has full read and write (create, update, delete) access
+        // to all events within their own 'events' subcollection.
+        allow read, write: if isOwner(userId);
+      }
     }
   }
 }

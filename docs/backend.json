@@ -105,6 +105,35 @@
         "isCompleted",
         "isManual"
       ]
+    },
+    "Event": {
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a personal, non-academic event.",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the event."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the event."
+        },
+        "eventDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date of the event."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The start time of the event (e.g., '18:00')."
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The end time of the event (e.g., '20:00')."
+        }
+      },
+      "required": ["title", "eventDate"]
     }
   },
   "auth": {
@@ -128,6 +157,15 @@
             "$ref": "#/entities/Task"
           },
           "description": "A flat collection of all tasks for a user, simplifying queries."
+        }
+      },
+      {
+        "path": "/users/{userId}/events/{eventId}",
+        "definition": {
+          "schema": {
+            "$ref": "#/entities/Event"
+          },
+          "description": "Stores personal events for a user."
         }
       }
     ]

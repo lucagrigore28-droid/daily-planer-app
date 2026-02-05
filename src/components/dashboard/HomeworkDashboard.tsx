@@ -5,7 +5,6 @@ import React, { useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { getDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Plus, Settings, Coins } from 'lucide-react';
 import AddTaskDialog from './AddTaskDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
@@ -24,10 +23,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import TasksView, { TasksViewMode } from './TasksView';
 import DashboardHeader from './DashboardHeader';
+import { Coins, Book, Calendar } from 'lucide-react';
+import AddEventDialog from './AddEventDialog';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
+  const [isAddEventOpen, setAddEventOpen] = useState(false);
+  const [isAddChoiceOpen, setAddChoiceOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [initialSettingsTab, setInitialSettingsTab] = useState('profile');
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
@@ -64,6 +67,15 @@ export default function HomeworkDashboard() {
     }
   };
 
+  const openChoiceDialog = (choice: 'task' | 'event') => {
+    setAddChoiceOpen(false);
+    if (choice === 'task') {
+      setAddTaskOpen(true);
+    } else {
+      setAddEventOpen(true);
+    }
+  };
+
   if (!context || !context.userData) return null;
 
   const dayOfWeekRaw = getDay(currentDate);
@@ -85,7 +97,7 @@ export default function HomeworkDashboard() {
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
       <DashboardHeader 
-        onOpenAddTask={() => setAddTaskOpen(true)}
+        onOpenAddDialog={() => setAddChoiceOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenCoinInfo={() => setIsCoinInfoOpen(true)}
         tasksViewMode={tasksViewMode}
@@ -120,7 +132,32 @@ export default function HomeworkDashboard() {
       </Tabs>
       
       <AddTaskDialog open={isAddTaskOpen} onOpenChange={setAddTaskOpen} />
+      <AddEventDialog isOpen={isAddEventOpen} onClose={() => setAddEventOpen(false)} />
       <SettingsDialog open={isSettingsOpen} onOpenChange={handleSettingsToggle} initialTab={initialSettingsTab} />
+
+      <AlertDialog open={isAddChoiceOpen} onOpenChange={setAddChoiceOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Ce dorești să adaugi?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Alege dacă vrei să adaugi o temă pentru școală sau un eveniment personal.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="grid grid-cols-2 gap-4 py-4">
+                <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => openChoiceDialog('task')}>
+                    <Book className="h-8 w-8"/>
+                    Temă nouă
+                </Button>
+                <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => openChoiceDialog('event')}>
+                    <Calendar className="h-8 w-8" />
+                    Eveniment personal
+                </Button>
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Anulează</AlertDialogCancel>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={isCoinInfoOpen} onOpenChange={setIsCoinInfoOpen}>
         <AlertDialogContent>

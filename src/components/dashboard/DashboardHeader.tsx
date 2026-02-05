@@ -17,7 +17,7 @@ const viewModes = {
 };
 
 type DashboardHeaderProps = {
-    onOpenAddTask: () => void;
+    onOpenAddDialog: () => void;
     onOpenSettings: () => void;
     onOpenCoinInfo: () => void;
     tasksViewMode: TasksViewMode;
@@ -26,7 +26,7 @@ type DashboardHeaderProps = {
 };
 
 export default function DashboardHeader({
-    onOpenAddTask,
+    onOpenAddDialog,
     onOpenSettings,
     onOpenCoinInfo,
     tasksViewMode,
@@ -55,9 +55,9 @@ export default function DashboardHeader({
             </div>
             <div className="flex flex-col items-end gap-2">
                  <div className="flex items-center gap-2">
-                    <Button onClick={onOpenAddTask} size="icon" variant="default">
+                    <Button onClick={onOpenAddDialog} size="icon" variant="default">
                         <Plus className="h-6 w-6" />
-                        <span className="sr-only">Adaugă temă</span>
+                        <span className="sr-only">Adaugă</span>
                     </Button>
                     <Button variant="ghost" size="icon" onClick={onOpenSettings}>
                         <Settings className="h-6 w-6" />
