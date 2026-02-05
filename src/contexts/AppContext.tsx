@@ -604,7 +604,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return { ...initialUserData, ...userData };
   }, [userData, isUserDataLoading]);
   
-  const value: AppContextType = {
+  const value = useMemo(() => ({
     userData: memoizedUserData,
     tasks: displayableTasks,
     events: allEvents || [],
@@ -636,9 +636,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setLastCoinReward,
     lastCompletedTaskIdForProgress,
     setLastCompletedTaskIdForProgress,
-  };
+  }), [
+    memoizedUserData,
+    displayableTasks,
+    allEvents,
+    updateUser,
+    updateSubjects,
+    addTask,
+    addEvent,
+    updateTask,
+    deleteTask,
+    resetData,
+    logout,
+    isDataLoaded,
+    areTasksSynced,
+    currentDate,
+    getNextDayWithTasks,
+    getWeekendTasks,
+    user,
+    isUserLoading,
+    createUserDocument,
+    activeTimerTaskId,
+    startTimer,
+    pauseTimer,
+    stopAndCompleteTimer,
+    completeTaskWithTimer,
+    unlockTheme,
+    addCoins,
+    lastCoinReward,
+    lastCompletedTaskIdForProgress,
+  ]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    

@@ -69,11 +69,15 @@ export default function HomeworkDashboard() {
 
   const openChoiceDialog = (choice: 'task' | 'event') => {
     setAddChoiceOpen(false);
-    if (choice === 'task') {
-      setAddTaskOpen(true);
-    } else {
-      setAddEventOpen(true);
-    }
+    // Replicăm soluția care a funcționat pentru bug-ul cu magazinul.
+    // O durată mai mare permite primului dialog să se închidă complet.
+    setTimeout(() => {
+      if (choice === 'task') {
+        setAddTaskOpen(true);
+      } else {
+        setAddEventOpen(true);
+      }
+    }, 300); // Am mărit durata la 300ms, identic cu soluția pentru magazin.
   };
 
   if (!context || !context.userData) return null;
