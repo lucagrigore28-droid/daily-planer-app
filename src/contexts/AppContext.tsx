@@ -325,7 +325,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addEvent = useCallback((event: Omit<PersonalEvent, 'id'>) => {
     if (eventsCollectionRef) {
-        addDoc(eventsCollectionRef, { ...event, createdAt: serverTimestamp() }).catch(serverError => {
+        addDoc(eventsCollectionRef, { ...event }).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: eventsCollectionRef.path,
                 operation: 'create',

@@ -44,7 +44,7 @@ export default function AddEventDialog({ isOpen, onClose }: AddEventDialogProps)
     }
   }, [isOpen]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!title || !date) {
       toast({
         title: 'Câmpuri Incomplete',
@@ -70,23 +70,12 @@ export default function AddEventDialog({ isOpen, onClose }: AddEventDialogProps)
         eventData.endTime = endTime;
     }
 
-    try {
-      await context.addEvent(eventData);
-      toast({
-        title: 'Eveniment adăugat!',
-        description: `"${title}" a fost adăugat în calendar.`,
-      });
-      onClose();
-    } catch (error) {
-      console.error("Error adding event:", error);
-      toast({
-        title: 'Eroare',
-        description: 'A apărut o eroare la adăugarea evenimentului.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    context.addEvent(eventData);
+    toast({
+      title: 'Eveniment adăugat!',
+      description: `"${title}" a fost adăugat în calendar.`,
+    });
+    onClose();
   };
 
   return (
