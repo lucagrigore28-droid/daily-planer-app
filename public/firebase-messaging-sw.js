@@ -75,18 +75,13 @@ define(['./workbox-7144475a'], (function (workbox) { 'use strict';
   workbox.registerRoute("/", new workbox.NetworkFirst({
     "cacheName": "start-url",
     plugins: [{
-      cacheWillUpdate: function (param) {
-        var e = param.response;
-        return _async_to_generator(function () {
-          return _ts_generator(this, function (_state) {
-            return [2, e && "opaqueredirect" === e.type ? new Response(e.body, {
-              status: 200,
-              statusText: "OK",
-              headers: e.headers
-            }) : e];
-          });
-        })();
-      }
+      cacheWillUpdate: async ({
+        response: e
+      }) => e && "opaqueredirect" === e.type ? new Response(e.body, {
+        status: 200,
+        statusText: "OK",
+        headers: e.headers
+      }) : e
     }]
   }), 'GET');
   workbox.registerRoute(/.*/i, new workbox.NetworkOnly({
