@@ -156,7 +156,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } else if (isDataLoaded && !userData?.setupComplete) {
       setAreTasksSynced(true);
     }
-  }, [isDataLoaded, userData?.setupComplete, user, firestore, scheduleJson, subjectsJson, userData]);
+  }, [isDataLoaded, userData?.setupComplete, user, firestore, scheduleJson, subjectsJson]);
 
 
   const displayableTasks = useMemo(() => {
@@ -439,14 +439,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
       window.location.reload();
   
-    } catch (serverError) {
-      // Create a generic error for the batch operation
-      const permissionError = new FirestorePermissionError({
-        path: `users/${user.uid}`,
-        operation: 'write', // Batch involves deletes and a set
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      console.error('Failed to reset data:', serverError);
+    } catch (serverError: any) {
+        let operation: 'write' | 'delete' = 'write';
+        // A more specific error could be constructed if we knew which part of the batch failed.
+        // For now, we'll assume a general write error.
+        if (serverError.code === 'permission-denied') {
+            const path = serverError.message.match(/on resource (.*)/)?.[1] || `users/${user.uid}`;
+             if (path.includes('/tasks/') || path.includes('/events/')) {
+                operation = 'delete';
+            }
+        }
+        const permissionError = new FirestorePermissionError({
+            path: `users/${user.uid}`, // Or a more specific path if available
+            operation: operation,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        console.error('Failed to reset data:', serverError);
     }
   }, [firestore, user, userDocRef, userData?.name]);
   
@@ -632,3 +640,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    
