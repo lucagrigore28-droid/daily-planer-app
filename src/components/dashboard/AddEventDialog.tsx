@@ -14,6 +14,7 @@ import { ro } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { AppContext } from '@/contexts/AppContext';
 import { Label } from '../ui/label';
+import type { PersonalEvent } from '@/lib/types';
 
 
 interface AddEventDialogProps {
@@ -56,14 +57,21 @@ export default function AddEventDialog({ isOpen, onClose }: AddEventDialogProps)
 
     setIsSubmitting(true);
     
-    try {
-      await context.addEvent({ 
-        title, 
-        description, 
+    const eventData: Omit<PersonalEvent, 'id'> = {
+        title,
+        description,
         eventDate: date.toISOString(),
-        startTime: startTime || undefined,
-        endTime: endTime || undefined
-      });
+    };
+
+    if (startTime) {
+        eventData.startTime = startTime;
+    }
+    if (endTime) {
+        eventData.endTime = endTime;
+    }
+
+    try {
+      await context.addEvent(eventData);
       toast({
         title: 'Eveniment adăugat!',
         description: `"${title}" a fost adăugat în calendar.`,
