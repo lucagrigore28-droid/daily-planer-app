@@ -82,9 +82,82 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [lastCompletedTaskIdForProgress, setLastCompletedTaskIdForProgress] = useState<string | null>(null);
   
   const syncInProgress = useRef(false);
-  const initialSyncCompleted = useRef(false);
 
   const isDataLoaded = !isUserDataLoading && !isUserLoading && !areTasksLoading && !areEventsLoading;
+
+  const scheduleJson = useMemo(() => JSON.stringify(userData?.schedule || {}), [userData?.schedule]);
+  const subjectsJson = useMemo(() => JSON.stringify(userData?.subjects || []), [userData?.subjects]);
+
+  useEffect(() => {
+    const performSync = async () => {
+      if (!user || !userData || syncInProgress.current) return;
+
+      syncInProgress.current = true;
+      try {
+        const tasksCollectionRef = collection(firestore, 'users', user.uid, 'tasks');
+        const tasksSnapshot = await getDocs(tasksCollectionRef);
+        const currentTasks: HomeworkTask[] = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as HomeworkTask));
+        
+        const batch = writeBatch(firestore);
+        const today = startOfDay(new Date());
+
+        const automaticTasks = currentTasks.filter(t => !t.isManual);
+        const existingTasks = new Map<string, string>(); 
+
+        automaticTasks.forEach(task => {
+            const taskDate = startOfDay(parseISO(task.dueDate));
+            const dayIndex = getDay(taskDate) === 0 ? 7 : getDay(taskDate);
+            const subjectStillExists = userData.subjects.some(s => s.id === task.subjectId);
+            const isScheduled = userData.schedule[task.subjectId]?.includes(dayIndex);
+            const dateStr = task.dueDate.split('T')[0];
+
+            if ((isBefore(taskDate, today) && !task.isCompleted) || !subjectStillExists || !isScheduled) {
+                batch.delete(doc(firestore, 'users', user.uid, 'tasks', task.id));
+            } else {
+                existingTasks.set(`${task.subjectId}_${dateStr}`, task.id);
+            }
+        });
+
+        for (let i = 0; i < 14; i++) {
+            const dateToCheck = addDays(today, i);
+            const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
+            const dateStr = dateToCheck.toISOString().split('T')[0];
+
+            if (dayIndex >= 1 && dayIndex <= 5) {
+                for (const subject of userData.subjects) {
+                    if (userData.schedule[subject.id]?.includes(dayIndex)) {
+                        const taskKey = `${subject.id}_${dateStr}`;
+                        if (!existingTasks.has(taskKey)) {
+                            const newTaskRef = doc(collection(firestore, 'users', user.uid, 'tasks'));
+                            batch.set(newTaskRef, {
+                                subjectId: subject.id,
+                                subjectName: subject.name,
+                                description: '',
+                                dueDate: dateToCheck.toISOString(),
+                                isCompleted: false,
+                                isManual: false
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        await batch.commit();
+      } catch (error) {
+          console.error("Error syncing tasks:", error);
+      } finally {
+          syncInProgress.current = false;
+          setAreTasksSynced(true);
+      }
+    };
+    
+    if (isDataLoaded && userData?.setupComplete) {
+      performSync();
+    } else if (isDataLoaded && !userData?.setupComplete) {
+      setAreTasksSynced(true);
+    }
+  }, [isDataLoaded, userData?.setupComplete, user, firestore, scheduleJson, subjectsJson, userData]);
+
 
   const displayableTasks = useMemo(() => {
     if (!allTasks || !userData || !userData.schedule) return [];
@@ -199,79 +272,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
   }, [userData?.theme, userData?.customThemeColors]);
-
-  const doSync = useCallback(async () => {
-    if (!user || !userData || syncInProgress.current) return;
-
-    syncInProgress.current = true;
-    try {
-        const tasksCollectionRef = collection(firestore, 'users', user.uid, 'tasks');
-        const tasksSnapshot = await getDocs(tasksCollectionRef);
-        const currentTasks: HomeworkTask[] = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as HomeworkTask));
-        
-        const batch = writeBatch(firestore);
-        const today = startOfDay(new Date());
-
-        const automaticTasks = currentTasks.filter(t => !t.isManual);
-        const existingTasks = new Map<string, string>(); 
-
-        automaticTasks.forEach(task => {
-            const taskDate = startOfDay(parseISO(task.dueDate));
-            const dayIndex = getDay(taskDate) === 0 ? 7 : getDay(taskDate);
-            const subjectStillExists = userData.subjects.some(s => s.id === task.subjectId);
-            const isScheduled = userData.schedule[task.subjectId]?.includes(dayIndex);
-            const dateStr = task.dueDate.split('T')[0];
-
-            if ((isBefore(taskDate, today) && !task.isCompleted) || !subjectStillExists || !isScheduled) {
-                batch.delete(doc(firestore, 'users', user.uid, 'tasks', task.id));
-            } else {
-                existingTasks.set(`${task.subjectId}_${dateStr}`, task.id);
-            }
-        });
-
-        for (let i = 0; i < 14; i++) {
-            const dateToCheck = addDays(today, i);
-            const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
-            const dateStr = dateToCheck.toISOString().split('T')[0];
-
-            if (dayIndex >= 1 && dayIndex <= 5) {
-                for (const subject of userData.subjects) {
-                    if (userData.schedule[subject.id]?.includes(dayIndex)) {
-                        const taskKey = `${subject.id}_${dateStr}`;
-                        if (!existingTasks.has(taskKey)) {
-                            const newTaskRef = doc(collection(firestore, 'users', user.uid, 'tasks'));
-                            batch.set(newTaskRef, {
-                                subjectId: subject.id,
-                                subjectName: subject.name,
-                                description: '',
-                                dueDate: dateToCheck.toISOString(),
-                                isCompleted: false,
-                                isManual: false
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        await batch.commit();
-    } catch (error) {
-        console.error("Error syncing tasks:", error);
-    } finally {
-        syncInProgress.current = false;
-        if (!initialSyncCompleted.current) {
-            initialSyncCompleted.current = true;
-            setAreTasksSynced(true);
-        }
-    }
-}, [firestore, user, userData]);
-
-useEffect(() => {
-    if (isDataLoaded && userData?.setupComplete) {
-        doSync();
-    } else if (isDataLoaded && !userData?.setupComplete) {
-        setAreTasksSynced(true);
-    }
-}, [isDataLoaded, userData?.setupComplete, userData?.schedule, userData?.subjects, doSync]);
   
   const createUserDocument = useCallback(async (user: any, name: string) => {
     if (!user) return;
@@ -329,7 +329,7 @@ useEffect(() => {
 
   const addEvent = useCallback((event: Omit<PersonalEvent, 'id'>) => {
     if (eventsCollectionRef) {
-        addDoc(eventsCollectionRef, { ...event }).catch(serverError => {
+        addDoc(eventsCollectionRef, event).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: eventsCollectionRef.path,
                 operation: 'create',
@@ -632,5 +632,3 @@ useEffect(() => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    
