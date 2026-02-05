@@ -70,7 +70,13 @@ export function useDoc<T = any>(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
-          setData({ ...(snapshot.data() as T), id: snapshot.id });
+          const newData = { ...(snapshot.data() as T), id: snapshot.id };
+          setData(currentData => {
+            if (JSON.stringify(currentData) === JSON.stringify(newData)) {
+              return currentData;
+            }
+            return newData;
+          });
         } else {
           setData(null);
         }
