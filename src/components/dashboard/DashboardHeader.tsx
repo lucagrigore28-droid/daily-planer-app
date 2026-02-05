@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useContext } from 'react';
@@ -54,15 +55,15 @@ export default function DashboardHeader({
             </div>
             <div className="flex flex-col items-end gap-2">
                  <div className="flex items-center gap-2">
+                    <Button onClick={onOpenAddTask} size="icon" variant="default">
+                        <Plus className="h-6 w-6" />
+                        <span className="sr-only">Adaugă temă</span>
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={onOpenSettings}>
                         <Settings className="h-6 w-6" />
                         <span className="sr-only">Setări</span>
                     </Button>
                 </div>
-                <Button onClick={onOpenAddTask} size="icon" variant="default" className="w-12 h-12">
-                    <Plus className="h-6 w-6" />
-                    <span className="sr-only">Adaugă temă</span>
-                </Button>
                 {activeTab === 'next-tasks' && (
                     <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as TasksViewMode) }}>
                         <SelectTrigger className="w-12 h-12 sm:h-10 sm:w-auto gap-2 justify-center sm:justify-start">
