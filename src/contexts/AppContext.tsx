@@ -5,13 +5,14 @@ import React, { createContext, useState, useEffect, ReactNode, useCallback, useM
 import type { HomeworkTask, UserData, Subject, Schedule, Theme } from '@/lib/types';
 import { addDays, getDay, startOfDay, startOfWeek, endOfWeek, isAfter, parseISO, isBefore, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
 import { useUser, useFirestore, useAuth } from '@/firebase';
-import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField } from 'firebase/firestore';
+import { doc, collection, setDoc, deleteDoc, query, onSnapshot, addDoc, getDocs, writeBatch, where, documentId, getDoc, runTransaction, Timestamp, deleteField, serverTimestamp } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { themes } from '@/lib/themes';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { getMessaging, getToken } from 'firebase/messaging';
 
 const initialUserData: UserData = {
   username: '',
@@ -56,6 +57,7 @@ type AppContextType = {
   setLastCoinReward: (reward: { taskId: string; amount: number } | null) => void;
   lastCompletedTaskIdForProgress: string | null;
   setLastCompletedTaskIdForProgress: (taskId: string | null) => void;
+  testNotifications: () => void;
 };
 
 export const AppContext = createContext<AppContextType | null>(null);
@@ -489,12 +491,52 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [displayableTasks, userData, currentDate]);
 
-  const startTimer = useCallback(async (taskId: string) => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission !== 'granted') {
-        await Notification.requestPermission();
-      }
+  const testNotifications = useCallback(async () => {
+    if (!user || !firestore) {
+      console.log("User or firestore not available");
+      return;
     }
+
+    try {
+      // Get the messaging instance
+      const messaging = getMessaging();
+
+      // Request permission
+      const permission = await Notification.requestPermission();
+
+      if (permission === 'granted') {
+        console.log('Notification permission granted.');
+        
+        // Get the token
+        const currentToken = await getToken(messaging, { vapidKey: 'BLK_q2D0U8aDfrWNIdcHKlQLGQDgglv2t_HstiAu_qzfccKGrgiD8vxATQCGhI07Ch3oPzTjy8h-xx7ImfBTXQs' });
+        
+        if (currentToken) {
+          console.log('FCM Token:', currentToken);
+          
+          // Save the token to Firestore
+          const tokensCollectionRef = collection(firestore, 'fcmTokens', user.uid, 'tokens');
+          await addDoc(tokensCollectionRef, {
+            token: currentToken,
+            createdAt: serverTimestamp()
+          });
+          console.log('Token saved to Firestore.');
+          alert("Permisiune acordată! Token-ul a fost salvat. Vezi consola pentru detalii.");
+
+        } else {
+          console.log('No registration token available. Request new token.');
+          alert("Nu s-a putut obține un token. Încearcă din nou.");
+        }
+      } else {
+        console.log('Unable to get permission to notify.');
+        alert("Permisiune refuzată pentru notificări.");
+      }
+    } catch (error) {
+      console.error('An error occurred while retrieving token. ', error);
+      alert("A apărut o eroare la obținerea token-ului.");
+    }
+  }, [user, firestore]);
+
+  const startTimer = useCallback(async (taskId: string) => {
     updateTask(taskId, { timerStartTime: Date.now() });
   }, [updateTask]);
 
@@ -607,6 +649,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setLastCoinReward,
     lastCompletedTaskIdForProgress,
     setLastCompletedTaskIdForProgress,
+    testNotifications,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

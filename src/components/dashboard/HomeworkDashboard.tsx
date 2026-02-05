@@ -3,14 +3,10 @@
 
 import React, { useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { format, getDay, addDays, subDays, isSameDay, startOfDay } from 'date-fns';
-import { ro } from 'date-fns/locale';
+import { getDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronLeft, ChevronRight, Settings, Coins, CalendarDays, List, GitFork } from 'lucide-react';
-import HomeworkList from './HomeworkList';
+import { Plus, Settings, Coins } from 'lucide-react';
 import AddTaskDialog from './AddTaskDialog';
-import { CalendarIcon } from 'lucide-react';
-import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpandableCalendarView from './ExpandableCalendarView';
 import WeekendView from './WeekendView';
@@ -26,33 +22,25 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import AllTasksView from './AllTasksView';
-import AlternatingTimelineView from './AlternatingTimelineView';
-
-const viewModes = {
-    daily: { icon: CalendarDays, label: 'Vizualizare Zilnică' },
-    timeline: { icon: List, label: 'Cronologie' },
-    'alternating-timeline': { icon: GitFork, label: 'Cronologie Alternantă' },
-};
+import TasksView, { TasksViewMode } from './TasksView';
+import DashboardHeader from './DashboardHeader';
 
 export default function HomeworkDashboard() {
   const context = useContext(AppContext);
   const [isAddTaskOpen, setAddTaskOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [initialSettingsTab, setInitialSettingsTab] = useState('profile');
-  const [displayedDay, setDisplayedDay] = useState<Date | null>(null);
   const [isCoinInfoOpen, setIsCoinInfoOpen] = useState(false);
-  const [tasksViewMode, setTasksViewMode] = useState<keyof typeof viewModes>('daily');
+  const [tasksViewMode, setTasksViewMode] = useState<TasksViewMode>('daily');
   const [activeTab, setActiveTab] = useState('next-tasks');
   const isInitialMount = useRef(true);
 
-  const { userData, currentDate, tasks, getNextDayWithTasks, areTasksSynced, isDataLoaded } = context!;
+  const { userData, currentDate } = context!;
 
   useEffect(() => {
     if (isInitialMount.current) {
-      const savedMode = localStorage.getItem('dailyPlannerPro_viewMode') as keyof typeof viewModes;
-      if (savedMode && viewModes[savedMode]) {
+      const savedMode = localStorage.getItem('dailyPlannerPro_viewMode') as TasksViewMode;
+      if (savedMode) {
           setTasksViewMode(savedMode);
       }
       isInitialMount.current = false;
@@ -61,47 +49,26 @@ export default function HomeworkDashboard() {
     }
   }, [tasksViewMode]);
 
-   useEffect(() => {
-    // This effect runs ONCE to set the initial day when data is loaded
-    if (areTasksSynced && isDataLoaded && !displayedDay) {
-      const nextDay = getNextDayWithTasks();
-      setDisplayedDay(nextDay ? startOfDay(nextDay) : startOfDay(new Date()));
-    }
-  }, [areTasksSynced, isDataLoaded, displayedDay, getNextDayWithTasks]);
-
-  const handlePrevDay = () => {
-    if (displayedDay) {
-      setDisplayedDay(subDays(displayedDay, 1));
-    }
-  };
-
-  const handleNextDay = () => {
-    if (displayedDay) {
-      setDisplayedDay(addDays(displayedDay, 1));
-    }
-  };
-
   const handleGoToStore = () => {
     setInitialSettingsTab('appearance');
     setIsCoinInfoOpen(false);
     setTimeout(() => {
       setIsSettingsOpen(true);
-    }, 300); // Delay slightly longer than the close animation
+    }, 300);
   };
   
   const handleSettingsToggle = (isOpen: boolean) => {
     setIsSettingsOpen(isOpen);
     if (!isOpen) {
-      // Reset the initial tab when the dialog is closed, so it opens on 'Profile' next time by default
       setInitialSettingsTab('profile');
     }
   };
 
   if (!context || !context.userData) return null;
 
-  const dayOfWeekRaw = getDay(currentDate); // Sun=0, Mon=1, ..., Sat=6
-  const dayOfWeek = dayOfWeekRaw === 0 ? 7 : dayOfWeekRaw; // Mon=1, ..., Sun=7
-  const weekendStartDay = userData?.weekendTabStartDay ?? 5; // Default Friday (5)
+  const dayOfWeekRaw = getDay(currentDate);
+  const dayOfWeek = dayOfWeekRaw === 0 ? 7 : dayOfWeekRaw;
+  const weekendStartDay = userData?.weekendTabStartDay ?? 5;
   const isWeekendVisible = dayOfWeek >= weekendStartDay;
 
   const tabs = useMemo(() => {
@@ -115,56 +82,16 @@ export default function HomeworkDashboard() {
     return baseTabs;
   }, [isWeekendVisible]);
 
-  const CurrentViewIcon = viewModes[tasksViewMode].icon;
-
   return (
     <main className="container mx-auto max-w-6xl py-8 px-4 fade-in-up">
-      <header className="mb-6 flex justify-between items-start gap-4">
-        <div className="flex items-center gap-4 rounded-lg border bg-card/90 p-4 backdrop-blur-sm">
-           <div>
-            <h1 className="text-4xl font-bold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent text-shadow-elegant">
-              Salutare, {userData.name}!
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Azi este {format(currentDate, "EEEE, d MMMM", { locale: ro })}.
-            </p>
-          </div>
-          <Button variant="ghost" onClick={() => setIsCoinInfoOpen(true)} className="flex items-center gap-2 bg-background/50 rounded-full px-3 py-1 border self-start mt-1 h-auto">
-            <Coins className="h-5 w-5 text-yellow-500" />
-            <span className="font-bold text-lg">{userData.coins || 0}</span>
-          </Button>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-            <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                <Settings className="h-6 w-6" />
-                <span className="sr-only">Setări</span>
-            </Button>
-            <Button onClick={() => setAddTaskOpen(true)} size="icon" variant="default" className="w-12 h-12">
-                <Plus className="h-6 w-6" />
-                <span className="sr-only">Adaugă temă</span>
-            </Button>
-            {activeTab === 'next-tasks' && (
-                <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as keyof typeof viewModes) }}>
-                    <SelectTrigger className="w-12 h-12 sm:h-10 sm:w-auto gap-2 justify-center sm:justify-start">
-                        <div className="flex items-center gap-2">
-                            <CurrentViewIcon className="h-5 w-5 sm:h-4 sm:w-4" />
-                            <span className="hidden sm:inline">{viewModes[tasksViewMode].label}</span>
-                        </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                        {Object.entries(viewModes).map(([value, { icon: Icon, label }]) => (
-                            <SelectItem key={value} value={value}>
-                                <div className="flex items-center gap-2">
-                                    <Icon className="h-4 w-4" />
-                                    <span>{label}</span>
-                                </div>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            )}
-        </div>
-      </header>
+      <DashboardHeader 
+        onOpenAddTask={() => setAddTaskOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenCoinInfo={() => setIsCoinInfoOpen(true)}
+        tasksViewMode={tasksViewMode}
+        setTasksViewMode={setTasksViewMode}
+        activeTab={activeTab}
+      />
       
       <Tabs defaultValue="next-tasks" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={cn("grid w-full max-w-lg mx-auto mb-6", `grid-cols-${tabs.length}`)}>
@@ -175,49 +102,7 @@ export default function HomeworkDashboard() {
         
         <TabsContent value="next-tasks">
             <div className="w-full max-w-3xl mx-auto">
-              {tasksViewMode === 'daily' ? (
-                  displayedDay ? (
-                      <Card>
-                          <CardContent className="p-4">
-                              <div className="flex justify-between items-center mb-4">
-                                  <div className="flex items-center gap-4">
-                                      <CalendarIcon className="h-10 w-10 text-primary"/>
-                                      <div>
-                                          <h2 className="text-base text-muted-foreground">Teme pentru</h2>
-                                          <h3 className="text-2xl font-semibold font-headline bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                                              {format(displayedDay, "EEEE, d MMMM", { locale: ro })}
-                                          </h3>
-                                      </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        onClick={handlePrevDay}
-                                      >
-                                          <ChevronLeft className="h-6 w-6" />
-                                      </Button>
-                                      <Button variant="ghost" size="icon" onClick={handleNextDay}>
-                                          <ChevronRight className="h-6 w-6" />
-                                      </Button>
-                                  </div>
-                              </div>
-                              <HomeworkList displayDate={displayedDay} />
-                          </CardContent>
-                      </Card>
-                  ) : (
-                      <Card>
-                          <CardContent className="p-6 text-center">
-                              <h3 className="text-xl font-semibold">Nicio temă viitoare</h3>
-                              <p className="text-muted-foreground">Nu ai nicio temă programată în curând. Bucură-te de timpul liber!</p>
-                          </CardContent>
-                      </Card>
-                  )
-              ) : tasksViewMode === 'timeline' ? (
-                  <AllTasksView />
-              ) : (
-                  <AlternatingTimelineView />
-              )}
+              <TasksView viewMode={tasksViewMode} />
             </div>
         </TabsContent>
 

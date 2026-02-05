@@ -37,16 +37,13 @@ function AppContainer() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user || !context || context.userData === undefined || !context.areTasksSynced) {
+  const isLoading = isUserLoading || !user || !context || !context.isDataLoaded || !context.areTasksSynced;
+
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
-  const { userData, isDataLoaded } = context;
-
-  if (!isDataLoaded) {
-    return <LoadingScreen />;
-  }
-
+  const { userData } = context;
   const showWizard = !userData?.setupComplete;
 
   if (showWizard) {
