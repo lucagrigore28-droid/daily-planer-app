@@ -7,7 +7,8 @@ export interface HomeworkTask {
   description: string;
   isCompleted: boolean;
   isManual: boolean;
-  plannedDate?: string; // ISO string
+  scheduledDate?: string; // ISO string - The date the user plans to work on the task
+  scheduledTime?: string; // "HH:mm" - The time the user plans to work on the task
   estimatedTime?: number; // in minutes
   timeSpent?: number; // in milliseconds
   timerStartTime?: number | null; // Unix timestamp

@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock } from 'lucide-react';
+import { Clock, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { AppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Subject } from '@/lib/types';
 import { Slider } from '../ui/slider';
+import { Separator } from '@/components/ui/separator';
 
 type AddTaskDialogProps = {
   open: boolean;
@@ -31,13 +32,18 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date>(new Date());
   const [estimatedTime, setEstimatedTime] = useState(0);
+  const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
+  const [scheduledTime, setScheduledTime] = useState('');
 
   useEffect(() => {
     if (open) {
+      // Reset all fields when dialog opens
       setSelectedSubject(null);
       setDescription('');
       setDueDate(new Date());
       setEstimatedTime(0);
+      setScheduledDate(null);
+      setScheduledTime('');
     }
   }, [open]);
 
@@ -59,6 +65,8 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
       isCompleted: false,
       isManual: true,
       estimatedTime: estimatedTime > 0 ? estimatedTime : undefined,
+      scheduledDate: scheduledDate ? scheduledDate.toISOString() : undefined,
+      scheduledTime: scheduledTime || undefined,
     });
     
     toast({
@@ -74,14 +82,24 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
     setSelectedSubject(subject || null);
   };
   
-  const handleDateChange = (dateString: string) => {
+  const handleDateChange = (dateString: string, setter: (date: Date) => void) => {
     const date = new Date(dateString + 'T00:00:00');
-    setDueDate(date);
+    setter(date);
+  }
+  
+  const handleScheduledDateChange = (dateString: string) => {
+      if (dateString) {
+          const date = new Date(dateString + 'T00:00:00');
+          setScheduledDate(date);
+      } else {
+          setScheduledDate(null);
+          setScheduledTime(''); // Also clear time if date is cleared
+      }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Adaugă o temă manuală</DialogTitle>
           <DialogDescription>
@@ -89,6 +107,8 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+
+          {/* --- Basic Info --- */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="subject-name">Materie</Label>
             <Select onValueChange={handleSubjectChange} value={selectedSubject?.id || ''}>
@@ -105,35 +125,64 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
             </Select>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="due-date">Termen</Label>
+            <Label htmlFor="due-date">Termen Limită</Label>
             <Input
               id="due-date"
               type="date"
               value={formatDateForInput(dueDate)}
-              onChange={(e) => handleDateChange(e.target.value)}
+              onChange={(e) => handleDateChange(e.target.value, setDueDate)}
             />
           </div>
-           <div className="flex flex-col gap-2">
-            <Label htmlFor="estimated-time">Timp estimat</Label>
-            <div className="flex items-center gap-4">
-                <Slider 
-                    id="estimated-time"
-                    value={[estimatedTime]} 
-                    max={180} 
-                    step={1} 
-                    onValueChange={(value) => setEstimatedTime(value[0])}
-                    className="flex-1"
-                />
-                <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-bold w-12 text-right">{estimatedTime > 0 ? `${estimatedTime} min` : 'N/A'}</span>
-                </div>
-            </div>
-          </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="description" className="pt-2">Descriere</Label>
+            <Label htmlFor="description">Descriere</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
+
+          <Separator className="my-2" />
+
+          {/* --- Planning Section --- */}
+          <div>
+            <h4 className="font-semibold text-md mb-3">Planificare (Opțional)</h4>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                    <Label htmlFor="estimated-time">Timp estimat</Label>
+                    <div className="flex items-center gap-4 bg-background rounded-md p-2 border">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <Slider 
+                            id="estimated-time"
+                            value={[estimatedTime]} 
+                            max={180} 
+                            step={5} 
+                            onValueChange={(value) => setEstimatedTime(value[0])}
+                            className="flex-1"
+                        />
+                        <span className="font-bold w-16 text-right">{estimatedTime > 0 ? `${estimatedTime} min` : 'N/A'}</span>
+                    </div>
+                </div>
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                 <div className="flex flex-col gap-2">
+                    <Label htmlFor="scheduled-date">Ziua de lucru</Label>
+                     <Input
+                        id="scheduled-date"
+                        type="date"
+                        value={scheduledDate ? formatDateForInput(scheduledDate) : ''}
+                        onChange={(e) => handleScheduledDateChange(e.target.value)}
+                        />
+                 </div>
+                 <div className="flex flex-col gap-2">
+                    <Label htmlFor="scheduled-time">Ora de început</Label>
+                     <Input
+                        id="scheduled-time"
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        disabled={!scheduledDate} // Disable time if no date is set
+                        />
+                 </div>
+             </div>
+          </div>
+
         </div>
         <DialogFooter>
           <Button onClick={handleAddTask}>Adaugă Tema</Button>
