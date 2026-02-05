@@ -1,46 +1,73 @@
+import { DocumentReference, Timestamp } from "firebase/firestore";
 
-export type Subject = {
-  id: string;
-  name: string;
-  isCustom: boolean;
-};
+export interface ISubject {
+    id: string;
+    name: string;
+    teacher?: string;
+    color?: string; // Optional color
+    userId: string;
+    createdAt: Timestamp;
+}
 
-export type Schedule = Record<string, number[]>; // subjectId: [dayOfWeek1, dayOfWeek2, ...]
+export interface ITask {
+    id: string;
+    name: string;
+    subject: string; // Corresponds to ISubject.id
+    deadline: Timestamp;
+    urgency: 'low' | 'medium' | 'high';
+    completed: boolean;
+    userId: string;
+    createdAt: Timestamp;
+    timeSpent?: number; // in milliseconds
+    timerStartTime?: number; // Unix timestamp (ms) when timer started
+}
 
-export type HomeworkTask = {
-  id: string;
-  subjectId: string;
-  subjectName: string;
-  description: string;
-  dueDate: string; // ISO string
-  isCompleted: boolean;
-  isManual: boolean;
-  plannedDate?: string; // ISO string for the day it's planned for weekend work
-  estimatedTime?: number; // in minutes
-  timeSpent?: number; // in milliseconds
-  timerStartTime?: number; // timestamp in milliseconds
-  coinsAwarded?: boolean;
-  isLocked?: boolean;
-};
+export type PartialTask = Partial<Omit<ITask, 'id' | 'userId'>>;
 
-export type UserData = {
-  username: string;
-  name: string;
-  subjects: Subject[];
-  schedule: Schedule;
-  setupComplete: boolean;
-  theme: string;
-  customThemeColors?: string[]; // Array of hex color strings
-  weekendTabStartDay?: number; // 1 for Monday, 7 for Sunday
-  coins: number;
-  unlockedThemes: string[];
-};
+export interface IEvent {
+    id: string;
+    userId: string;
+    title: string;
+    description?: string;
+    date: Timestamp;      // Using Firestore Timestamp for consistency
+    startTime?: string;   // e.g., "18:00"
+    endTime?: string;     // e.g., "20:00"
+    createdAt: Timestamp;
+}
 
-export type Theme = {
-  name: string;
-  label: string;
-  className: string;
-  primary: string;
-  accent: string;
-  cost: number;
-};
+export type PartialEvent = Partial<Omit<IEvent, 'id' | 'userId'>>;
+
+
+export interface IUser {
+    uid: string;
+    email?: string | null;
+    displayName?: string | null;
+    photoURL?: string | null;
+    // App-specific settings
+    theme?: string;
+    showCompletedTasks?: boolean;
+    subjects?: DocumentReference<ISubject>[];
+}
+
+export interface IAppContext {
+    allTasks: ITask[];
+    allSubjects: ISubject[];
+    isLoading: boolean;
+    isTaskbarVisible: boolean;
+    setIsTaskbarVisible: (isVisible: boolean) => void;
+    // Task Functions
+    addTask: (task: Omit<ITask, 'id' | 'userId' | 'createdAt'>) => Promise<ITask | undefined>;
+    updateTask: (taskId: string, updates: PartialTask) => Promise<void>;
+    deleteTask: (taskId: string) => Promise<void>;
+    reorderTasks: (oldIndex: number, newIndex: number) => void;
+    // Subject Functions
+    addSubject: (subject: Omit<ISubject, 'id' | 'userId' | 'createdAt'>) => Promise<ISubject | undefined>;
+    updateSubject: (subjectId: string, updates: Partial<ISubject>) => Promise<void>;
+    deleteSubject: (subjectId: string) => Promise<void>;
+    // Timer
+    isTimerRunning: boolean;
+    activeTimerTaskId: string | null;
+    startTimer: (taskId: string) => void;
+    pauseTimer: (taskId: string, isSwitching?: boolean) => void;
+    completeTaskWithTimer: (taskId: string) => void;
+}

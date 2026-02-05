@@ -415,18 +415,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const resetData = useCallback(async () => {
     if (!user || !userDocRef) return;
-    
-    // Delete all tasks
+
     const tasksCollectionRef = collection(firestore, 'users', user.uid, 'tasks');
-    const tasksSnapshot = await getDocs(tasksCollectionRef);
+    
+    let tasksSnapshot;
+    try {
+        tasksSnapshot = await getDocs(tasksCollectionRef);
+    } catch (serverError) {
+         errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: tasksCollectionRef.path,
+            operation: 'list',
+        }));
+        return; // Stop execution
+    }
+
     const batch = writeBatch(firestore);
     tasksSnapshot.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-
-    // Reset user document
-    await setDoc(userDocRef, { ...initialUserData, name: userData?.name || '' });
     
-    window.location.reload();
+    // Chain mutations with .then() and .catch()
+    batch.commit().then(() => {
+        const resetUserData = { ...initialUserData, name: userData?.name || '' };
+        setDoc(userDocRef, resetUserData)
+            .then(() => {
+                window.location.reload();
+            })
+            .catch(serverError => {
+                 errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'create',
+                    requestResourceData: resetUserData
+                }));
+            });
+    }).catch(serverError => {
+         errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `users/${user.uid}/tasks`, // Representative path for batch
+            operation: 'delete',
+        }));
+    });
   }, [firestore, user, userDocRef, userData]);
   
   const logout = useCallback(async () => {
@@ -536,10 +561,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, firestore]);
 
-  const startTimer = useCallback(async (taskId: string) => {
-    updateTask(taskId, { timerStartTime: Date.now() });
-  }, [updateTask]);
-
   const pauseTimer = useCallback((taskId: string) => {
     const task = allTasks?.find(t => t.id === taskId);
     if (task && task.timerStartTime) {
@@ -551,7 +572,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
     }
   }, [allTasks, updateTask]);
-  
+
+  const startTimer = useCallback(async (taskId: string) => {
+    // If there's another timer running, pause it first
+    if (activeTimerTaskId && activeTimerTaskId !== taskId) {
+      pauseTimer(activeTimerTaskId);
+    }
+    updateTask(taskId, { timerStartTime: Date.now() });
+  }, [activeTimerTaskId, updateTask, pauseTimer]);
+
   const completeTaskWithTimer = useCallback((taskId: string) => {
     const task = allTasks?.find(t => t.id === taskId);
     if (task) {
@@ -654,3 +683,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    

@@ -9,7 +9,7 @@ export default function PrivacyPolicyPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="text-3xl font-headline">Politică de Confidențialitate</CardTitle>
-                    <p className="text-sm text-muted-foreground">Ultima actualizare: 24 Mai 2024</p>
+                    <p className="text-sm text-muted-foreground">Ultima actualizare: 2 Iunie 2024</p>
                 </CardHeader>
                 <CardContent className="space-y-6 text-foreground/90">
                     <section>
@@ -26,7 +26,10 @@ export default function PrivacyPolicyPage() {
                                 <strong>Informații de Cont:</strong> Când vă creați un cont, colectăm adresa de e-mail și numele pe care îl furnizați. Dacă alegeți să vă conectați ca oaspete (anonim), un identificator unic este generat de Firebase Authentication, fără a colecta date personale.
                             </li>
                             <li>
-                                <strong>Date de Utilizare a Aplicației:</strong> Colectăm datele pe care le introduceți în aplicație, cum ar fi: materiile, orarul, temele (descriere, termene limită) și preferințele de aspect (teme de culori).
+                                <strong>Date Academice și de Utilizare:</strong> Colectăm datele pe care le introduceți în aplicație, cum ar fi: materiile, orarul, temele (descriere, termene limită) și preferințele de aspect (teme de culori).
+                            </li>
+                             <li>
+                                <strong>Evenimente Personale:</strong> Colectăm date despre evenimentele personale pe care le adăugați, cum ar fi titlul, data, și descrierea acestora (de exemplu: antrenamente, întâlniri, alte activități non-școlare).
                             </li>
                             <li>
                                 <strong>Date Tehnice (prin Firebase):</strong> Putem colecta informații despre dispozitiv și utilizare în mod anonim pentru a îmbunătăți performanța și stabilitatea aplicației.
@@ -40,7 +43,7 @@ export default function PrivacyPolicyPage() {
                             Folosim informațiile colectate pentru a:
                         </p>
                         <ul className="list-disc pl-6 space-y-2 mt-2">
-                            <li>A oferi, menține și îmbunătăți funcționalitățile aplicației.</li>
+                            <li>A oferi, menține și îmbunătăți funcționalitățile aplicației (organizarea temelor și evenimentelor).</li>
                             <li>A vă personaliza experiența.</li>
                             <li>A sincroniza datele între dispozitivele dumneavoastră (dacă sunteți autentificat cu un cont).</li>
                             <li>A vă oferi suport tehnic, dacă este cazul.</li>
@@ -64,7 +67,7 @@ export default function PrivacyPolicyPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-2">6. Drepturile Dumneavoastră</h2>
                         <p>
-                            Aveți dreptul de a accesa și modifica datele direct din aplicație. De asemenea, aveți opțiunea de a reseta complet contul din meniul de Setări, acțiune care va șterge ireversibil toate datele asociate (teme, materii, orar).
+                            Aveți dreptul de a accesa, modifica și șterge datele (teme, materii, evenimente) direct din aplicație. De asemenea, aveți opțiunea de a reseta complet contul din meniul de Setări, acțiune care va șterge ireversibil toate datele asociate.
                         </p>
                     </section>
 
