@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '../ui/button';
-import { CornerDownLeft, Trash2, Clock, Timer, Lock, Coins, Star, Share2 } from 'lucide-react';
+import { Input } from '../ui/input';
+import { CornerDownLeft, Trash2, Clock, Timer, Lock, Coins, Star, Share2, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -25,14 +26,20 @@ import {
 import { Slider } from '../ui/slider';
 import TaskTimer from './TaskTimer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { isBefore, startOfDay } from 'date-fns';
+import { isBefore, startOfDay, format } from 'date-fns';
+import { ro } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 
 type HomeworkItemProps = {
   task: HomeworkTask;
+  showDueDate?: boolean; 
 };
 
-export default function HomeworkItem({ task }: HomeworkItemProps) {
+const formatDateForInput = (date: Date): string => {
+  return format(date, 'yyyy-MM-dd');
+};
+
+export default function HomeworkItem({ task, showDueDate }: HomeworkItemProps) {
   const context = useContext(AppContext);
   const { toast } = useToast();
   const { 
@@ -44,8 +51,13 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     lastCompletedTaskIdForProgress,
     setLastCompletedTaskIdForProgress
   } = context!;
+  
+  // State for editable fields
   const [description, setDescription] = useState(task.description);
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 0);
+  const [scheduledDate, setScheduledDate] = useState<Date | null>(task.scheduledDate ? new Date(task.scheduledDate) : null);
+  const [scheduledTime, setScheduledTime] = useState(task.scheduledTime || '');
+  
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [coinReward, setCoinReward] = useState<{ amount: number; key: number } | null>(null);
@@ -61,8 +73,8 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
   useEffect(() => {
     if (lastCompletedTaskIdForProgress && lastCompletedTaskIdForProgress === task.id) {
       setShowStar(true);
-      setLastCompletedTaskIdForProgress(null); // Reset context
-      const timer = setTimeout(() => setShowStar(false), 1200); // Animation duration
+      setLastCompletedTaskIdForProgress(null); 
+      const timer = setTimeout(() => setShowStar(false), 1200); 
       return () => clearTimeout(timer);
     }
   }, [lastCompletedTaskIdForProgress, task.id, setLastCompletedTaskIdForProgress]);
@@ -79,6 +91,8 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     context?.updateTask(task.id, { 
         description,
         estimatedTime: estimatedTime > 0 ? estimatedTime : undefined,
+        scheduledDate: scheduledDate ? scheduledDate.toISOString() : undefined,
+        scheduledTime: scheduledTime || undefined,
     });
     setTimeout(() => setIsSaving(false), 1000);
   };
@@ -107,17 +121,34 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
     }
   };
   
+  // When the task prop updates from parent, reset the local state
   useEffect(() => {
     setDescription(task.description);
     setEstimatedTime(task.estimatedTime || 0);
+    setScheduledDate(task.scheduledDate ? new Date(task.scheduledDate) : null);
+    setScheduledTime(task.scheduledTime || '');
   }, [task]);
 
-  const hasChanged = description !== task.description || estimatedTime !== (task.estimatedTime || 0);
+  const originalScheduledDate = task.scheduledDate ? new Date(task.scheduledDate) : null;
+  const hasChanged = description !== task.description || 
+                     estimatedTime !== (task.estimatedTime || 0) || 
+                     (scheduledDate?.getTime() !== originalScheduledDate?.getTime()) ||
+                     scheduledTime !== (task.scheduledTime || '');
 
   const anotherTimerIsRunning = activeTimerTaskId !== null && activeTimerTaskId !== task.id;
 
   if (activeTimerTaskId === task.id) {
     return <TaskTimer task={task} />;
+  }
+  
+  const handleScheduledDateChange = (dateString: string) => {
+      if (dateString) {
+          const date = new Date(dateString + 'T00:00:00');
+          setScheduledDate(date);
+      } else {
+          setScheduledDate(null);
+          setScheduledTime(''); // Also clear time if date is cleared
+      }
   }
 
   return (
@@ -184,14 +215,24 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                   >
                     {task.subjectName}
                   </Label>
-                  {(task.estimatedTime || task.timeSpent) && (
-                      <div className={cn("flex items-center gap-1.5 text-xs", task.isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {task.timeSpent ? `${Math.round(task.timeSpent / 1000)} sec lucrate` : `${task.estimatedTime} min estimate`}
-                          </span>
-                      </div>
-                  )}
+                  <div className={cn("flex items-center gap-3 text-xs", task.isCompleted ? "text-muted-foreground" : "text-muted-foreground")}>
+                    {(task.estimatedTime || task.timeSpent) && (
+                        <div className="flex items-center gap-1.5">
+                           <Clock className="h-3 w-3" />
+                           <span>
+                               {task.timeSpent ? `${Math.round(task.timeSpent / 1000)} sec` : `${task.estimatedTime} min`}
+                           </span>
+                        </div>
+                    )}
+                    {showDueDate && (
+                         <div className="flex items-center gap-1.5 text-red-600 font-semibold">
+                           <CalendarClock className="h-3 w-3" />
+                           <span>
+                               Termen: {format(new Date(task.dueDate), "d MMM", { locale: ro })}
+                           </span>
+                        </div>
+                    )}
+                  </div>
                 </div>
                 
                 {isLocked ? (
@@ -243,13 +284,39 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                        />
                   </div>
                   
-                   <div className="grid gap-2 fade-in-up" style={{animationDelay: '150ms'}}>
+                  {/* --- Planning Section --- */}
+                  <div className="grid gap-4 fade-in-up pt-2" style={{animationDelay: '150ms'}}>
+                    <Label>Planificare (Opțional)</Label>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor={`scheduled-date-${task.id}`} className="text-xs text-muted-foreground">Ziua de lucru</Label>
+                            <Input
+                                id={`scheduled-date-${task.id}`}
+                                type="date"
+                                value={scheduledDate ? formatDateForInput(scheduledDate) : ''}
+                                onChange={(e) => handleScheduledDateChange(e.target.value)}
+                                />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor={`scheduled-time-${task.id}`} className="text-xs text-muted-foreground">Ora de început</Label>
+                            <Input
+                                id={`scheduled-time-${task.id}`}
+                                type="time"
+                                value={scheduledTime}
+                                onChange={(e) => setScheduledTime(e.target.value)}
+                                disabled={!scheduledDate} // Disable time if no date is set
+                                />
+                        </div>
+                     </div>
+                  </div>
+
+                   <div className="grid gap-2 fade-in-up" style={{animationDelay: '250ms'}}>
                       <Label htmlFor={`estimated-time-${task.id}`}>Timp estimat (minute)</Label>
-                      <div className="flex items-center gap-4 pt-2">
+                      <div className="flex items-center gap-4 pt-1">
                            <Slider 
                               value={[estimatedTime]} 
                               max={180} 
-                              step={1} 
+                              step={5} 
                               onValueChange={(value) => setEstimatedTime(value[0])}
                               className="flex-1"
                           />
@@ -258,7 +325,7 @@ export default function HomeworkItem({ task }: HomeworkItemProps) {
                           </div>
                       </div>
                    </div>
-                   <div className="flex justify-between items-center fade-in-up" style={{animationDelay: '250ms'}}>
+                   <div className="flex justify-between items-center fade-in-up pt-2" style={{animationDelay: '350ms'}}>
                       <div className="flex items-center gap-2">
                           {hasChanged && (
                             <Button size="sm" onClick={handleSaveDetails} disabled={isSaving}>

@@ -1,109 +1,110 @@
+
 'use client';
 
-import React, { useContext, useState, useEffect, useRef, useMemo } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
 import HomeworkItem from './HomeworkItem';
-import { CheckCircle2, CalendarClock } from 'lucide-react';
-import { format } from 'date-fns';
+import { CheckCircle2, CalendarClock, CalendarCheck } from 'lucide-react';
+import { format, isSameDay, startOfToday } from 'date-fns';
 import { ro } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import type { HomeworkTask } from '@/lib/types';
-
-// Helper hook to get the previous value
-function usePrevious<T>(value: T): T | undefined {
-  const ref = useRef<T>();
-  useEffect(() => {
-    ref.current = value;
-  });
-  return ref.current;
-}
+import { Separator } from '../ui/separator';
 
 export default function AllTasksView() {
   const context = useContext(AppContext);
   const { tasks } = context!;
 
-  // Get the list of tasks that *should* be visible (uncompleted ones)
-  const currentVisibleTasks = useMemo(() => tasks
-    .filter(task => !task.isCompleted && !task.isLocked)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()), [tasks]);
+  const { tasksByDueDate, plannedTasks } = useMemo(() => {
+    const uncompletedTasks = tasks.filter(task => !task.isCompleted);
 
-  const [displayedTasks, setDisplayedTasks] = useState<HomeworkTask[]>(currentVisibleTasks);
+    const tasksByDueDate = uncompletedTasks
+      .filter(task => !task.scheduledDate) // Tasks WITHOUT a scheduled date
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-  const prevTasks = usePrevious(currentVisibleTasks) || [];
+    const plannedTasks = uncompletedTasks
+      .filter(task => !!task.scheduledDate) // Tasks WITH a scheduled date
+      .sort((a, b) => new Date(a.scheduledDate!).getTime() - new Date(b.scheduledDate!).getTime());
 
-  useEffect(() => {
-    const prevTaskIds = new Set(prevTasks.map(t => t.id));
-    const currentTaskIds = new Set(currentVisibleTasks.map(t => t.id));
+    return { tasksByDueDate, plannedTasks };
+  }, [tasks]);
 
-    // Find tasks that were in the previous list but not in the current one (i.e., just completed)
-    const disappearingTaskIds = [...prevTaskIds].filter(id => !currentTaskIds.has(id));
-
-    if (disappearingTaskIds.length > 0) {
-      const disappearingTasks = prevTasks
-        .filter(t => disappearingTaskIds.includes(t.id))
-        .map(t => ({ ...t, isDisappearing: true } as HomeworkTask));
-      
-      // Show the current tasks + the disappearing ones
-      const tasksToRender = [...currentVisibleTasks, ...disappearingTasks]
-        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-      setDisplayedTasks(tasksToRender);
-
-      // After the animation, remove the disappearing tasks from the display list
-      const timer = setTimeout(() => {
-        setDisplayedTasks(currentVisibleTasks);
-      }, 400); // Match animation duration in globals.css
-
-      return () => clearTimeout(timer);
-    } else {
-      setDisplayedTasks(currentVisibleTasks);
-    }
-  }, [currentVisibleTasks]);
-
-  if (displayedTasks.length === 0 && (!prevTasks || prevTasks.length === 0)) {
+  if (tasksByDueDate.length === 0 && plannedTasks.length === 0) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-xl font-semibold">Felicitări!</h3>
-            <p className="text-muted-foreground">Nu mai ai nicio temă de făcut. Ești la zi!</p>
+          <CheckCircle2 className="mx-auto h-12 w-12 text-green-500 mb-4" />
+          <h3 className="text-xl font-semibold">Felicitări!</h3>
+          <p className="text-muted-foreground">Nu mai ai nicio temă de făcut. Ești la zi!</p>
         </CardContent>
       </Card>
     );
   }
-  
+
+  const today = startOfToday();
+
   return (
-    <div className="relative py-4">
-      {/* The vertical line */}
-      <div className="absolute top-0 left-12 border-border border-2 h-full" />
-
-      {displayedTasks.map((task, index) => {
-        return (
-          <div 
-            key={task.id} 
-            className={cn(
-              "mb-8 flex items-center w-full",
-              task.isDisappearing ? 'animate-fade-out-shrink' : 'fade-in-up'
-            )}
-            style={{ animationDelay: task.isDisappearing ? '0ms' : `${index * 75}ms` }}
-          >
-            {/* Spacer & Dot */}
-            <div className="w-24 flex-shrink-0 flex justify-center">
-                <div className="z-10 flex items-center bg-primary ring-8 ring-background shadow-xl w-8 h-8 rounded-full">
-                  <CalendarClock className="h-5 w-5 text-primary-foreground mx-auto" />
+    <div className="space-y-8">
+      {/* Section 1: Tasks sorted by Due Date */}
+      {tasksByDueDate.length > 0 && (
+        <div className="space-y-6">
+          {tasksByDueDate.map((task, index) => {
+            const taskDate = new Date(task.dueDate);
+            const isFirstInGroup = index === 0 || !isSameDay(taskDate, new Date(tasksByDueDate[index - 1].dueDate));
+            
+            return (
+              <div key={task.id}>
+                {isFirstInGroup && (
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary text-primary-foreground">
+                        <CalendarClock className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-xl font-semibold font-headline">
+                      {format(taskDate, "EEEE, d MMMM", { locale: ro })}
+                    </h3>
+                  </div>
+                )}
+                <div className="ml-5 pl-8 border-l-2 border-border">
+                  <HomeworkItem task={task} />
                 </div>
-            </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-            {/* Content */}
-            <div className="flex-grow pr-4">
-               <p className="mb-2 text-sm sm:text-base font-semibold text-muted-foreground">
-                {format(new Date(task.dueDate), "EEEE, d MMMM", { locale: ro })}
-              </p>
-              <HomeworkItem task={task} />
-            </div>
+      {/* Section 2: Planned Tasks */}
+      {plannedTasks.length > 0 && (
+        <div>
+          {tasksByDueDate.length > 0 && <Separator className="my-8" />}
+          <div className="flex items-center gap-4 mb-6">
+             <h2 className="text-2xl font-bold text-center flex-1">Teme Planificate</h2>
           </div>
-        );
-      })}
+          <div className="space-y-6">
+            {plannedTasks.map((task, index) => {
+              const taskDate = new Date(task.scheduledDate!);
+              const isFirstInGroup = index === 0 || !isSameDay(taskDate, new Date(plannedTasks[index - 1].scheduledDate!));
+
+              return (
+                <div key={task.id}>
+                  {isFirstInGroup && (
+                     <div className="flex items-center gap-4 mb-4">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-full bg-accent text-accent-foreground">
+                            <CalendarCheck className="h-5 w-5" />
+                        </div>
+                        <h3 className="text-xl font-semibold font-headline">
+                          {format(taskDate, "EEEE, d MMMM", { locale: ro })}
+                        </h3>
+                    </div>
+                  )}
+                  <div className="ml-5 pl-8 border-l-2 border-border">
+                     <HomeworkItem task={task} showDueDate />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -132,8 +132,8 @@ export default function WeekendView() {
     const unplannedTasks: HomeworkTask[] = [];
 
     weekendTasks.forEach(task => {
-      if (task.plannedDate) {
-        const plannedDay = startOfDay(new Date(task.plannedDate));
+      if (task.scheduledDate) {
+        const plannedDay = startOfDay(new Date(task.scheduledDate));
         if (plannedDay.getTime() === friday.getTime()) {
           fridayTasks.push(task);
         } else if (plannedDay.getTime() === saturday.getTime()) {
@@ -189,7 +189,7 @@ export default function WeekendView() {
   const handleDrop = (targetDate: Date | null) => (e: React.DragEvent<HTMLDivElement>) => {
     const taskId = e.dataTransfer.getData("taskId");
     if (taskId) {
-        updateTask(taskId, { plannedDate: targetDate ? targetDate.toISOString() : null });
+        updateTask(taskId, { scheduledDate: targetDate ? targetDate.toISOString() : undefined });
     }
     setIsDragging(false);
   };
@@ -209,7 +209,7 @@ export default function WeekendView() {
     if (day === 'saturday') targetDate = saturday;
     if (day === 'sunday') targetDate = sunday;
     
-    updateTask(taskId, { plannedDate: targetDate ? targetDate.toISOString() : null });
+    updateTask(taskId, { scheduledDate: targetDate ? targetDate.toISOString() : undefined });
   };
 
 
@@ -305,3 +305,5 @@ export default function WeekendView() {
     </div>
   );
 }
+
+    

@@ -34,7 +34,7 @@ export function MobilePlannerItem({ title, tasks, onPlanDay }: MobilePlannerItem
                             <span className="text-sm text-muted-foreground mr-2">Alocă:</span>
                             <Button
                                 size="sm"
-                                variant={task.plannedDate ? 'outline' : 'default'}
+                                variant={task.scheduledDate ? 'outline' : 'default'}
                                 onClick={() => onPlanDay(task.id, 'friday')}
                                 className={cn(
                                     "w-10 h-8",
@@ -45,7 +45,7 @@ export function MobilePlannerItem({ title, tasks, onPlanDay }: MobilePlannerItem
                             </Button>
                             <Button
                                 size="sm"
-                                variant={task.plannedDate ? 'outline' : 'default'}
+                                variant={task.scheduledDate ? 'outline' : 'default'}
                                 onClick={() => onPlanDay(task.id, 'saturday')}
                                 className={cn(
                                     "w-10 h-8",
@@ -56,7 +56,7 @@ export function MobilePlannerItem({ title, tasks, onPlanDay }: MobilePlannerItem
                             </Button>
                             <Button
                                 size="sm"
-                                variant={task.plannedDate ? 'outline' : 'default'}
+                                variant={task.scheduledDate ? 'outline' : 'default'}
                                 onClick={() => onPlanDay(task.id, 'sunday')}
                                 className={cn(
                                     "w-10 h-8",
@@ -65,7 +65,7 @@ export function MobilePlannerItem({ title, tasks, onPlanDay }: MobilePlannerItem
                             >
                                 D
                             </Button>
-                            {task.plannedDate && (
+                            {task.scheduledDate && (
                                 <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => onPlanDay(task.id, null)}>
                                     <X className="h-4 w-4" />
                                 </Button>
@@ -80,3 +80,5 @@ export function MobilePlannerItem({ title, tasks, onPlanDay }: MobilePlannerItem
         </Card>
     )
 }
+
+    

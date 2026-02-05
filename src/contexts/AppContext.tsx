@@ -88,10 +88,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const scheduleJson = useMemo(() => JSON.stringify(userData?.schedule || {}), [userData?.schedule]);
   const subjectsJson = useMemo(() => JSON.stringify(userData?.subjects || []), [userData?.subjects]);
 
+  const stableUserData = useMemo(() => userData, [userData?.setupComplete, scheduleJson, subjectsJson]);
+
   useEffect(() => {
     const performSync = async () => {
-      if (!user || !userData || syncInProgress.current) return;
-
+      if (!user || !stableUserData || syncInProgress.current) return;
+  
       syncInProgress.current = true;
       try {
         const tasksCollectionRef = collection(firestore, 'users', user.uid, 'tasks');
@@ -100,32 +102,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         
         const batch = writeBatch(firestore);
         const today = startOfDay(new Date());
-
+  
         const automaticTasks = currentTasks.filter(t => !t.isManual);
         const existingTasks = new Map<string, string>(); 
-
+  
         automaticTasks.forEach(task => {
             const taskDate = startOfDay(parseISO(task.dueDate));
             const dayIndex = getDay(taskDate) === 0 ? 7 : getDay(taskDate);
-            const subjectStillExists = userData.subjects.some(s => s.id === task.subjectId);
-            const isScheduled = userData.schedule[task.subjectId]?.includes(dayIndex);
+            const subjectStillExists = stableUserData.subjects.some(s => s.id === task.subjectId);
+            const isScheduled = stableUserData.schedule[task.subjectId]?.includes(dayIndex);
             const dateStr = task.dueDate.split('T')[0];
-
+  
             if ((isBefore(taskDate, today) && !task.isCompleted) || !subjectStillExists || !isScheduled) {
                 batch.delete(doc(firestore, 'users', user.uid, 'tasks', task.id));
             } else {
                 existingTasks.set(`${task.subjectId}_${dateStr}`, task.id);
             }
         });
-
+  
         for (let i = 0; i < 14; i++) {
             const dateToCheck = addDays(today, i);
             const dayIndex = getDay(dateToCheck) === 0 ? 7 : getDay(dateToCheck);
             const dateStr = dateToCheck.toISOString().split('T')[0];
-
+  
             if (dayIndex >= 1 && dayIndex <= 5) {
-                for (const subject of userData.subjects) {
-                    if (userData.schedule[subject.id]?.includes(dayIndex)) {
+                for (const subject of stableUserData.subjects) {
+                    if (stableUserData.schedule[subject.id]?.includes(dayIndex)) {
                         const taskKey = `${subject.id}_${dateStr}`;
                         if (!existingTasks.has(taskKey)) {
                             const newTaskRef = doc(collection(firestore, 'users', user.uid, 'tasks'));
@@ -151,12 +153,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     
-    if (isDataLoaded && userData?.setupComplete) {
+    if (isDataLoaded && stableUserData?.setupComplete) {
       performSync();
-    } else if (isDataLoaded && !userData?.setupComplete) {
+    } else if (isDataLoaded && !stableUserData?.setupComplete) {
       setAreTasksSynced(true);
     }
-  }, [isDataLoaded, userData?.setupComplete, user, firestore, scheduleJson, subjectsJson]);
+  }, [isDataLoaded, stableUserData, user, firestore]);
 
 
   const displayableTasks = useMemo(() => {
@@ -384,16 +386,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
     } else {
-      const finalUpdates: Partial<HomeworkTask> = { ...updates };
-      if ('plannedDate' in finalUpdates && (finalUpdates.plannedDate === undefined || finalUpdates.plannedDate === null)) {
-        finalUpdates.plannedDate = deleteField() as any;
+      const finalUpdates: { [key: string]: any } = { ...updates };
+
+      // Handle legacy 'plannedDate' from WeekendView
+      if ('plannedDate' in finalUpdates) {
+        finalUpdates.scheduledDate = finalUpdates.plannedDate;
+        delete finalUpdates.plannedDate;
+      }
+      
+      // Convert undefined/null/empty values to deleteField() sentinels
+      // to properly remove them from the document.
+      if ('scheduledDate' in finalUpdates && (finalUpdates.scheduledDate === undefined || finalUpdates.scheduledDate === null)) {
+        finalUpdates.scheduledDate = deleteField();
+      }
+      if ('scheduledTime' in finalUpdates && (finalUpdates.scheduledTime === undefined || finalUpdates.scheduledTime === '')) {
+        finalUpdates.scheduledTime = deleteField();
       }
       if ('estimatedTime' in finalUpdates && (finalUpdates.estimatedTime === undefined || finalUpdates.estimatedTime <= 0)) {
-        finalUpdates.estimatedTime = deleteField() as any;
+        finalUpdates.estimatedTime = deleteField();
       }
       if ('timerStartTime' in finalUpdates && (finalUpdates.timerStartTime === undefined || finalUpdates.timerStartTime === null)) {
-        finalUpdates.timerStartTime = deleteField() as any;
+        finalUpdates.timerStartTime = deleteField();
       }
+      
       setDoc(taskDocRef, finalUpdates, { merge: true }).catch(serverError => {
         const permissionError = new FirestorePermissionError({
           path: taskDocRef.path,
@@ -474,8 +489,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (!isBefore(dueDate, today)) {
             acc.add(dueDate.getTime());
         }
-        if (task.plannedDate) {
-            const plannedDate = startOfDay(new Date(task.plannedDate));
+        if (task.scheduledDate) {
+            const plannedDate = startOfDay(new Date(task.scheduledDate));
             if (!isBefore(plannedDate, today)) {
                 acc.add(plannedDate.getTime());
             }
@@ -669,3 +684,5 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
+
+    

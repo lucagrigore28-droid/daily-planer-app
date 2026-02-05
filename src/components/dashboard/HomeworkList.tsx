@@ -24,8 +24,9 @@ export default function HomeworkList({ displayDate }: { displayDate: Date }) {
         startOfDay(new Date(task.dueDate)).getTime() === startOfDisplayDate
     );
     
+    // Corrected to use scheduledDate
     const plannedTasksForDay = tasks.filter(task => 
-        task.plannedDate && startOfDay(new Date(task.plannedDate)).getTime() === startOfDisplayDate
+        task.scheduledDate && startOfDay(new Date(task.scheduledDate)).getTime() === startOfDisplayDate
     );
     
     const eventsForDay = events.filter(event => 
