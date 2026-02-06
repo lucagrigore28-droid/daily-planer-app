@@ -1,4 +1,3 @@
-
 'use client';
 import type { PersonalEvent } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,8 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import AddEventDialog from './AddEventDialog';
-import { cn } from '@/lib/utils';
+import { AddEventDialog } from './AddEventDialog';
 
 export default function EventItem({ event }: { event: PersonalEvent }) {
   const context = useContext(AppContext);
@@ -45,7 +43,7 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
 
   const onDragEnd = (e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const swipeToDeleteThreshold = -180;
-    const openMenuThreshold = -60;
+    const openMenuThreshold = -80;
 
     if (info.offset.x < swipeToDeleteThreshold) {
       controls.start({ x: 0 });
@@ -61,23 +59,25 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
     <>
       <motion.div animate={itemControls} className="w-full">
         <div className="relative w-full overflow-hidden rounded-lg">
-          <div className="absolute top-0 right-0 h-full flex items-center bg-black">
+          {/* Hidden Action Buttons Container (Black Background) */}
+          <div className="absolute top-0 right-0 h-full flex items-center bg-background">
             <button
               onClick={handleEdit}
-              className="h-full w-20 flex items-center justify-center bg-transparent text-white transition-colors hover:bg-zinc-800"
+              className="h-full w-20 flex items-center justify-center transition-colors hover:bg-white/5"
             >
-              <Pencil size={20} />
+              <Pencil size={22} className="text-primary" />
             </button>
             <button
               onClick={() => setIsDeleteDialogOpen(true)}
-              className="h-full w-20 flex items-center justify-center bg-transparent text-white transition-colors hover:bg-zinc-800"
+              className="h-full w-20 flex items-center justify-center transition-colors hover:bg-white/5"
             >
-              <Trash2 size={20} />
+              <Trash2 size={22} className="text-accent" />
             </button>
           </div>
 
+          {/* Draggable Event Item */}
           <motion.div
-            className="relative z-10 w-full flex items-center bg-card border-l-4 border-l-accent rounded-lg"
+            className="relative z-10 w-full flex items-stretch"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElasticity={0.1}
@@ -85,15 +85,15 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
             animate={controls}
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
           >
-            <Card className="flex-grow bg-transparent shadow-none border-none">
-              <CardContent className="p-3 text-card-foreground">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-1">
+            {/* Left Side (Accent Color) */}
+            <div className="flex-grow bg-accent text-accent-foreground rounded-l-lg p-3">
+                <div className="flex items-start justify-between gap-4 h-full">
+                  <div className="flex flex-col flex-1 space-y-1">
                     <p className="font-semibold">{event.title}</p>
                     {event.description && <p className="text-sm opacity-80">{event.description}</p>}
                   </div>
                   {(event.startTime || event.endTime) && (
-                    <div className="flex items-center gap-1.5 text-xs opacity-90 pt-1">
+                    <div className="flex items-center gap-1.5 text-xs opacity-90 pt-1 flex-shrink-0">
                       <Clock className="h-3 w-3" />
                       <span>
                         {event.startTime} {event.endTime ? ` - ${event.endTime}` : ''}
@@ -101,9 +101,10 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-            <div className="flex-shrink-0 h-full w-10 flex items-center justify-center bg-card rounded-r-lg">
+            </div>
+
+            {/* Right Side Handle (Card Color) */}
+            <div className="flex-shrink-0 w-12 flex items-center justify-center bg-card rounded-r-lg">
                 <motion.div animate={{ x: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
                     <ChevronsLeft className="h-6 w-6 text-muted-foreground" />
                 </motion.div>
@@ -112,7 +113,7 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
         </div>
       </motion.div>
 
-      <AddEventDialog open={isEditing} onOpenChange={setIsEditing} eventToEdit={event} />
+      {isEditing && <AddEventDialog eventToEdit={event} onClose={() => setIsEditing(false)} />}
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
