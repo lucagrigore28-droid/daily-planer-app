@@ -33,6 +33,7 @@ type AppContextType = {
   updateSubjects: (subjects: Subject[]) => void;
   addTask: (task: Omit<HomeworkTask, 'id'>) => void;
   addEvent: (event: Omit<PersonalEvent, 'id'>) => void;
+  updateEvent: (eventId: string, updates: Partial<Omit<PersonalEvent, 'id'>>) => void;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
   deleteTask: (taskId: string) => void;
   deleteEvent: (eventId: string) => void;
@@ -89,7 +90,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const scheduleJson = useMemo(() => JSON.stringify(userData?.schedule || {}), [userData?.schedule]);
   const subjectsJson = useMemo(() => JSON.stringify(userData?.subjects || []), [userData?.subjects]);
 
-  const stableUserData = useMemo(() => userData, [userData?.setupComplete, scheduleJson, subjectsJson]);
+  const stableUserData = useMemo(() => userData, [userData?.setupComplete, userData?.name, scheduleJson, subjectsJson]);
 
   useEffect(() => {
     const performSync = async () => {
@@ -343,6 +344,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [eventsCollectionRef]);
 
+  const updateEvent = useCallback((eventId: string, updates: Partial<Omit<PersonalEvent, 'id'>>) => {
+    if (!user) return;
+    const eventDocRef = doc(firestore, 'users', user.uid, 'events', eventId);
+    setDoc(eventDocRef, updates, { merge: true }).catch(serverError => {
+        const permissionError = new FirestorePermissionError({
+            path: eventDocRef.path,
+            operation: 'update',
+            requestResourceData: updates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    });
+  }, [firestore, user]);
+
   const updateTask = useCallback((taskId: string, updates: Partial<HomeworkTask>) => {
     if (!user) return;
     const taskDocRef = doc(firestore, 'users', user.uid, 'tasks', taskId);
@@ -388,12 +402,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     } else {
       const finalUpdates: { [key: string]: any } = { ...updates };
-
-      // Handle legacy 'plannedDate' from WeekendView
-      if ('plannedDate' in finalUpdates) {
-        finalUpdates.scheduledDate = finalUpdates.plannedDate;
-        delete finalUpdates.plannedDate;
-      }
       
       // Convert undefined/null/empty values to deleteField() sentinels
       // to properly remove them from the document.
@@ -642,6 +650,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     updateSubjects,
     addTask,
     addEvent,
+    updateEvent,
     updateTask,
     deleteTask,
     deleteEvent,
@@ -675,6 +684,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     updateSubjects,
     addTask,
     addEvent,
+    updateEvent,
     updateTask,
     deleteTask,
     deleteEvent,

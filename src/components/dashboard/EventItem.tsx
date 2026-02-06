@@ -1,3 +1,4 @@
+
 'use client';
 import type { PersonalEvent } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AddEventDialog } from './AddEventDialog';
+import AddEventDialog from './AddEventDialog';
+import { cn } from '@/lib/utils';
 
 export default function EventItem({ event }: { event: PersonalEvent }) {
   const context = useContext(AppContext);
@@ -59,23 +61,23 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
     <>
       <motion.div animate={itemControls} className="w-full">
         <div className="relative w-full overflow-hidden rounded-lg">
-          <div className="absolute top-0 right-0 h-full flex items-center">
+          <div className="absolute top-0 right-0 h-full flex items-center bg-black">
             <button
               onClick={handleEdit}
-              className="h-full w-20 flex items-center justify-center bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+              className="h-full w-20 flex items-center justify-center bg-transparent text-white transition-colors hover:bg-zinc-800"
             >
               <Pencil size={20} />
             </button>
             <button
               onClick={() => setIsDeleteDialogOpen(true)}
-              className="h-full w-20 flex items-center justify-center bg-destructive text-destructive-foreground transition-colors hover:bg-destructive/90"
+              className="h-full w-20 flex items-center justify-center bg-transparent text-white transition-colors hover:bg-zinc-800"
             >
               <Trash2 size={20} />
             </button>
           </div>
 
           <motion.div
-            className="relative z-10 w-full flex items-center bg-accent rounded-lg"
+            className="relative z-10 w-full flex items-center bg-card border-l-4 border-l-accent rounded-lg"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElasticity={0.1}
@@ -84,7 +86,7 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
           >
             <Card className="flex-grow bg-transparent shadow-none border-none">
-              <CardContent className="p-3 text-accent-foreground">
+              <CardContent className="p-3 text-card-foreground">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-1">
                     <p className="font-semibold">{event.title}</p>
@@ -101,16 +103,16 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
                 </div>
               </CardContent>
             </Card>
-            <div className="flex-shrink-0 h-full w-10 flex items-center justify-center bg-accent/80 rounded-r-lg">
+            <div className="flex-shrink-0 h-full w-10 flex items-center justify-center bg-card rounded-r-lg">
                 <motion.div animate={{ x: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
-                    <ChevronsLeft className="h-6 w-6 text-gradient" />
+                    <ChevronsLeft className="h-6 w-6 text-muted-foreground" />
                 </motion.div>
             </div>
           </motion.div>
         </div>
       </motion.div>
 
-      {isEditing && <AddEventDialog eventToEdit={event} onClose={() => setIsEditing(false)} />}
+      <AddEventDialog open={isEditing} onOpenChange={setIsEditing} eventToEdit={event} />
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

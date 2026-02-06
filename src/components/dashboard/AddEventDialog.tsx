@@ -20,9 +20,10 @@ import type { PersonalEvent } from '@/lib/types';
 interface AddEventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  eventToEdit?: PersonalEvent;
 }
 
-export default function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
+export default function AddEventDialog({ open, onOpenChange, eventToEdit }: AddEventDialogProps) {
   const context = useContext(AppContext);
   const { toast } = useToast();
 
@@ -32,17 +33,27 @@ export default function AddEventDialog({ open, onOpenChange }: AddEventDialogPro
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const isEditing = !!eventToEdit;
 
   useEffect(() => {
     if (open) {
-      setTitle('');
-      setDescription('');
-      setDate(new Date());
-      setStartTime('');
-      setEndTime('');
+      if (isEditing) {
+        setTitle(eventToEdit.title);
+        setDescription(eventToEdit.description || '');
+        setDate(eventToEdit.eventDate ? new Date(eventToEdit.eventDate) : new Date());
+        setStartTime(eventToEdit.startTime || '');
+        setEndTime(eventToEdit.endTime || '');
+      } else {
+        setTitle('');
+        setDescription('');
+        setDate(new Date());
+        setStartTime('');
+        setEndTime('');
+      }
       setIsSubmitting(false);
     }
-  }, [open]);
+  }, [open, eventToEdit, isEditing]);
 
   const handleClose = () => {
     onOpenChange(false);
@@ -61,7 +72,7 @@ export default function AddEventDialog({ open, onOpenChange }: AddEventDialogPro
 
     setIsSubmitting(true);
     
-    const eventData: Omit<PersonalEvent, 'id'> = {
+    const eventData: {[key: string]: any} = {
         title,
         description,
         eventDate: date.toISOString(),
@@ -74,11 +85,20 @@ export default function AddEventDialog({ open, onOpenChange }: AddEventDialogPro
         eventData.endTime = endTime;
     }
 
-    context.addEvent(eventData);
-    toast({
-      title: 'Eveniment adăugat!',
-      description: `"${title}" a fost adăugat în calendar.`,
-    });
+    if (isEditing) {
+        context.updateEvent(eventToEdit.id, eventData);
+        toast({
+            title: 'Eveniment actualizat!',
+            description: `"${title}" a fost actualizat.`,
+        });
+    } else {
+        context.addEvent(eventData as Omit<PersonalEvent, 'id'>);
+        toast({
+            title: 'Eveniment adăugat!',
+            description: `"${title}" a fost adăugat în calendar.`,
+        });
+    }
+    
     handleClose();
   };
 
@@ -86,7 +106,7 @@ export default function AddEventDialog({ open, onOpenChange }: AddEventDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adaugă un Eveniment Nou</DialogTitle>
+          <DialogTitle>{isEditing ? 'Modifică Eveniment' : 'Adaugă un Eveniment Nou'}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -152,7 +172,7 @@ export default function AddEventDialog({ open, onOpenChange }: AddEventDialogPro
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>Anulează</Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? 'Se adaugă...' : 'Adaugă Eveniment'}
+            {isSubmitting ? (isEditing ? 'Se salvează...' : 'Se adaugă...') : (isEditing ? 'Salvează Modificări' : 'Adaugă Eveniment')}
           </Button>
         </DialogFooter>
       </DialogContent>
