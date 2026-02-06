@@ -254,14 +254,10 @@ export default function WeekendView() {
                         {weekendTasks.map((task, index) => (
                              <div 
                                 key={task.id} 
-                                className="flex items-center justify-between fade-in-up"
+                                className="fade-in-up"
                                 style={{ animationDelay: `${index * 75}ms` }}
                              >
-                                <div className="flex-grow"><HomeworkItem task={task} /></div>
-                                <div className="ml-4 text-right text-sm text-muted-foreground">
-                                    <p className="font-semibold">{format(new Date(task.dueDate), "EEEE", { locale: ro })}</p>
-                                    <p>{format(new Date(task.dueDate), "d MMMM", { locale: ro })}</p>
-                                </div>
+                                <HomeworkItem task={task} />
                              </div>
                         ))}
                     </div>
@@ -305,5 +301,3 @@ export default function WeekendView() {
     </div>
   );
 }
-
-    

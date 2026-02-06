@@ -1,4 +1,3 @@
-
 'use client';
 import type { HomeworkTask } from '@/lib/types';
 import { AppContext } from '@/contexts/AppContext';
@@ -22,7 +21,13 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 
 
-export default function HomeworkItem({ task, showDueDate = true }: { task: HomeworkTask, showDueDate?: boolean }) {
+type HomeworkItemProps = {
+  task: HomeworkTask;
+  showDueDate?: boolean;
+  viewMode?: 'swipe' | 'static';
+}
+
+export default function HomeworkItem({ task, showDueDate = true, viewMode = 'swipe' }: HomeworkItemProps) {
   const context = useContext(AppContext);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -47,7 +52,9 @@ export default function HomeworkItem({ task, showDueDate = true }: { task: Homew
   };
 
   const handleEdit = () => {
-    controls.start({ x: 0 });
+    if (viewMode === 'swipe') {
+      controls.start({ x: 0 });
+    }
     setIsEditing(true);
   };
 
@@ -75,91 +82,123 @@ export default function HomeworkItem({ task, showDueDate = true }: { task: Homew
 
   return (
     <>
-      <motion.div 
-        animate={itemControls} 
-        className={cn("w-full", (isLocked || task.isCompleted) && "opacity-60")}
-      >
-        <div className="relative w-full overflow-hidden rounded-lg">
-          {/* Hidden Action Buttons Container */}
-          {!isLocked && (
-            <div className="absolute top-0 right-0 h-full flex items-center bg-background">
-                <button
-                onClick={handleEdit}
-                className="h-full w-20 flex items-center justify-center transition-colors hover:bg-white/5"
-                >
-                <Pencil size={22} className="text-primary" />
-                </button>
-                <button
-                onClick={() => setIsDeleteDialogOpen(true)}
-                className="h-full w-20 flex items-center justify-center transition-colors hover:bg-white/5"
-                >
-                <Trash2 size={22} className="text-accent" />
-                </button>
-            </div>
-          )}
-
-          {/* Draggable Event Item */}
-          <motion.div
-            className="relative z-10 w-full"
-            drag={isLocked ? false : "x"}
-            dragConstraints={{ left: 0, right: 0 }}
-            onDragEnd={onDragEnd}
-            animate={controls}
-            transition={{ type: "spring", stiffness: 350, damping: 35 }}
+      {viewMode === 'static' ? (
+        // STATIC MODE: No swipe, visible buttons. Used in accordions.
+        <motion.div animate={itemControls} className={cn("w-full rounded-lg", (isLocked || task.isCompleted) && "opacity-60")}>
+          <div 
+            className="flex items-center bg-card rounded-lg border-l-8 p-3 gap-4"
+            style={{ borderColor }}
           >
-            <div 
-              className="flex items-stretch bg-card rounded-lg border-2"
-              style={{ borderColor }}
+              <Checkbox
+                  id={`task-${task.id}-static`}
+                  checked={task.isCompleted}
+                  onCheckedChange={handleCompletionChange}
+                  disabled={isLocked || isOverdue}
+                  className="h-6 w-6 rounded-full flex-shrink-0"
+              />
+              <div className="flex-grow">
+                  <p className="font-semibold text-lg text-card-foreground">{task.subjectName}</p>
+                  {task.description && (
+                      <p className="text-sm text-muted-foreground truncate max-w-xs">{task.description}</p>
+                  )}
+              </div>
+              {showDueDate && (
+                  <div className={cn(
+                      "flex-shrink-0 flex items-center gap-1.5 text-xs font-medium text-muted-foreground",
+                      isOverdue && !task.isCompleted && "text-destructive font-semibold"
+                  )}>
+                      <CalendarClock className="h-3 w-3" />
+                      <span>
+                          Termen: {format(new Date(task.dueDate), "d MMM", { locale: ro })}
+                      </span>
+                  </div>
+              )}
+              <div className="flex-shrink-0 flex items-center gap-1 ml-2">
+                  {isLocked ? (
+                      <Lock className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                      <>
+                          <button onClick={handleEdit} className="p-2 rounded-full hover:bg-muted transition-colors">
+                              <Pencil size={18} className="text-primary" />
+                          </button>
+                          <button onClick={() => setIsDeleteDialogOpen(true)} className="p-2 rounded-full hover:bg-muted transition-colors">
+                              <Trash2 size={18} className="text-accent" />
+                          </button>
+                      </>
+                  )}
+              </div>
+          </div>
+        </motion.div>
+      ) : (
+        // SWIPE MODE: Default behavior for dashboard.
+        <motion.div 
+          animate={itemControls} 
+          className={cn("w-full", (isLocked || task.isCompleted) && "opacity-60")}
+        >
+          <div className="relative w-full overflow-hidden rounded-lg">
+            {!isLocked && (
+              <div className="absolute top-0 right-0 h-full flex items-center bg-background">
+                  <button onClick={handleEdit} className="h-full w-20 flex items-center justify-center transition-colors hover:bg-white/5">
+                    <Pencil size={22} className="text-primary" />
+                  </button>
+                  <button onClick={() => setIsDeleteDialogOpen(true)} className="h-full w-20 flex items-center justify-center transition-colors hover:bg-white/5">
+                    <Trash2 size={22} className="text-accent" />
+                  </button>
+              </div>
+            )}
+            <motion.div
+              className="relative z-10 w-full"
+              drag={isLocked ? false : "x"}
+              dragConstraints={{ left: 0, right: 0 }}
+              onDragEnd={onDragEnd}
+              animate={controls}
+              transition={{ type: "spring", stiffness: 350, damping: 35 }}
             >
-                {/* Main Content */}
-                <div className="flex-grow p-3 flex items-center justify-between gap-4">
-                    {/* Left group: checkbox and texts */}
-                    <div className="flex items-center gap-4">
-                        <Checkbox
-                            id={`task-${task.id}`}
-                            checked={task.isCompleted}
-                            onCheckedChange={handleCompletionChange}
-                            disabled={isLocked || isOverdue}
-                            className="h-6 w-6 rounded-full"
-                        />
-                        <div>
-                            <p className="font-semibold text-lg text-card-foreground">{task.subjectName}</p>
-                            {task.description && (
-                                <p className="text-sm text-muted-foreground truncate max-w-xs">{task.description}</p>
-                            )}
-                        </div>
-                    </div>
-                    
-                    {/* Right group: due date */}
-                    {showDueDate && (
-                        <div className={cn(
-                            "flex items-center flex-shrink-0 gap-1.5 text-xs font-medium text-muted-foreground",
-                            isOverdue && !task.isCompleted && "text-destructive font-semibold"
-                        )}>
-                            <CalendarClock className="h-3 w-3" />
-                            <span>
-                                Termen: {format(new Date(task.dueDate), "d MMM", { locale: ro })}
-                            </span>
-                        </div>
-                    )}
-                </div>
+              <div className="flex items-stretch bg-card rounded-lg border-l-8" style={{ borderColor }}>
+                  <div className="flex-grow p-3 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                          <Checkbox
+                              id={`task-${task.id}-swipe`}
+                              checked={task.isCompleted}
+                              onCheckedChange={handleCompletionChange}
+                              disabled={isLocked || isOverdue}
+                              className="h-6 w-6 rounded-full"
+                          />
+                          <div>
+                              <p className="font-semibold text-lg text-card-foreground">{task.subjectName}</p>
+                              {task.description && (
+                                  <p className="text-sm text-muted-foreground truncate max-w-xs">{task.description}</p>
+                              )}
+                          </div>
+                      </div>
+                      {showDueDate && (
+                          <div className={cn(
+                              "flex items-center flex-shrink-0 gap-1.5 text-xs font-medium text-muted-foreground",
+                              isOverdue && !task.isCompleted && "text-destructive font-semibold"
+                          )}>
+                              <CalendarClock className="h-3 w-3" />
+                              <span>
+                                  Termen: {format(new Date(task.dueDate), "d MMM", { locale: ro })}
+                              </span>
+                          </div>
+                      )}
+                  </div>
+                  <div className="flex-shrink-0 w-12 flex items-center justify-center rounded-r-lg">
+                      {isLocked ? (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                          <motion.div animate={{ x: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
+                              <ChevronsLeft className="h-6 w-6 text-muted-foreground" />
+                          </motion.div>
+                      )}
+                  </div>
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
 
-                {/* Right Side Handle */}
-                <div className="flex-shrink-0 w-12 flex items-center justify-center rounded-r-lg">
-                    {isLocked ? (
-                        <Lock className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                        <motion.div animate={{ x: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
-                            <ChevronsLeft className="h-6 w-6 text-muted-foreground" />
-                        </motion.div>
-                    )}
-                </div>
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {<AddTaskDialog open={isEditing} onOpenChange={setIsEditing} taskToEdit={task} />}
+      <AddTaskDialog open={isEditing} onOpenChange={setIsEditing} taskToEdit={task} />
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
@@ -170,7 +209,7 @@ export default function HomeworkItem({ task, showDueDate = true }: { task: Homew
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => controls.start({ x: 0 })}>Anulează</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => viewMode === 'swipe' && controls.start({ x: 0 })}>Anulează</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Da, șterge
             </AlertDialogAction>

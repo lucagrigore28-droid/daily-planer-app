@@ -120,8 +120,8 @@ export default function AlternatingTimelineView() {
                     </CardContent>
                   </Card>
                 </PopoverTrigger>
-                <PopoverContent className="w-80 p-0" align={isLeft ? 'end' : 'start'}>
-                  <HomeworkItem task={task} />
+                <PopoverContent className="w-auto p-0 border-none shadow-none" align={isLeft ? 'end' : 'start'}>
+                  <HomeworkItem task={task} viewMode="static" />
                 </PopoverContent>
               </Popover>
 
