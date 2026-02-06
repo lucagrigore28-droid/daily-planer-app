@@ -10,6 +10,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { signOut } from 'firebase/auth';
 import { themes } from '@/lib/themes';
+import { SUBJECT_COLORS } from '@/lib/constants';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
@@ -315,7 +316,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [userDocRef]);
 
   const updateSubjects = useCallback((subjects: Subject[]) => {
-      updateUser({ subjects });
+      const subjectsWithColors = subjects.map((subject, index) => {
+        if (!subject.color) {
+          return {
+            ...subject,
+            color: SUBJECT_COLORS[index % SUBJECT_COLORS.length]
+          };
+        }
+        return subject;
+      });
+      updateUser({ subjects: subjectsWithColors });
   }, [updateUser]);
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
@@ -656,7 +666,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const memoizedUserData = useMemo(() => {
     if (isUserDataLoading || userData === undefined) return null;
     if (userData === null) return initialUserData;
-    return { ...initialUserData, ...userData };
+
+    const subjectsWithColors = (userData.subjects || []).map((subject, index) => ({
+      ...subject,
+      color: subject.color || SUBJECT_COLORS[index % SUBJECT_COLORS.length]
+    }));
+    
+    return { ...initialUserData, ...userData, subjects: subjectsWithColors };
   }, [userData, isUserDataLoading]);
   
   const value = useMemo(() => ({

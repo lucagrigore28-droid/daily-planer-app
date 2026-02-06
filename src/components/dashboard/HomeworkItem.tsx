@@ -1,3 +1,4 @@
+
 'use client';
 import type { HomeworkTask } from '@/lib/types';
 import { AppContext } from '@/contexts/AppContext';
@@ -107,35 +108,40 @@ export default function HomeworkItem({ task, showDueDate = true }: { task: Homew
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
           >
             <div 
-              className="flex items-stretch bg-card rounded-lg border-l-8"
+              className="flex items-stretch bg-card rounded-lg border-2"
               style={{ borderColor }}
             >
                 {/* Main Content */}
-                <div className="flex-grow p-3 flex items-center gap-4">
-                    <Checkbox
-                        id={`task-${task.id}`}
-                        checked={task.isCompleted}
-                        onCheckedChange={handleCompletionChange}
-                        disabled={isLocked || isOverdue}
-                        className="h-6 w-6 rounded-full"
-                    />
-                    <div className="flex-1">
-                        <p className="font-semibold text-lg text-card-foreground">{task.subjectName}</p>
-                        {task.description && (
-                            <p className="text-sm text-muted-foreground truncate max-w-xs">{task.description}</p>
-                        )}
-                        {showDueDate && (
-                            <div className={cn(
-                                "flex items-center gap-1.5 text-xs font-medium pt-1 text-muted-foreground",
-                                isOverdue && !task.isCompleted && "text-destructive font-semibold"
-                            )}>
-                                <CalendarClock className="h-3 w-3" />
-                                <span>
-                                    Termen: {format(new Date(task.dueDate), "d MMM, HH:mm", { locale: ro })}
-                                </span>
-                            </div>
-                        )}
+                <div className="flex-grow p-3 flex items-center justify-between gap-4">
+                    {/* Left group: checkbox and texts */}
+                    <div className="flex items-center gap-4">
+                        <Checkbox
+                            id={`task-${task.id}`}
+                            checked={task.isCompleted}
+                            onCheckedChange={handleCompletionChange}
+                            disabled={isLocked || isOverdue}
+                            className="h-6 w-6 rounded-full"
+                        />
+                        <div>
+                            <p className="font-semibold text-lg text-card-foreground">{task.subjectName}</p>
+                            {task.description && (
+                                <p className="text-sm text-muted-foreground truncate max-w-xs">{task.description}</p>
+                            )}
+                        </div>
                     </div>
+                    
+                    {/* Right group: due date */}
+                    {showDueDate && (
+                        <div className={cn(
+                            "flex items-center flex-shrink-0 gap-1.5 text-xs font-medium text-muted-foreground",
+                            isOverdue && !task.isCompleted && "text-destructive font-semibold"
+                        )}>
+                            <CalendarClock className="h-3 w-3" />
+                            <span>
+                                Termen: {format(new Date(task.dueDate), "d MMM", { locale: ro })}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Right Side Handle */}

@@ -31,6 +31,7 @@ export interface Subject {
   id: string;
   name: string;
   isCustom: boolean;
+  color?: string;
 }
 
 export type Schedule = {
