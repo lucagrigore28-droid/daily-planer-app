@@ -15,7 +15,7 @@ export default function AllTasksView() {
   const { tasks } = context!;
 
   const { tasksByDueDate, plannedTasks } = useMemo(() => {
-    const uncompletedTasks = tasks.filter(task => !task.isCompleted);
+    const uncompletedTasks = tasks.filter(task => !task.isCompleted && !task.isLocked);
 
     const tasksByDueDate = uncompletedTasks
       .filter(task => !task.scheduledDate) // Tasks WITHOUT a scheduled date
