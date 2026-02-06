@@ -35,6 +35,7 @@ type AppContextType = {
   addEvent: (event: Omit<PersonalEvent, 'id'>) => void;
   updateTask: (taskId: string, updates: Partial<HomeworkTask>) => void;
   deleteTask: (taskId: string) => void;
+  deleteEvent: (eventId: string) => void;
   resetData: () => Promise<void>;
   logout: () => Promise<void>;
   isDataLoaded: boolean;
@@ -434,6 +435,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [firestore, user]);
 
+  const deleteEvent = useCallback((eventId: string) => {
+    if (user) {
+        const eventDocRef = doc(firestore, 'users', user.uid, 'events', eventId);
+        deleteDoc(eventDocRef).catch(serverError => {
+            const permissionError = new FirestorePermissionError({
+                path: eventDocRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+    }
+  }, [firestore, user]);
+
+
   const resetData = useCallback(async () => {
     if (!user || !userDocRef) return;
     const tasksCollectionRef = collection(firestore, 'users', user.uid, 'tasks');
@@ -629,6 +644,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addEvent,
     updateTask,
     deleteTask,
+    deleteEvent,
     resetData,
     logout,
     isDataLoaded,
@@ -661,6 +677,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addEvent,
     updateTask,
     deleteTask,
+    deleteEvent,
     resetData,
     logout,
     isDataLoaded,
