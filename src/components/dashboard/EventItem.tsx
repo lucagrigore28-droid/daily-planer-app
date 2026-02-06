@@ -1,6 +1,5 @@
 'use client';
 import type { PersonalEvent } from '@/lib/types';
-import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Trash2, Pencil, ChevronsLeft } from 'lucide-react';
 import { AppContext } from '@/contexts/AppContext';
 import { useContext, useState } from 'react';
@@ -15,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AddEventDialog } from './AddEventDialog';
+import AddEventDialog from './AddEventDialog';
 
 export default function EventItem({ event }: { event: PersonalEvent }) {
   const context = useContext(AppContext);
@@ -80,13 +79,12 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
             className="relative z-10 w-full flex items-stretch"
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
-            dragElasticity={0.1}
             onDragEnd={onDragEnd}
             animate={controls}
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
           >
             {/* Left Side (Accent Color) */}
-            <div className="flex-grow bg-accent text-accent-foreground rounded-l-lg p-3">
+            <div className="flex-grow bg-accent text-black rounded-l-lg p-3">
                 <div className="flex items-start justify-between gap-4 h-full">
                   <div className="flex flex-col flex-1 space-y-1">
                     <p className="font-semibold">{event.title}</p>
@@ -113,7 +111,7 @@ export default function EventItem({ event }: { event: PersonalEvent }) {
         </div>
       </motion.div>
 
-      {isEditing && <AddEventDialog eventToEdit={event} onClose={() => setIsEditing(false)} />}
+      {isEditing && <AddEventDialog eventToEdit={event} open={isEditing} onOpenChange={setIsEditing} />}
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
