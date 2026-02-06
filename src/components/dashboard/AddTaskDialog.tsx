@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import React, { useContext, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -7,47 +6,67 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, Calendar } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { AppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Subject } from '@/lib/types';
+import type { HomeworkTask, Subject } from '@/lib/types';
 import { Slider } from '../ui/slider';
 import { Separator } from '@/components/ui/separator';
 
 type AddTaskDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  taskToEdit?: HomeworkTask;
 };
 
 const formatDateForInput = (date: Date): string => {
-  return format(date, 'yyyy-MM-dd');
+  try {
+    return format(date, 'yyyy-MM-dd');
+  } catch (error) {
+    console.error("Invalid date value:", date);
+    return ''; // Return a default or empty string
+  }
 };
 
-export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps) {
+export default function AddTaskDialog({ open, onOpenChange, taskToEdit }: AddTaskDialogProps) {
   const context = useContext(AppContext);
   const { toast } = useToast();
+  
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date>(new Date());
   const [estimatedTime, setEstimatedTime] = useState(0);
   const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   const [scheduledTime, setScheduledTime] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
+    setIsEditing(!!taskToEdit);
     if (open) {
-      // Reset all fields when dialog opens
-      setSelectedSubject(null);
-      setDescription('');
-      setDueDate(new Date());
-      setEstimatedTime(0);
-      setScheduledDate(null);
-      setScheduledTime('');
+      if (taskToEdit) {
+        // Populate fields with existing task data
+        const subject = context?.userData?.subjects.find(s => s.id === taskToEdit.subjectId) || null;
+        setSelectedSubject(subject);
+        setDescription(taskToEdit.description || '');
+        setDueDate(parseISO(taskToEdit.dueDate));
+        setEstimatedTime(taskToEdit.estimatedTime || 0);
+        setScheduledDate(taskToEdit.scheduledDate ? parseISO(taskToEdit.scheduledDate) : null);
+        setScheduledTime(taskToEdit.scheduledTime || '');
+      } else {
+        // Reset fields for a new task
+        setSelectedSubject(null);
+        setDescription('');
+        setDueDate(new Date());
+        setEstimatedTime(0);
+        setScheduledDate(null);
+        setScheduledTime('');
+      }
     }
-  }, [open]);
+  }, [open, taskToEdit, context?.userData?.subjects]);
 
-  const handleAddTask = () => {
+  const handleSave = () => {
     if (!selectedSubject) {
       toast({
         title: 'Câmpuri incomplete',
@@ -57,29 +76,32 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
       return;
     }
 
-    context?.addTask({
+    const taskData = {
       subjectId: selectedSubject.id,
       subjectName: selectedSubject.name,
+      subjectColor: selectedSubject.color,
       description: description.trim(),
       dueDate: dueDate.toISOString(),
-      isCompleted: false,
-      isManual: true,
       estimatedTime: estimatedTime > 0 ? estimatedTime : undefined,
       scheduledDate: scheduledDate ? scheduledDate.toISOString() : undefined,
       scheduledTime: scheduledTime || undefined,
-    });
-    
-    toast({
-        title: 'Temă adăugată!',
-        description: `Tema pentru "${selectedSubject.name}" a fost adăugată cu succes.`,
-    });
+    };
+
+    if (isEditing && taskToEdit) {
+        context?.updateTask(taskToEdit.id, taskData);
+        toast({
+            title: 'Temă actualizată!',
+            description: `Tema pentru "${selectedSubject.name}" a fost actualizată.`,
+        });
+    } else {
+        context?.addTask({ ...taskData, isCompleted: false, isManual: true });
+        toast({
+            title: 'Temă adăugată!',
+            description: `Tema pentru "${selectedSubject.name}" a fost adăugată.`,
+        });
+    }
 
     onOpenChange(false);
-  };
-
-  const handleSubjectChange = (subjectId: string) => {
-    const subject = context?.userData?.subjects.find(s => s.id === subjectId);
-    setSelectedSubject(subject || null);
   };
   
   const handleDateChange = (dateString: string, setter: (date: Date) => void) => {
@@ -93,7 +115,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
           setScheduledDate(date);
       } else {
           setScheduledDate(null);
-          setScheduledTime(''); // Also clear time if date is cleared
+          setScheduledTime('');
       }
   }
 
@@ -101,17 +123,20 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Adaugă o temă manuală</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editează tema' : 'Adaugă o temă manuală'}</DialogTitle>
           <DialogDescription>
-            Completează detaliile pentru noua temă.
+            {isEditing ? 'Modifică detaliile temei existente.' : 'Completează detaliile pentru noua temă.'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
 
-          {/* --- Basic Info --- */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="subject-name">Materie</Label>
-            <Select onValueChange={handleSubjectChange} value={selectedSubject?.id || ''}>
+            <Select 
+              onValueChange={(id) => setSelectedSubject(context?.userData?.subjects.find(s => s.id === id) || null)}
+              value={selectedSubject?.id || ''}
+              disabled={isEditing} // Disable subject change when editing
+            >
                 <SelectTrigger id="subject-name">
                     <SelectValue placeholder="Alege materia" />
                 </SelectTrigger>
@@ -140,7 +165,6 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
 
           <Separator className="my-2" />
 
-          {/* --- Planning Section --- */}
           <div>
             <h4 className="font-semibold text-md mb-3">Planificare (Opțional)</h4>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -177,7 +201,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
                         type="time"
                         value={scheduledTime}
                         onChange={(e) => setScheduledTime(e.target.value)}
-                        disabled={!scheduledDate} // Disable time if no date is set
+                        disabled={!scheduledDate}
                         />
                  </div>
              </div>
@@ -185,7 +209,7 @@ export default function AddTaskDialog({ open, onOpenChange }: AddTaskDialogProps
 
         </div>
         <DialogFooter>
-          <Button onClick={handleAddTask}>Adaugă Tema</Button>
+          <Button onClick={handleSave}>{isEditing ? 'Salvează Modificările' : 'Adaugă Tema'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

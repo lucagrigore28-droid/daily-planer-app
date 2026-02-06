@@ -70,6 +70,8 @@ export default function HomeworkItem({ task, showDueDate = true }: { task: Homew
     }
   };
 
+  const borderColor = isOverdue && !task.isCompleted ? 'hsl(var(--destructive))' : task.subjectColor || 'hsl(var(--border))';
+
   return (
     <>
       <motion.div 
@@ -97,59 +99,61 @@ export default function HomeworkItem({ task, showDueDate = true }: { task: Homew
 
           {/* Draggable Event Item */}
           <motion.div
-            className="relative z-10 w-full flex items-stretch"
+            className="relative z-10 w-full"
             drag={isLocked ? false : "x"}
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={onDragEnd}
             animate={controls}
             transition={{ type: "spring", stiffness: 350, damping: 35 }}
           >
-            {/* Left Side (Accent Color) */}
-            <div className={cn(
-                "flex-grow bg-accent text-black rounded-l-lg p-3 flex items-center gap-4",
-                isOverdue && !task.isCompleted && "bg-destructive/80 text-destructive-foreground"
-            )}>
-                <Checkbox
-                    id={`task-${task.id}`}
-                    checked={task.isCompleted}
-                    onCheckedChange={handleCompletionChange}
-                    disabled={isLocked || isOverdue}
-                    className="h-6 w-6 rounded-full border-black/50 data-[state=checked]:bg-black data-[state=checked]:text-white"
-                />
-                <div className="flex-1">
-                    <p className="font-semibold text-lg">{task.subjectName}</p>
-                    <div className={cn("flex items-center gap-3 text-xs opacity-90", task.isCompleted && "opacity-70")}>
-                        {task.description && <p className="text-sm truncate max-w-xs">{task.description}</p>}
+            <div 
+              className="flex items-stretch bg-card rounded-lg border-l-8"
+              style={{ borderColor }}
+            >
+                {/* Main Content */}
+                <div className="flex-grow p-3 flex items-center gap-4">
+                    <Checkbox
+                        id={`task-${task.id}`}
+                        checked={task.isCompleted}
+                        onCheckedChange={handleCompletionChange}
+                        disabled={isLocked || isOverdue}
+                        className="h-6 w-6 rounded-full"
+                    />
+                    <div className="flex-1">
+                        <p className="font-semibold text-lg text-card-foreground">{task.subjectName}</p>
+                        {task.description && (
+                            <p className="text-sm text-muted-foreground truncate max-w-xs">{task.description}</p>
+                        )}
+                        {showDueDate && (
+                            <div className={cn(
+                                "flex items-center gap-1.5 text-xs font-medium pt-1 text-muted-foreground",
+                                isOverdue && !task.isCompleted && "text-destructive font-semibold"
+                            )}>
+                                <CalendarClock className="h-3 w-3" />
+                                <span>
+                                    Termen: {format(new Date(task.dueDate), "d MMM, HH:mm", { locale: ro })}
+                                </span>
+                            </div>
+                        )}
                     </div>
-                    {showDueDate && (
-                         <div className={cn(
-                            "flex items-center gap-1.5 text-xs font-medium pt-1",
-                             isOverdue && !task.isCompleted ? "text-white/80" : "text-black/60"
-                          )}>
-                           <CalendarClock className="h-3 w-3" />
-                           <span>
-                               Termen: {format(new Date(task.dueDate), "d MMM, HH:mm", { locale: ro })}
-                           </span>
-                        </div>
+                </div>
+
+                {/* Right Side Handle */}
+                <div className="flex-shrink-0 w-12 flex items-center justify-center rounded-r-lg">
+                    {isLocked ? (
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                        <motion.div animate={{ x: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
+                            <ChevronsLeft className="h-6 w-6 text-muted-foreground" />
+                        </motion.div>
                     )}
                 </div>
-            </div>
-
-            {/* Right Side Handle (Card Color) */}
-            <div className="flex-shrink-0 w-12 flex items-center justify-center bg-card rounded-r-lg">
-                {isLocked ? (
-                    <Lock className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                    <motion.div animate={{ x: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
-                        <ChevronsLeft className="h-6 w-6 text-muted-foreground" />
-                    </motion.div>
-                )}
             </div>
           </motion.div>
         </div>
       </motion.div>
 
-      {isEditing && <AddTaskDialog taskToEdit={task} open={isEditing} onOpenChange={setIsEditing} />}
+      {<AddTaskDialog open={isEditing} onOpenChange={setIsEditing} taskToEdit={task} />}
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>

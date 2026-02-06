@@ -320,11 +320,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addTask = useCallback((task: Omit<HomeworkTask, 'id'>) => {
       if (tasksCollectionRef) {
-        addDoc(tasksCollectionRef, task).catch(serverError => {
+        const sanitizedTask: { [key: string]: any } = { ...task };
+        if (sanitizedTask.subjectColor === undefined) {
+          delete sanitizedTask.subjectColor;
+        }
+        addDoc(tasksCollectionRef, sanitizedTask).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: tasksCollectionRef.path,
                 operation: 'create',
-                requestResourceData: task,
+                requestResourceData: sanitizedTask,
             });
             errorEmitter.emit('permission-error', permissionError);
         });
@@ -333,11 +337,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addEvent = useCallback((event: Omit<PersonalEvent, 'id'>) => {
     if (eventsCollectionRef) {
-        addDoc(eventsCollectionRef, event).catch(serverError => {
+        const eventData: {[key: string]: any} = {...event};
+        if (eventData.startTime === undefined || eventData.startTime === '') {
+            delete eventData.startTime;
+        }
+        if (eventData.endTime === undefined || eventData.endTime === '') {
+            delete eventData.endTime;
+        }
+        addDoc(eventsCollectionRef, eventData).catch(serverError => {
             const permissionError = new FirestorePermissionError({
                 path: eventsCollectionRef.path,
                 operation: 'create',
-                requestResourceData: event,
+                requestResourceData: eventData,
             });
             errorEmitter.emit('permission-error', permissionError);
         });
@@ -390,7 +401,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       
-      const taskUpdates = { ...updates, coinsAwarded: true };
+      const taskUpdates: any = { ...updates, coinsAwarded: true };
+      if (taskUpdates.subjectColor === undefined) {
+        delete taskUpdates.subjectColor;
+      }
       setDoc(taskDocRef, taskUpdates, { merge: true }).catch(serverError => {
         const permissionError = new FirestorePermissionError({
             path: taskDocRef.path,
@@ -416,6 +430,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
       if ('timerStartTime' in finalUpdates && (finalUpdates.timerStartTime === undefined || finalUpdates.timerStartTime === null)) {
         finalUpdates.timerStartTime = deleteField();
+      }
+      if (finalUpdates.subjectColor === undefined) {
+        delete finalUpdates.subjectColor;
       }
       
       setDoc(taskDocRef, finalUpdates, { merge: true }).catch(serverError => {
@@ -711,5 +728,3 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
-
-    

@@ -3,6 +3,7 @@ export interface HomeworkTask {
   id: string; // Firestore document ID
   subjectId: string;
   subjectName: string;
+  subjectColor?: string;
   dueDate: string; // ISO string
   description: string;
   isCompleted: boolean;
