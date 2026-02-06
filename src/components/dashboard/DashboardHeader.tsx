@@ -54,16 +54,14 @@ export default function DashboardHeader({
                 </Button>
             </div>
             <div className="flex flex-col items-end gap-2">
-                 <div className="flex items-center gap-2">
-                    <Button onClick={onOpenAddDialog} size="icon" variant="default">
-                        <Plus className="h-6 w-6" />
-                        <span className="sr-only">Adaugă</span>
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={onOpenSettings}>
-                        <Settings className="h-6 w-6" />
-                        <span className="sr-only">Setări</span>
-                    </Button>
-                </div>
+                <Button variant="ghost" size="icon" onClick={onOpenSettings}>
+                    <Settings className="h-6 w-6" />
+                    <span className="sr-only">Setări</span>
+                </Button>
+                <Button onClick={onOpenAddDialog} size="icon" variant="default">
+                    <Plus className="h-6 w-6" />
+                    <span className="sr-only">Adaugă</span>
+                </Button>
                 {activeTab === 'next-tasks' && (
                     <Select value={tasksViewMode} onValueChange={(value) => { if (value) setTasksViewMode(value as TasksViewMode) }}>
                         <SelectTrigger className="w-12 h-12 sm:h-10 sm:w-auto gap-2 justify-center sm:justify-start">
