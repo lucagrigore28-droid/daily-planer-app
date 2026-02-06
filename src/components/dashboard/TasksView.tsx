@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useContext, useEffect, useRef } from 'react';
@@ -11,6 +10,7 @@ import { ro } from 'date-fns/locale';
 import HomeworkList from './HomeworkList';
 import AllTasksView from './AllTasksView';
 import AlternatingTimelineView from './AlternatingTimelineView';
+import { Separator } from '../ui/separator';
 
 export type TasksViewMode = 'daily' | 'timeline' | 'alternating-timeline';
 
@@ -58,7 +58,7 @@ export default function TasksView({ viewMode }: TasksViewProps) {
         return (
             <Card>
                 <CardContent className="p-4">
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center">
                         <div className="flex items-center gap-4">
                             <CalendarIcon className="h-10 w-10 text-primary" />
                             <div>
@@ -69,14 +69,15 @@ export default function TasksView({ viewMode }: TasksViewProps) {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon" onClick={handlePrevDay}>
+                            <Button variant="ghost" size="icon" onClick={handlePrevDay} className="hover:bg-muted">
                                 <ChevronLeft className="h-6 w-6" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={handleNextDay}>
+                            <Button variant="ghost" size="icon" onClick={handleNextDay} className="hover:bg-muted">
                                 <ChevronRight className="h-6 w-6" />
                             </Button>
                         </div>
                     </div>
+                    <Separator className="my-4" />
                     <HomeworkList displayDate={displayedDay} />
                 </CardContent>
             </Card>
